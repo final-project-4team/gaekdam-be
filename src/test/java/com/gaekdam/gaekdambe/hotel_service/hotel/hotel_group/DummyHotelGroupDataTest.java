@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.hotel_service.hotel_group;
+package com.gaekdam.gaekdambe.hotel_service.hotel.hotel_group;
 
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
@@ -36,10 +36,10 @@ public class DummyHotelGroupDataTest {
 
     };
 
-    for ( int i=0; i<hotels.length; i++ ) {
+    for (Object[] hotel : hotels) {
       HotelGroup hotelGroup = HotelGroup.createHotelGroup(
-          (String)hotels[i][0],
-          (LocalDateTime) hotels[i][1]
+          (String) hotel[0],
+          (LocalDateTime) hotel[1]
       );
       hotelGroupRepository.save(hotelGroup);
     }

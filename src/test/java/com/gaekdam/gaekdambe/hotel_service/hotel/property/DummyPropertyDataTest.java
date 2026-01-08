@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.hotel_service.property;
+package com.gaekdam.gaekdambe.hotel_service.hotel.property;
 
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.PropertyStatus;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;

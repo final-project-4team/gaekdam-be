@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 public class HotelGroup {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name="hotel_group_code",nullable=false)
+  @Column(name="hotel_group_code")
   private Long hotelGroupCode;
 
   @Column(name="hotel_group_name",nullable = false)
