@@ -6,7 +6,6 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 @Entity
 @Getter
 @NoArgsConstructor
@@ -20,39 +19,43 @@ public class Facility {
     @Column(name = "facility_code")
     private Long facilityCode;
 
-    @Column(name = "facility_name" , unique = true)
+    @Column(name = "facility_name", nullable = false, length = 50)
     private String facilityName;
 
-    @Column(name = "facility_type")
-    private String facilityType;
+    @Column(name = "facility_type", nullable = false, length = 50)
+    private String facilityType; // 식사 / 운동 / 휴식 / 여가 / 레저
 
     @Column(name = "operating_hours")
     private String operatingHours;
 
-    @Column(name = "operating_status")
+    @Column(name = "operating_status", nullable = false)
     private String operatingStatus;
 
-    @Column(name = "created_at")
+    @Column(name = "hotel_group_code", nullable = false)
+    private Long hotelGroupCode;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-
-    // 생성 메서드 (예약 생성)
+    // 생성 메서드
     public static Facility createFacility(
-            String facilityName ,
-            String facilityType ,
-            String operatingHours ,
-            String operatingStatus
+            String name,
+            String type,
+            String hours,
+            String status,
+            Long hotelGroupCode
     ) {
         LocalDateTime now = LocalDateTime.now();
 
         return Facility.builder()
-                .facilityName(facilityName)
-                .facilityType(facilityType)
-                .operatingHours(operatingHours)
-                .operatingStatus(operatingStatus != null ? operatingStatus : "ACTIVE")
+                .facilityName(name)
+                .facilityType(type)
+                .operatingHours(hours)
+                .operatingStatus(status != null ? status : "ACTIVE")
+                .hotelGroupCode(hotelGroupCode)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

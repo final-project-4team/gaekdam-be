@@ -22,11 +22,11 @@ public class RoomType {
     @Column(name = "room_type_code")
     private Long roomTypeCode;
 
-    @Column(name = "type_name", nullable = false, length = 50 , unique = true)
+    @Column(name = "type_name", nullable = false, length = 50)
     private String typeName;
 
     @Column(name = "max_capacity", nullable = false)
-    private Integer maxCapacity;
+    private int maxCapacity;
 
     @Column(name = "bed_type", nullable = false, length = 50)
     private String bedType;
@@ -37,8 +37,11 @@ public class RoomType {
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "hotel_group_code", nullable = false)
+    private Long hotelGroupCode;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -46,24 +49,26 @@ public class RoomType {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // 생성 메서드
+
     public static RoomType createRoomType(
-            String typeName,
-            Integer maxCapacity,
+            String name,
+            int capacity,
             String bedType,
             String viewType,
-            BigDecimal basePrice,
-            String description
+            BigDecimal price,
+            String description,
+            Long hotelGroupCode
     ) {
         LocalDateTime now = LocalDateTime.now();
 
         return RoomType.builder()
-                .typeName(typeName)
-                .maxCapacity(maxCapacity)
+                .typeName(name)
+                .maxCapacity(capacity)
                 .bedType(bedType)
                 .viewType(viewType)
-                .basePrice(basePrice)
+                .basePrice(price)
                 .description(description)
+                .hotelGroupCode(hotelGroupCode)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
