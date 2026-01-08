@@ -20,7 +20,7 @@ public class Facility {
     @Column(name = "facility_code")
     private Long facilityCode;
 
-    @Column(name = "facility_name")
+    @Column(name = "facility_name" , unique = true)
     private String facilityName;
 
     @Column(name = "facility_type")
