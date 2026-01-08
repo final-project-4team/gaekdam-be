@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @SpringBootTest
 @Transactional
 @Rollback(false) // 실제 DB에 반영시킨다
-public class DummyRoomTypeDateTest {
+public class DummyRoomTypeDataTest {
 
     @Autowired
     private RoomTypeRepository roomTypeRepository;
