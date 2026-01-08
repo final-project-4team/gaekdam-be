@@ -34,7 +34,7 @@ public class Property {
 
 
   @Enumerated(EnumType.STRING)
-  @Column(name="property_status")
+  @Column(name="property_status",nullable = false)
   private PropertyStatus propertyStatus;
 
   @Column(name="property_city",nullable = false)
