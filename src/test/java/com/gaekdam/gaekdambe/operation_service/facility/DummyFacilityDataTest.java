@@ -11,7 +11,7 @@ import org.springframework.test.annotation.Rollback;
 
 @SpringBootTest
 @Transactional
-//@Rollback(false) // 실제 DB에 반영시킨다
+@Rollback(false) // 실제 DB에 반영시킨다
 public class DummyFacilityDataTest {
 
     @Autowired
