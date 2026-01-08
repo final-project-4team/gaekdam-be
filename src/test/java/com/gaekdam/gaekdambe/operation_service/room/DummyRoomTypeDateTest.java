@@ -20,51 +20,63 @@ public class DummyRoomTypeDateTest {
     private RoomTypeRepository roomTypeRepository;
 
     @Test
-    @DisplayName("룸타입 더미데이터 20개 생성")
-    void createRoomTypeDummy(){
+    @DisplayName("각 호텔별 5개씩 룸타입 생성")
+    void createRoomTypesByHotel() {
 
-        Object[][] roomTypes = {
-                {"스탠다드", 2, "DOUBLE", "CITY", new BigDecimal("120000"), "기본 객실"},
-                {"스탠다드 오션", 2, "DOUBLE", "OCEAN", new BigDecimal("140000"), "오션뷰 기본 객실"},
-                {"스탠다드 레이크", 2, "DOUBLE", "LAKE", new BigDecimal("135000"), "레이크뷰 기본 객실"},
-
-                {"디럭스", 2, "QUEEN", "CITY", new BigDecimal("160000"), "여유 있는 디럭스 객실"},
-                {"디럭스 오션", 2, "QUEEN", "OCEAN", new BigDecimal("180000"), "오션뷰 디럭스"},
-                {"디럭스 레이크", 2, "QUEEN", "LAKE", new BigDecimal("175000"), "레이크뷰 디럭스"},
-
-                {"프리미엄 디럭스", 2, "KING", "CITY", new BigDecimal("210000"), "프리미엄 디럭스"},
-                {"프리미엄 디럭스 오션", 2, "KING", "OCEAN", new BigDecimal("240000"), "프리미엄 오션 디럭스"},
-
-                {"패밀리", 4, "DOUBLE+SINGLE", "CITY", new BigDecimal("200000"), "가족 고객용 객실"},
-                {"패밀리 오션", 4, "DOUBLE+SINGLE", "OCEAN", new BigDecimal("230000"), "가족 오션뷰 객실"},
-                {"패밀리 레이크", 4, "DOUBLE+SINGLE", "LAKE", new BigDecimal("225000"), "가족 레이크뷰 객실"},
-
-                {"패밀리 프리미엄", 5, "DOUBLE+DOUBLE", "CITY", new BigDecimal("260000"), "대가족 프리미엄 객실"},
-
-                {"스위트", 2, "KING", "CITY", new BigDecimal("280000"), "고급 스위트"},
-                {"스위트 오션", 2, "KING", "OCEAN", new BigDecimal("320000"), "오션뷰 스위트"},
-                {"스위트 레이크", 2, "KING", "LAKE", new BigDecimal("310000"), "레이크뷰 스위트"},
-
-                {"프리미엄 스위트", 2, "KING", "CITY", new BigDecimal("350000"), "프리미엄 스위트"},
-                {"프리미엄 스위트 오션", 2, "KING", "OCEAN", new BigDecimal("380000"), "프리미엄 오션 스위트"},
-
-                {"로얄 스위트", 4, "KING+DOUBLE", "CITY", new BigDecimal("420000"), "최상급 객실"},
-                {"로얄 스위트 오션", 4, "KING+DOUBLE", "OCEAN", new BigDecimal("450000"), "최상급 오션뷰 객실"},
-                {"로얄 스위트 레이크", 4, "KING+DOUBLE", "LAKE", new BigDecimal("440000"), "최상급 레이크뷰 객실"}
+        // 모든 호텔 공통 (3개)
+        Object[][] baseRoomTypes = {
+                {"스탠다드", 2, "DOUBLE", "CITY", 120000, "기본 객실"},
+                {"디럭스", 2, "QUEEN", "CITY", 160000, "디럭스 객실"},
+                {"패밀리", 4, "DOUBLE+SINGLE", "CITY", 200000, "가족 객실"}
         };
 
-        for (Object[] r : roomTypes) {
-            RoomType roomType = RoomType.createRoomType(
-                    (String) r[0],
-                    (Integer) r[1],
-                    (String) r[2],
-                    (String) r[3],
-                    (BigDecimal) r[4],
-                    (String) r[5]
-            );
+        // 짝수 호텔용 (2개)
+        Object[][] oceanRoomTypes = {
+                {"디럭스 오션", 2, "QUEEN", "OCEAN", 190000, "오션뷰 디럭스"},
+                {"패밀리 오션", 4, "DOUBLE+SINGLE", "OCEAN", 230000, "오션뷰 패밀리"}
+        };
 
-            roomTypeRepository.save(roomType);
+        // 홀수 호텔용 (2개)
+        Object[][] suiteRoomTypes = {
+                {"스위트", 2, "KING", "CITY", 280000, "스위트 객실"},
+                {"로얄 스위트", 4, "KING+DOUBLE", "OCEAN", 450000, "최상급 스위트"}
+        };
+
+        for (long hotelCode = 1; hotelCode <= 10; hotelCode++) {
+
+            // 공통 3개
+            for (Object[] r : baseRoomTypes) {
+                roomTypeRepository.save(
+                        RoomType.createRoomType(
+                                (String) r[0],
+                                (int) r[1],
+                                (String) r[2],
+                                (String) r[3],
+                                BigDecimal.valueOf((int) r[4]),
+                                (String) r[5],
+                                hotelCode
+                        )
+                );
+            }
+
+            // 호텔별 추가 2개 → 총 5개 보장
+            Object[][] extraTypes = (hotelCode % 2 == 0)
+                    ? oceanRoomTypes
+                    : suiteRoomTypes;
+
+            for (Object[] r : extraTypes) {
+                roomTypeRepository.save(
+                        RoomType.createRoomType(
+                                (String) r[0],
+                                (int) r[1],
+                                (String) r[2],
+                                (String) r[3],
+                                BigDecimal.valueOf((int) r[4]),
+                                (String) r[5],
+                                hotelCode
+                        )
+                );
+            }
         }
-
     }
 }
