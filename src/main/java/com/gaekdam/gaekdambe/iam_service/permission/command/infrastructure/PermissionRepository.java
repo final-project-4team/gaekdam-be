@@ -1,0 +1,8 @@
+package com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure;
+
+import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PermissionRepository extends JpaRepository<Permission, Integer> {
+
+}
