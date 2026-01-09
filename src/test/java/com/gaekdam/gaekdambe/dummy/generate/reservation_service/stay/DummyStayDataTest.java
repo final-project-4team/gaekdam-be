@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.reservation_service.stay;
+package com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay;
 
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyStayDataTest {
 
     @Autowired
@@ -26,9 +25,8 @@ public class DummyStayDataTest {
     @Autowired
     private StayRepository stayRepository;
 
-    @Test
-    @DisplayName("투숙 더미 데이터 8000건 생성 (예약 데이터 먼저 생성 후 하셔야 됩니다)")
-    void createStayDummy() {
+    @Transactional
+    public void generate() {
 
         Random random = new Random();
 

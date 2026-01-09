@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.reservation_service.stay;
+package com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay;
 
 import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity.CheckInOut;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity.Stay;
@@ -8,15 +8,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyCheckInOutDataTest {
 
 
@@ -26,9 +25,8 @@ public class DummyCheckInOutDataTest {
     @Autowired
     private CheckInOutRepository checkInOutRepository;
 
-    @Test
-    @DisplayName("체크인/체크아웃 더미 데이터 생성 투숙 상태에따라 데이터 상이")
-    void createCheckInOutDummy() {
+    @Transactional
+    public void generate() {
 
         Random random = new Random();
         String[] channels = {"FRONT", "KIOSK", "MOBILE"};

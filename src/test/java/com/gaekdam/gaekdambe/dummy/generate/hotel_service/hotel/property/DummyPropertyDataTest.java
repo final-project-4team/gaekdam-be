@@ -1,19 +1,18 @@
-package com.gaekdam.gaekdambe.dummy.hotel_service.hotel.property;
+package com.gaekdam.gaekdambe.dummy.generate.hotel_service.hotel.property;
 
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.PropertyStatus;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.PropertyRepository;
-import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyPropertyDataTest {
 
   @Autowired
@@ -21,9 +20,8 @@ public class DummyPropertyDataTest {
   @Autowired
   private HotelGroupRepository hotelGroupRepository;
 
-  @Test
-  @DisplayName("지점 생성 ")
-  void createPropertyDummy() {
+  @Transactional
+  public void generate() {
     Object[][] properties = {
         {"한화리조트 경주", PropertyStatus.ACTIVE, "경주", (long)1},
         {"한화리조트 설악", PropertyStatus.ACTIVE, "설악", (long)1},

@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.operation_service.facility;
+package com.gaekdam.gaekdambe.dummy.generate.operation_service.facility;
 
 import com.gaekdam.gaekdambe.operation_service.facility.command.domain.entity.FacilityUsage;
 import com.gaekdam.gaekdambe.operation_service.facility.command.infrastructure.repository.FacilityUsageRepository;
@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,17 +14,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Random;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyFacilityUsageDataTest {
 
     @Autowired
     private FacilityUsageRepository facilityUsageRepository;
 
-    @Test
-    @DisplayName("부대시설 이용내역 2만건 생성")
-    void createFacilityUsageDummy() {
+    @Transactional
+    public void generate() {
 
         Random random = new Random();
         int totalCount = 20_000;
