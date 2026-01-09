@@ -18,6 +18,11 @@ public class DummyPermissionTypeDataTest {
 
   @Transactional
   public void generate() {
+
+      if (permissionTypeRepository.count() > 0) {
+          return;
+      }
+
     for (long hotel = 1; hotel <= 10; hotel++) {
       for (PermissionTypeSeed s : PermissionTypeSeed.values()) {
         long hotels=hotel;

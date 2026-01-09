@@ -21,6 +21,10 @@ public class DummyRoomTypeDataTest {
     @Transactional
     public void generate() {
 
+        if (roomTypeRepository.count() > 0) {
+            return;
+        }
+
         // 모든 호텔 공통 (3개)
         Object[][] baseRoomTypes = {
                 {"스탠다드", 2, "DOUBLE", "CITY", 120000, "기본 객실"},

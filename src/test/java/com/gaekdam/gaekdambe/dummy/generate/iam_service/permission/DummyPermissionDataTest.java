@@ -19,6 +19,12 @@ public class DummyPermissionDataTest {
   public void generate()
   {
     for(long hotel=1;hotel<=10;hotel++) {
+
+        if (permissionRepository.count() > 0) {
+            return;
+        }
+
+
 /*      Object[][] permissionsDummy={
           {"경영-총지배인",hotel},
           {"경영-부지배인",hotel},

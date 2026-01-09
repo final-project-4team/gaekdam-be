@@ -19,6 +19,10 @@ public class DummyFacilityDataTest {
     @Transactional
     public void generate() {
 
+        if (facilityRepository.count() > 0) {
+            return;
+        }
+
         // 모든 호텔 공통 (4개)
         String[][] baseFacilities = {
                 {"조식 뷔페", "식사", "07:00~10:00"},

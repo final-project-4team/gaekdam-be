@@ -24,6 +24,11 @@ public class DummyPositionDataTest {
 
   @Transactional
   public void generate() {
+
+      if (hotelPositionRepository.count() > 0) {
+          return;
+      }
+
     Object[][] positionsDummy={
         {"총지배인",1L,1L},
         {"부지배인",1L,1L},

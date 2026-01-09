@@ -18,6 +18,11 @@ public class DummyDepartmentDataTest {
 
   @Transactional
   public void generate() {
+
+      if (departmentRepository.count() > 0) {
+          return;
+      }
+
     Object[][] departmentsDummy = {
         {"경영", 1L},
         {"지원", 1L},

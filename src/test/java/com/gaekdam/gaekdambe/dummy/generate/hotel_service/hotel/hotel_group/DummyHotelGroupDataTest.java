@@ -21,6 +21,10 @@ public class DummyHotelGroupDataTest {
   @Transactional
   public void generate() {
 
+      if (hotelGroupRepository.count() > 0) {
+          return;
+      }
+
     Object[][] hotels = {
         {"한화 호텔", LocalDateTime.of(2027,1,3,12,0,0)},
         {"호텔 신라",LocalDateTime.of(2027,2,3,12,0,0)},
