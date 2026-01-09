@@ -24,6 +24,10 @@ public class DummyRoomDataTest {
     @Transactional
     public void generate() {
 
+        if (roomRepository.count() > 0) {
+            return;
+        }
+
         long roomTypeCode = 1;
 
         for (int hotel = 1; hotel <= 10; hotel++) {

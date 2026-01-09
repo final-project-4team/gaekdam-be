@@ -28,6 +28,10 @@ public class DummyCheckInOutDataTest {
     @Transactional
     public void generate() {
 
+        if (checkInOutRepository.count() > 0) {
+            return;
+        }
+
         Random random = new Random();
         String[] channels = {"FRONT", "KIOSK", "MOBILE"};
 

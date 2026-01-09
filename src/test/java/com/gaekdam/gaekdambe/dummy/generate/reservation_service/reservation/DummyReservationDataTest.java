@@ -23,6 +23,10 @@ public class DummyReservationDataTest {
     @Transactional
     public void generate(){
 
+        if (reservationRepository.count() > 0) {
+            return;
+        }
+
         Random random = new Random();
         int totalCount = 10_000;
 

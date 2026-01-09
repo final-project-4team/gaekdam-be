@@ -28,6 +28,10 @@ public class DummyStayDataTest {
     @Transactional
     public void generate() {
 
+        if (stayRepository.count() > 0) {
+            return;
+        }
+
         Random random = new Random();
 
         // RESERVED 상태 예약만 투숙 생성

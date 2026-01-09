@@ -27,6 +27,10 @@ public class DummyReservationPackageDataTest {
     @Transactional
     public void generate() {
 
+        if (packageRepository.count() > 0) {
+            return;
+        }
+
         for (long hotelCode = 1; hotelCode <= 10; hotelCode++) {
 
             long f1 = (hotelCode - 1) * 5 + 1;

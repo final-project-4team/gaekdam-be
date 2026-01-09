@@ -23,6 +23,10 @@ public class DummyFacilityUsageDataTest {
     @Transactional
     public void generate() {
 
+        if (facilityUsageRepository.count() > 0) {
+            return;
+        }
+
         Random random = new Random();
         int totalCount = 20_000;
 

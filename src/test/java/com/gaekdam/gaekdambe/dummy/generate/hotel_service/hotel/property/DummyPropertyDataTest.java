@@ -22,6 +22,11 @@ public class DummyPropertyDataTest {
 
   @Transactional
   public void generate() {
+
+      if (propertyRepository.count() > 0) {
+          return;
+      }
+
     Object[][] properties = {
         {"한화리조트 경주", PropertyStatus.ACTIVE, "경주", (long)1},
         {"한화리조트 설악", PropertyStatus.ACTIVE, "설악", (long)1},
