@@ -26,13 +26,22 @@ public class DummyReservationDataTest {
     void createReservationDummy(){
 
         Random random = new Random();
-
         int totalCount = 10_000;
 
         for (int i = 1; i <= totalCount; i++) {
 
-            long tenantCode = (i % 10) + 1; // 호텔 1~10
-            long roomCode = random.nextInt(500) + 1; // 객실 1~500
+            // 상태 결정
+            String reservationStatus;
+            if (i <= 1_200) {
+                reservationStatus = "NO_SHOW";
+            } else if (i <= 2_000) {
+                reservationStatus = "CANCELED";
+            } else {
+                reservationStatus = "RESERVED";
+            }
+
+            long tenantCode = (i % 10) + 1;
+            long roomCode = random.nextInt(500) + 1;
             long customerCode = random.nextInt(5_000) + 1;
 
             boolean hasPackage = random.nextBoolean();
@@ -49,7 +58,8 @@ public class DummyReservationDataTest {
             LocalDate checkin = LocalDate.now().minusDays(random.nextInt(60));
             LocalDate checkout = checkin.plusDays(1 + random.nextInt(3));
 
-            Reservation reservation = Reservation.create(
+            // 예약 생성
+            Reservation reservation = Reservation.createReservation(
                     checkin,
                     checkout,
                     1 + random.nextInt(4),
@@ -60,8 +70,32 @@ public class DummyReservationDataTest {
                     tenantCode,
                     roomCode,
                     customerCode,
-                    packageCode
+                    packageCode,
+                    reservationStatus
             );
+
+            // 취소 상태면 취소 시간 세팅
+            if ("CANCELED".equals(reservationStatus)) {
+                reservation = Reservation.builder()
+                        .reservationCode(reservation.getReservationCode())
+                        .reservationStatus(reservation.getReservationStatus())
+                        .checkinDate(reservation.getCheckinDate())
+                        .checkoutDate(reservation.getCheckoutDate())
+                        .guestCount(reservation.getGuestCount())
+                        .guestType(reservation.getGuestType())
+                        .reservationChannel(reservation.getReservationChannel())
+                        .reservationRoomPrice(reservation.getReservationRoomPrice())
+                        .reservationPackagePrice(reservation.getReservationPackagePrice())
+                        .totalPrice(reservation.getTotalPrice())
+                        .reservedAt(reservation.getReservedAt())
+                        .canceledAt(reservation.getReservedAt().plusHours(1 + random.nextInt(72)))
+                        .createdAt(reservation.getCreatedAt())
+                        .tenantCode(reservation.getTenantCode())
+                        .roomCode(reservation.getRoomCode())
+                        .customerCode(reservation.getCustomerCode())
+                        .packageCode(reservation.getPackageCode())
+                        .build();
+            }
 
             reservationRepository.save(reservation);
         }

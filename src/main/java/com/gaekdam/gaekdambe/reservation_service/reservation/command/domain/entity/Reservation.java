@@ -79,9 +79,9 @@ public class Reservation {
 
 
 
-    public static Reservation create(
-            LocalDate checkinDate,
-            LocalDate checkoutDate,
+    public static Reservation createReservation(
+            LocalDate checkin,
+            LocalDate checkout,
             int guestCount,
             String guestType,
             String reservationChannel,
@@ -90,23 +90,24 @@ public class Reservation {
             Long tenantCode,
             Long roomCode,
             Long customerCode,
-            Long packageCode
+            Long packageCode,
+            String reservationStatus
     ) {
         LocalDateTime now = LocalDateTime.now();
 
-        BigDecimal total =
+        BigDecimal totalPrice =
                 roomPrice.add(packagePrice != null ? packagePrice : BigDecimal.ZERO);
 
         return Reservation.builder()
-                .reservationStatus("RESERVED")
-                .checkinDate(checkinDate)
-                .checkoutDate(checkoutDate)
+                .reservationStatus(reservationStatus)
+                .checkinDate(checkin)
+                .checkoutDate(checkout)
                 .guestCount(guestCount)
                 .guestType(guestType)
                 .reservationChannel(reservationChannel)
                 .reservationRoomPrice(roomPrice)
                 .reservationPackagePrice(packagePrice)
-                .totalPrice(total)
+                .totalPrice(totalPrice)
                 .reservedAt(now)
                 .createdAt(now)
                 .tenantCode(tenantCode)
