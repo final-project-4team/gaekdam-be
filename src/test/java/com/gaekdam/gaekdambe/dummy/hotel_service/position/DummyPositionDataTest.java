@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.hotel_service.position;
+package com.gaekdam.gaekdambe.dummy.hotel_service.position;
 
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;

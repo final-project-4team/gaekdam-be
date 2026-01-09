@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.hotel_service.hotel.hotel_group;
+package com.gaekdam.gaekdambe.dummy.hotel_service.hotel.hotel_group;
 
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;

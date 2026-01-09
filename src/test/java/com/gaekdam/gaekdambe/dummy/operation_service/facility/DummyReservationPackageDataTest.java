@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.operation_service.facility;
+package com.gaekdam.gaekdambe.dummy.operation_service.facility;
 
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.PackageFacility;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.ReservationPackage;

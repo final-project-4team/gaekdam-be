@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.operation_service.room;
+package com.gaekdam.gaekdambe.dummy.operation_service.room;
 
 import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.RoomType;
 import com.gaekdam.gaekdambe.operation_service.room.command.infrastructure.repository.RoomTypeRepository;
