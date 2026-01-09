@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.operation_service.facility;
+package com.gaekdam.gaekdambe.dummy.operation_service.facility;
 
 import com.gaekdam.gaekdambe.operation_service.facility.command.domain.entity.Facility;
 import com.gaekdam.gaekdambe.operation_service.facility.command.infrastructure.repository.FacilityRepository;

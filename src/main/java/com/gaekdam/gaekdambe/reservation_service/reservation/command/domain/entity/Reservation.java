@@ -3,6 +3,7 @@ package com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.ent
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -20,7 +21,7 @@ public class Reservation {
     private Long reservationCode;
 
     @Column(name = "reservation_status", nullable = false, length = 20)
-    private String reservationStatus;
+    private String reservationStatus; // RESERVED, CANCELED, NO_SHOW
 
     @Column(name = "checkin_date", nullable = false)
     private LocalDate checkinDate;
@@ -29,17 +30,28 @@ public class Reservation {
     private LocalDate checkoutDate;
 
     @Column(name = "guest_count", nullable = false)
-    private Integer guestCount;
+    private int guestCount;
 
     @Column(name = "guest_type", nullable = false, length = 20)
-    private String guestType;
+    private String guestType; // INDIVIDUAL, FAMILY, GROUP
 
     @Column(name = "reservation_channel", nullable = false, length = 20)
-    private String reservationChannel;
+    private String reservationChannel; // WEB, PHONE, OTA
 
     @Column(name = "request_note", length = 255)
     private String requestNote;
 
+    // 금액
+    @Column(name = "reservation_room_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal reservationRoomPrice;
+
+    @Column(name = "reservation_package_price", precision = 10, scale = 2)
+    private BigDecimal reservationPackagePrice;
+
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice;
+
+    // 시간
     @Column(name = "reserved_at", nullable = false)
     private LocalDateTime reservedAt;
 
@@ -49,51 +61,58 @@ public class Reservation {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 연관 코드 (FK는 느슨하게 숫자로)
     @Column(name = "tenant_code", nullable = false)
     private Long tenantCode;
 
     @Column(name = "room_code", nullable = false)
     private Long roomCode;
 
-    @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    @Column(name = "customer_code", nullable = false)
+    private Long customerCode;
 
     @Column(name = "package_code")
     private Long packageCode;
 
-    // 생성 메서드 (예약 생성)
-    public static Reservation createReservation(
-            Long tenantCode,
-            Long roomCode,
-            Long customerId,
+
+
+    public static Reservation create(
             LocalDate checkinDate,
             LocalDate checkoutDate,
-            Integer guestCount,
+            int guestCount,
             String guestType,
             String reservationChannel,
-            String requestNote,
+            BigDecimal roomPrice,
+            BigDecimal packagePrice,
+            Long tenantCode,
+            Long roomCode,
+            Long customerCode,
             Long packageCode
     ) {
         LocalDateTime now = LocalDateTime.now();
 
+        BigDecimal total =
+                roomPrice.add(packagePrice != null ? packagePrice : BigDecimal.ZERO);
+
         return Reservation.builder()
-                .tenantCode(tenantCode)
-                .roomCode(roomCode)
-                .customerId(customerId)
+                .reservationStatus("RESERVED")
                 .checkinDate(checkinDate)
                 .checkoutDate(checkoutDate)
-                .guestCount(guestCount != null ? guestCount : 1)
+                .guestCount(guestCount)
                 .guestType(guestType)
                 .reservationChannel(reservationChannel)
-                .requestNote(requestNote)
-                .packageCode(packageCode)
-                .reservationStatus("RESERVED")
+                .reservationRoomPrice(roomPrice)
+                .reservationPackagePrice(packagePrice)
+                .totalPrice(total)
                 .reservedAt(now)
                 .createdAt(now)
-                .updatedAt(now)
+                .tenantCode(tenantCode)
+                .roomCode(roomCode)
+                .customerCode(customerCode)
+                .packageCode(packageCode)
                 .build();
     }
 }

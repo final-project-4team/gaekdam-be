@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.hotel_service.department;
+package com.gaekdam.gaekdambe.dummy.hotel_service.department;
 
 import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;

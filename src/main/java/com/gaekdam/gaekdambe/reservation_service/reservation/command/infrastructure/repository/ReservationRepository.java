@@ -1,4 +1,7 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository;
 
-public interface ReservationRepository {
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ReservationRepository extends JpaRepository<Reservation,Long> {
 }
