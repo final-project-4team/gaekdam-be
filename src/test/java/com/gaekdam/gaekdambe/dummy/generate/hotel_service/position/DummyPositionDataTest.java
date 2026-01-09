@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.hotel_service.position;
+package com.gaekdam.gaekdambe.dummy.generate.hotel_service.position;
 
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
@@ -8,12 +8,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyPositionDataTest {
 
   @Autowired
@@ -23,9 +22,8 @@ public class DummyPositionDataTest {
   @Autowired
   private DepartmentRepository departmentRepository;
 
-  @Test
-  @DisplayName("직책 생성")
-  void createPosition() {
+  @Transactional
+  public void generate() {
     Object[][] positionsDummy={
         {"총지배인",1L,1L},
         {"부지배인",1L,1L},

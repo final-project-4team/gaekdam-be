@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.operation_service.room;
+package com.gaekdam.gaekdambe.dummy.generate.operation_service.room;
 
 import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.RoomType;
 import com.gaekdam.gaekdambe.operation_service.room.command.infrastructure.repository.RoomTypeRepository;
@@ -6,22 +6,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
-@SpringBootTest
-@Transactional
-@Rollback(false) // 실제 DB에 반영시킨다
+@Component
 public class DummyRoomTypeDataTest {
 
     @Autowired
     private RoomTypeRepository roomTypeRepository;
 
-    @Test
-    @DisplayName("각 호텔별 5개씩 룸타입 생성")
-    void createRoomTypesByHotel() {
+    @Transactional
+    public void generate() {
 
         // 모든 호텔 공통 (3개)
         Object[][] baseRoomTypes = {

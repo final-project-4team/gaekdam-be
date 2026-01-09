@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.operation_service.facility;
+package com.gaekdam.gaekdambe.dummy.generate.operation_service.facility;
 
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.PackageFacility;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.ReservationPackage;
@@ -8,15 +8,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyReservationPackageDataTest {
 
     @Autowired
@@ -25,9 +24,8 @@ public class DummyReservationPackageDataTest {
     @Autowired
     private PackageFacilityRepository packageFacilityRepository;
 
-    @Test
-    @DisplayName("패키지 더미데이터 50개 생성")
-    void createPackagesByHotel() {
+    @Transactional
+    public void generate() {
 
         for (long hotelCode = 1; hotelCode <= 10; hotelCode++) {
 

@@ -1,18 +1,14 @@
-package com.gaekdam.gaekdambe.dummy.hotel_service.department;
+package com.gaekdam.gaekdambe.dummy.generate.hotel_service.department;
+
 
 import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyDepartmentDataTest {
 
   @Autowired
@@ -20,9 +16,8 @@ public class DummyDepartmentDataTest {
   @Autowired
   HotelGroupRepository hotelGroupRepository;
 
-  @Test
-  @DisplayName("부서 생성")
-  void createDepartment() {
+  @Transactional
+  public void generate() {
     Object[][] departmentsDummy = {
         {"경영", 1L},
         {"지원", 1L},

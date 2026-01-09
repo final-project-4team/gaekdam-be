@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.operation_service.facility;
+package com.gaekdam.gaekdambe.dummy.generate.operation_service.facility;
 
 import com.gaekdam.gaekdambe.operation_service.facility.command.domain.entity.Facility;
 import com.gaekdam.gaekdambe.operation_service.facility.command.infrastructure.repository.FacilityRepository;
@@ -6,20 +6,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.annotation.Rollback;
 
-@SpringBootTest
-@Transactional
-@Rollback(false) // 실제 DB에 반영시킨다
+@Component
 public class DummyFacilityDataTest {
 
     @Autowired
     private FacilityRepository facilityRepository;
 
-    @Test
-    @DisplayName("각 호텔별로 부대시설 5개씩")
-    void createFacilities() {
+    @Transactional
+    public void generate() {
 
         // 모든 호텔 공통 (4개)
         String[][] baseFacilities = {

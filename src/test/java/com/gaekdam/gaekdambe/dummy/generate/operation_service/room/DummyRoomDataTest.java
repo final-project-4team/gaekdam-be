@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.operation_service.room;
+package com.gaekdam.gaekdambe.dummy.generate.operation_service.room;
 
 import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.Room;
 import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.RoomType;
@@ -8,23 +8,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@SpringBootTest
-@Transactional
-@Rollback(false) // 실제 DB에 반영시킨다
+@Component
 public class DummyRoomDataTest {
 
     @Autowired
     private RoomRepository roomRepository;
 
-    @Test
-    @DisplayName("호텔당 객실 50개 생성 (RoomTypeCode 직접 지정)")
-    void createRoomDummy() {
+    @Transactional
+    public void generate() {
 
         long roomTypeCode = 1;
 

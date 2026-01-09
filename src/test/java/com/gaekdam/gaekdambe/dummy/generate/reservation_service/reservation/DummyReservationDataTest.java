@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.reservation_service.reservation;
+package com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation;
 
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,17 +14,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Random;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyReservationDataTest {
 
     @Autowired
     private ReservationRepository reservationRepository;
 
-    @Test
-    @DisplayName("예약 내역 1만건 생성")
-    void createReservationDummy(){
+    @Transactional
+    public void generate(){
 
         Random random = new Random();
         int totalCount = 10_000;

@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.dummy.iam_service.permission;
+package com.gaekdam.gaekdambe.dummy.generate.iam_service.permission;
 
 import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
 import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.PermissionRepository;
@@ -6,19 +6,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@Transactional
-@Rollback(false)
+@Component
 public class DummyPermissionDataTest {
   @Autowired
   private PermissionRepository permissionRepository;
 
-  @Test
-  @DisplayName("권한 생성")
-  void createPermissions()
+ @Transactional
+  public void generate()
   {
     for(long hotel=1;hotel<=10;hotel++) {
 /*      Object[][] permissionsDummy={
