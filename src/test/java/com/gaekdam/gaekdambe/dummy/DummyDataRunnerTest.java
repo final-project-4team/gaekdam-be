@@ -1,5 +1,16 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.incident.DummyIncidentDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry.DummyInquiryDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging.DummyMessageJourneyStageSetupTest;
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging.DummyMessageRuleSetupTest;
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging.DummyMessageTemplateSetupTest;
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyCustomerDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.loyalty.DummyLoyaltyDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.membership.DummyMembershipDataTest;
@@ -17,11 +28,6 @@ import com.gaekdam.gaekdambe.dummy.generate.operation_service.room.DummyRoomType
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation.DummyReservationDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyCheckInOutDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDataTest;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
@@ -55,6 +61,13 @@ class DummyDataRunnerTest {
     @Autowired DummyMembershipDataTest membershipDataTest;
     @Autowired DummyLoyaltyDataTest loyaltyDataTest;
 
+    // 커뮤니케이션 서비스 (문의, 사건, 메세지 더미데이터 생성)
+    @Autowired DummyIncidentDataTest incidentDataTest;
+    @Autowired DummyInquiryDataTest inquiryDataTest;
+    @Autowired DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
+    @Autowired DummyMessageRuleSetupTest messageRuleSetupTest;
+    @Autowired DummyMessageTemplateSetupTest messageTemplateSetupTest;
+
 
     @Test
     void generateAll() {
@@ -84,6 +97,13 @@ class DummyDataRunnerTest {
         customerDataTest.generate();
         membershipDataTest.generate();
         loyaltyDataTest.generate();
+
+        // communication_service (문의, 사건, 메세지 더미데이터 생성)
+        incidentDataTest.generate();
+        inquiryDataTest.generate();
+        messageJourneyStageSetupTest.generate();
+        messageRuleSetupTest.generate();
+        messageTemplateSetupTest.generate();
 
     }
 }
