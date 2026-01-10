@@ -1,5 +1,8 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyCustomerDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.loyalty.DummyLoyaltyDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.membership.DummyMembershipDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.hotel_service.department.DummyDepartmentDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.hotel_service.hotel.hotel_group.DummyHotelGroupDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.hotel_service.hotel.property.DummyPropertyDataTest;
@@ -47,6 +50,12 @@ class DummyDataRunnerTest {
     @Autowired DummyStayDataTest stayDataTest;
     @Autowired DummyCheckInOutDataTest checkInOutDataTest;
 
+    // 고객 서비스
+    @Autowired DummyCustomerDataTest customerDataTest;
+    @Autowired DummyMembershipDataTest membershipDataTest;
+    @Autowired DummyLoyaltyDataTest loyaltyDataTest;
+
+
     @Test
     void generateAll() {
         // 호텔서비스
@@ -70,6 +79,11 @@ class DummyDataRunnerTest {
         reservationDataTest.generate();
         stayDataTest.generate();
         checkInOutDataTest.generate();
+
+        // customer_service (순서 중요: customer -> membership -> loyalty)
+        customerDataTest.generate();
+        membershipDataTest.generate();
+        loyaltyDataTest.generate();
 
     }
 }
