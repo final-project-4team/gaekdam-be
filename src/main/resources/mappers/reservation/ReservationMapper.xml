@@ -5,24 +5,127 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.ReservationMapper">
 
+    <!--    검색 목록들      -->
+    <!--        Keyword 검색      -->
 
-    <select id="findAllReservations"
+    <sql id="ReservationKeywordSearch">
+        AND (
+        reservation_status LIKE CONCAT('%', #{search.keyword}, '%')
+        OR reservation_channel LIKE CONCAT('%', #{search.keyword}, '%')
+        OR guest_type LIKE CONCAT('%', #{search.keyword}, '%')
+        )
+    </sql>
+
+
+    <!--         상태 검색      -->
+
+    <sql id="ReservationStatusSearch">
+        AND reservation_status = #{search.status}
+    </sql>
+
+
+    <!--        테넌트 검색      -->
+
+    <sql id="ReservationTenantSearch">
+        AND tenant_code = #{search.tenantCode}
+    </sql>
+
+
+    <!--       기간 검색       -->
+
+    <sql id="ReservationDateRangeSearch">
+        <if test="search.fromDate != null">
+            AND reserved_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        <if test="search.toDate != null">
+            AND reserved_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </sql>
+
+
+    <!--         예약 목록 (페이징 + 검색)       -->
+
+    <select id="findReservations"
             resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.ReservationResponse">
+
         SELECT
-            reservation_code      AS reservationCode,
-            reservation_status    AS reservationStatus,
-            checkin_date          AS checkinDate,
-            checkout_date         AS checkoutDate,
-            guest_count           AS guestCount,
-            guest_type            AS guestType,
-            reservation_channel   AS reservationChannel,
-            reserved_at           AS reservedAt,
-            tenant_code           AS tenantCode,
-            room_code             AS roomCode,
-            customer_id           AS customerId
+        reservation_code AS reservationCode,
+        reservation_status AS reservationStatus,
+
+        checkin_date AS checkinDate,
+        checkout_date AS checkoutDate,
+
+        guest_count AS guestCount,
+        guest_type AS guestType,
+        reservation_channel AS reservationChannel,
+
+        reservation_room_price AS reservationRoomPrice,
+        reservation_package_price AS reservationPackagePrice,
+        total_price AS totalPrice,
+
+        reserved_at AS reservedAt,
+        canceled_at AS canceledAt,
+        created_at AS createdAt,
+        updated_at AS updatedAt,
+
+        tenant_code AS tenantCode,
+        room_code AS roomCode,
+        customer_code AS customerCode,
+        package_code AS packageCode
         FROM reservation
-        ORDER BY reservation_code DESC
+
+        <where>
+            <if test="search != null">
+
+                <if test="search.keyword != null and search.keyword != ''">
+                    <include refid="ReservationKeywordSearch"/>
+                </if>
+
+                <if test="search.status != null and search.status != ''">
+                    <include refid="ReservationStatusSearch"/>
+                </if>
+
+                <if test="search.tenantCode != null">
+                    <include refid="ReservationTenantSearch"/>
+                </if>
+
+                <include refid="ReservationDateRangeSearch"/>
+
+            </if>
+        </where>
+
+        <if test="sort != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
     </select>
 
+    <!-- =========================
+         예약 총 개수
+         ========================= -->
+    <select id="countReservations" resultType="long">
+        SELECT COUNT(*)
+        FROM reservation
+        <where>
+            <if test="search != null">
+
+                <if test="search.keyword != null and search.keyword != ''">
+                    <include refid="ReservationKeywordSearch"/>
+                </if>
+
+                <if test="search.status != null and search.status != ''">
+                    <include refid="ReservationStatusSearch"/>
+                </if>
+
+                <if test="search.tenantCode != null">
+                    <include refid="ReservationTenantSearch"/>
+                </if>
+
+                <include refid="ReservationDateRangeSearch"/>
+
+            </if>
+        </where>
+    </select>
 
 </mapper>

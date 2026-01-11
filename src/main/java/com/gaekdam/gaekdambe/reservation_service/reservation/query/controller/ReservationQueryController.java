@@ -1,14 +1,16 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.query.controller;
 
+import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
+import com.gaekdam.gaekdambe.global.paging.PageRequest;
+import com.gaekdam.gaekdambe.global.paging.PageResponse;
+import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.request.ReservationSearchRequest;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.ReservationResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,7 +20,14 @@ public class ReservationQueryController {
     private final ReservationQueryService reservationQueryService;
 
     @GetMapping
-    public List<ReservationResponse> getAllReservations() {
-        return reservationQueryService.getAllReservations();
+    public ApiResponse<PageResponse<ReservationResponse>> getReservations(
+            PageRequest page,
+            ReservationSearchRequest search,
+            SortRequest sort
+    ) {
+        PageResponse<ReservationResponse> result =
+                reservationQueryService.getReservations(page, search, sort);
+
+        return ApiResponse.success(result);
     }
 }
