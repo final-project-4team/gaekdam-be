@@ -31,8 +31,7 @@ import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyCheckI
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDataTest;
 
 @SpringBootTest
-@Transactional
-@Rollback(false)
+@Rollback(value = false)
 class DummyDataRunnerTest {
 
     // 호텔서비스
