@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.stay.query.mapper.StayMapper">
+
+    <!-- =========================
+         1. 상태 검색
+         ========================= -->
+    <sql id="StayStatusSearch">
+        AND stay_status = #{search.stayStatus}
+    </sql>
+
+    <!-- =========================
+         2. 예약 코드 검색
+         ========================= -->
+    <sql id="StayReservationSearch">
+        AND reservation_code = #{search.reservationCode}
+    </sql>
+
+    <!-- =========================
+         3. 객실 검색
+         ========================= -->
+    <sql id="StayRoomSearch">
+        AND room_code = #{search.roomCode}
+    </sql>
+
+    <!-- =========================
+         4. 고객 검색
+         ========================= -->
+    <sql id="StayCustomerSearch">
+        AND customer_code = #{search.customerCode}
+    </sql>
+
+    <!-- =========================
+         5. 체크인 날짜 검색
+         ========================= -->
+    <sql id="StayDateRangeSearch">
+        <if test="search.fromDate != null">
+            AND actual_checkin_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        <if test="search.toDate != null">
+            AND actual_checkin_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </sql>
+
+    <!-- =========================
+         투숙 목록
+         ========================= -->
+    <select id="findStays"
+            resultType="com.gaekdam.gaekdambe.reservation_service.stay.query.dto.response.StayResponse">
+
+        SELECT
+        stay_code AS stayCode,
+        stay_status AS stayStatus,
+        actual_checkin_at AS actualCheckinAt,
+        actual_checkout_at AS actualCheckoutAt,
+        guest_count AS guestCount,
+        reservation_code AS reservationCode,
+        room_code AS roomCode,
+        customer_code AS customerCode,
+        created_at AS createdAt
+        FROM stay
+
+        <where>
+            <if test="search != null">
+
+                <if test="search.stayStatus != null">
+                    <include refid="StayStatusSearch"/>
+                </if>
+
+                <if test="search.reservationCode != null">
+                    <include refid="StayReservationSearch"/>
+                </if>
+
+                <if test="search.roomCode != null">
+                    <include refid="StayRoomSearch"/>
+                </if>
+
+                <if test="search.customerCode != null">
+                    <include refid="StayCustomerSearch"/>
+                </if>
+
+                <include refid="StayDateRangeSearch"/>
+
+            </if>
+        </where>
+
+        <if test="sort != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         투숙 총 개수
+         ========================= -->
+    <select id="countStays" resultType="long">
+        SELECT COUNT(*)
+        FROM stay
+        <where>
+            <if test="search != null">
+
+                <if test="search.stayStatus != null">
+                    <include refid="StayStatusSearch"/>
+                </if>
+
+                <if test="search.reservationCode != null">
+                    <include refid="StayReservationSearch"/>
+                </if>
+
+                <if test="search.roomCode != null">
+                    <include refid="StayRoomSearch"/>
+                </if>
+
+                <if test="search.customerCode != null">
+                    <include refid="StayCustomerSearch"/>
+                </if>
+
+                <include refid="StayDateRangeSearch"/>
+
+            </if>
+        </where>
+    </select>
+
+</mapper>
