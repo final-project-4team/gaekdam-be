@@ -1,6 +1,5 @@
 package com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.entity;
 
-import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.LoyaltyGradeName;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -34,9 +33,8 @@ public class LoyaltyGrade {
     @Column(name = "hotel_group_code", nullable = false)
     private Long hotelGroupCode;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "grade_name", nullable = false, length = 50)
-    private LoyaltyGradeName gradeName;
+    private String gradeName;
 
     @Column(name = "tier_level", nullable = false)
     private Long tierLevel;
@@ -55,24 +53,31 @@ public class LoyaltyGrade {
 
     private LoyaltyGrade(
             Long hotelGroupCode,
-            LoyaltyGradeName gradeName,
+            String gradeName,
             Long tierLevel,
             String calculationStandard,
             Boolean isActive,
             LocalDateTime now
     ) {
+        if (gradeName == null || gradeName.isBlank()) {
+            throw new IllegalArgumentException("gradeName must not be blank");
+        }
+        if (calculationStandard == null || calculationStandard.isBlank()) {
+            throw new IllegalArgumentException("calculationStandard must not be blank");
+        }
+
         this.hotelGroupCode = hotelGroupCode;
-        this.gradeName = gradeName;
+        this.gradeName = gradeName.trim();
         this.tierLevel = tierLevel;
         this.calculationStandard = calculationStandard;
-        this.isActive = isActive;
+        this.isActive = (isActive != null) ? isActive : Boolean.TRUE;
         this.createdAt = now;
         this.updatedAt = now;
     }
 
     public static LoyaltyGrade registerLoyaltyGrade(
             Long hotelGroupCode,
-            LoyaltyGradeName gradeName,
+            String gradeName,
             Long tierLevel,
             String calculationStandard,
             Boolean isActive,
@@ -94,6 +99,9 @@ public class LoyaltyGrade {
     }
 
     public void changeCalculationStandard(String calculationStandard, LocalDateTime now) {
+        if (calculationStandard == null || calculationStandard.isBlank()) {
+            throw new IllegalArgumentException("calculationStandard must not be blank");
+        }
         this.calculationStandard = calculationStandard;
         this.updatedAt = now;
     }

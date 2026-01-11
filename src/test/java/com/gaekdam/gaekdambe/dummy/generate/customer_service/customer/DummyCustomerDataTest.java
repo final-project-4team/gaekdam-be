@@ -3,6 +3,8 @@ package com.gaekdam.gaekdambe.dummy.generate.customer_service.customer;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.*;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.*;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.*;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,8 @@ public class DummyCustomerDataTest {
     @Autowired(required = false)
     private CustomerStatusHistoryRepository customerStatusHistoryRepository;
 
+    @Autowired private HotelGroupRepository hotelGroupRepository; // 변경: 호텔 그룹 코드 소스
+
     @PersistenceContext
     private EntityManager em;
 
@@ -36,8 +40,16 @@ public class DummyCustomerDataTest {
             return;
         }
 
+        // 변경: hotel_group에 있는 실제 코드만 사용
+        List<Long> hotelGroupCodes = hotelGroupRepository.findAll().stream()
+                .map(HotelGroup::getHotelGroupCode)
+                .toList();
+
+        if (hotelGroupCodes.isEmpty()) {
+            return; // 호텔 더미가 아직 안 들어간 상태면 고객 더미 생성 안 함
+        }
+
         int count = Integer.getInteger("dummy.customer.count", 1000);
-        List<Long> hotelGroupCodes = List.of(1L, 2L, 3L);
         LocalDateTime now = LocalDateTime.now();
 
         for (int i = 1; i <= count; i++) {
@@ -65,7 +77,6 @@ public class DummyCustomerDataTest {
         String kmsKeyId = "kms-key-dev-001";
         byte[] dekEnc = randomBytes(64);
 
-        // ✅ customerType 제거된 createCustomer 사용
         Customer customer = Customer.createCustomer(
                 hotelGroupCode,
                 customerNameEnc,
