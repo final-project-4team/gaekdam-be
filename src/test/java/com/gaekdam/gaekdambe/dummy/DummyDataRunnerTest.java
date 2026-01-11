@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import com.gaekdam.gaekdambe.dummy.generate.iam_service.employee.EmployeeEncryptedRegistrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,6 +44,8 @@ class DummyDataRunnerTest {
     // iam서비스
     @Autowired DummyPermissionTypeDataTest permissionTypeDataTest;
     @Autowired DummyPermissionDataTest permissionDataTest;
+    @Autowired
+    EmployeeEncryptedRegistrationTest employeeDataTest;
 
     // 오퍼레이션 서비스
     @Autowired DummyFacilityDataTest facilityDataTest;
@@ -73,13 +76,15 @@ class DummyDataRunnerTest {
     void generateAll() {
         // 호텔서비스
         hotelGroupDataTest.generate();
+        propertyDataTest.generate();
         departmentDataTest.generate();
         positionDataTest.generate();
-        propertyDataTest.generate();
 
         // iam서비스
         permissionTypeDataTest.generate();
         permissionDataTest.generate();
+        employeeDataTest.generate();
+
 
         // 오퍼레이션 서비스
         facilityDataTest.generate();
