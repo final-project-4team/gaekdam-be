@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.employee.query.mapper.EmployeeQueryMapper">
+
+    <select id="findAllEmployees" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+    </select>
+
+    <select id="findByEmployeeCode" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeDetailResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+        WHERE employee_code = #{employeeCode}
+        LIMIT 1
+    </select>
+
+    <select id="findByEmailHash" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+        WHERE email_hash = #{emailHash}
+    </select>
+
+    <select id="findByPhoneHash" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+        WHERE phone_number_hash = #{phoneHash}
+    </select>
+
+    <select id="findByNameHash" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+        WHERE employee_name_hash = #{nameHash}
+    </select>
+
+    <select id="findByPassword" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+        WHERE password_hash = #{password}
+    </select>
+
+    <select id="findByNameAndPhoneHash" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse">
+        SELECT
+            employee_code      AS employeeCode,
+            employee_number    AS employeeNumber,
+            login_id           AS loginId,
+            employee_name_enc  AS employeeNameEnc,
+            phone_number_enc   AS phoneNumberEnc,
+            email_enc          AS emailEnc,
+            dek_enc            AS dekEnc
+        FROM employee
+        WHERE employee_name_hash = #{nameHash}
+          AND phone_number_hash = #{phoneHash}
+    </select>
+
+</mapper>
