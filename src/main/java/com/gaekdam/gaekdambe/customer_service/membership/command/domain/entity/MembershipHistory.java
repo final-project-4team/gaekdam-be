@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
+import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

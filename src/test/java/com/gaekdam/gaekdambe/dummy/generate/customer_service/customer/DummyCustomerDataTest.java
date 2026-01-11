@@ -46,7 +46,6 @@ public class DummyCustomerDataTest {
 
             createFullCustomerData(i, hotelGroupCode, createdAt);
 
-            // 대용량일 때 메모리/속도 안정화
             if (i % 100 == 0) {
                 em.flush();
                 em.clear();
@@ -62,18 +61,17 @@ public class DummyCustomerDataTest {
 
         NationalityType nationalityType = pickNationalityType();
         ContractType contractType = pickContractType();
-        CustomerType customerType = deriveCustomerType(nationalityType, contractType);
 
         String kmsKeyId = "kms-key-dev-001";
         byte[] dekEnc = randomBytes(64);
 
+        // ✅ customerType 제거된 createCustomer 사용
         Customer customer = Customer.createCustomer(
                 hotelGroupCode,
                 customerNameEnc,
                 customerNameHash,
                 nationalityType,
                 contractType,
-                customerType,
                 kmsKeyId,
                 dekEnc,
                 createdAt
@@ -81,7 +79,6 @@ public class DummyCustomerDataTest {
 
         customerRepository.save(customer);
 
-        // 상태 섞기 + 이력
         CustomerStatus before = customer.getCustomerStatus();
         CustomerStatus after = pickCustomerStatus();
         if (after != before) {
@@ -103,15 +100,12 @@ public class DummyCustomerDataTest {
             }
         }
 
-        // Contact(필수)
         createContacts(customer.getCustomerCode(), seq, createdAt);
 
-        // Member (옵션 60%)
         if (chance(0.60)) {
             memberRepository.save(Member.registerMember(customer.getCustomerCode(), createdAt));
         }
 
-        // Memo (옵션 30%, 1~2개)
         if (chance(0.30)) {
             int memoCount = randomInt(1, 3);
             for (int m = 0; m < memoCount; m++) {
@@ -131,7 +125,6 @@ public class DummyCustomerDataTest {
 
     private void createContacts(Long customerCode, int seq, LocalDateTime createdAt) {
 
-        // PHONE (대표)
         String phone = "010" + String.format("%08d", seq);
         Boolean phoneOptIn = chance(0.50);
         LocalDateTime phoneConsentAt = phoneOptIn ? createdAt : null;
@@ -149,7 +142,6 @@ public class DummyCustomerDataTest {
                 )
         );
 
-        // EMAIL
         String email = "dummy" + seq + "@gaekdam.test";
         Boolean emailOptIn = chance(0.50);
         LocalDateTime emailConsentAt = emailOptIn ? createdAt : null;
@@ -174,13 +166,6 @@ public class DummyCustomerDataTest {
 
     private ContractType pickContractType() {
         return chance(0.80) ? ContractType.PERSONAL : ContractType.CORPORATE;
-    }
-
-    private CustomerType deriveCustomerType(NationalityType n, ContractType c) {
-        if (n == NationalityType.DOMESTIC && c == ContractType.PERSONAL) return CustomerType.DOMESTIC_PERSONAL;
-        if (n == NationalityType.DOMESTIC && c == ContractType.CORPORATE) return CustomerType.DOMESTIC_CORPORATE;
-        if (n == NationalityType.FOREIGN && c == ContractType.PERSONAL) return CustomerType.FOREIGN_PERSONAL;
-        return CustomerType.FOREIGN_CORPORATE;
     }
 
     private CustomerStatus pickCustomerStatus() {
@@ -208,7 +193,6 @@ public class DummyCustomerDataTest {
         return b;
     }
 
-    //
     private String sha256Hex(String value) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

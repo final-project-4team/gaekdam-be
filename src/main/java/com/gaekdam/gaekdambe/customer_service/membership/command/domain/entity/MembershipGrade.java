@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity;
 
+import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipGradeName;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

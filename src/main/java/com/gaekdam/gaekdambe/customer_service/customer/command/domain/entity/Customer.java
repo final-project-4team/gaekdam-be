@@ -2,7 +2,7 @@ package com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus;
-import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerType;
+import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -39,10 +39,6 @@ public class Customer {
     private ContractType contractType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "customer_type", nullable = false, length = 50)
-    private CustomerType customerType;
-
-    @Enumerated(EnumType.STRING)
     @Column(name = "customer_status", nullable = false, length = 30)
     private CustomerStatus customerStatus;
 
@@ -70,7 +66,6 @@ public class Customer {
             String customerNameHash,
             NationalityType nationalityType,
             ContractType contractType,
-            CustomerType customerType,
             String kmsKeyId,
             byte[] dekEnc,
             LocalDateTime now
@@ -80,7 +75,6 @@ public class Customer {
         this.customerNameHash = customerNameHash;
         this.nationalityType = nationalityType;
         this.contractType = contractType;
-        this.customerType = customerType;
         this.customerStatus = CustomerStatus.ACTIVE;
         this.kmsKeyId = kmsKeyId;
         this.dekEnc = dekEnc;
@@ -94,7 +88,6 @@ public class Customer {
             String customerNameHash,
             NationalityType nationalityType,
             ContractType contractType,
-            CustomerType customerType,
             String kmsKeyId,
             byte[] dekEnc,
             LocalDateTime now
@@ -105,7 +98,6 @@ public class Customer {
                 customerNameHash,
                 nationalityType,
                 contractType,
-                customerType,
                 kmsKeyId,
                 dekEnc,
                 now
