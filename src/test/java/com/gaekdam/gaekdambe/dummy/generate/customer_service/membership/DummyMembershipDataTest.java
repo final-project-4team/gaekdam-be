@@ -3,6 +3,8 @@ package com.gaekdam.gaekdambe.dummy.generate.customer_service.membership;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
+import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipGradeName;
+import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.*;
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipGradeRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipHistoryRepository;
