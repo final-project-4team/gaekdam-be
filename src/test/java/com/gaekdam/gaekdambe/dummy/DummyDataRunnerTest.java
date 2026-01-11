@@ -93,7 +93,7 @@ class DummyDataRunnerTest {
         stayDataTest.generate();
         checkInOutDataTest.generate();
 
-        // customer_service (순서 중요: customer -> membership -> loyalty)
+        // 고객 서비스
         customerDataTest.generate();
         membershipDataTest.generate();
         loyaltyDataTest.generate();

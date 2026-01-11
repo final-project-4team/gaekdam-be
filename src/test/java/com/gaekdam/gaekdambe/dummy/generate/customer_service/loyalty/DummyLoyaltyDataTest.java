@@ -3,7 +3,6 @@ package com.gaekdam.gaekdambe.dummy.generate.customer_service.loyalty;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
-import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.LoyaltyGradeName;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.LoyaltyStatus;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.entity.Loyalty;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.entity.LoyaltyGrade;
@@ -11,6 +10,8 @@ import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.entity.Loya
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyGradeRepository;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyHistoryRepository;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyRepository;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 @Component
 public class DummyLoyaltyDataTest {
@@ -29,10 +29,18 @@ public class DummyLoyaltyDataTest {
     @Autowired private LoyaltyRepository loyaltyRepository;
     @Autowired private LoyaltyHistoryRepository loyaltyHistoryRepository;
 
+    @Autowired private HotelGroupRepository hotelGroupRepository; // 변경: 호텔 테이블에서 코드 읽기
+
     private final Map<Long, List<LoyaltyGrade>> gradeCache = new HashMap<>();
 
     private static final double LOYALTY_RATE = 0.80;
     private static final double LOYALTY_CHANGE_RATE = 0.20;
+
+    private static final String STANDARD = "{\"windowMonths\":12}";
+    private static final List<GradeSeed> GRADE_SEEDS = List.of(
+            new GradeSeed("GENERAL", 1L),
+            new GradeSeed("EXCELLENT", 2L)
+    );
 
     @Transactional
     public void generate() {
@@ -42,10 +50,11 @@ public class DummyLoyaltyDataTest {
 
         LocalDateTime now = LocalDateTime.now();
 
-        List<Long> hotelGroupCodes = customers.stream()
-                .map(Customer::getHotelGroupCode)
-                .distinct()
-                .collect(Collectors.toList());
+        List<Long> hotelGroupCodes = hotelGroupRepository.findAll().stream()
+                .map(HotelGroup::getHotelGroupCode)
+                .toList();
+
+        if (hotelGroupCodes.isEmpty()) return;
 
         seedLoyaltyGradesIfNeeded(hotelGroupCodes, now);
 
@@ -54,43 +63,37 @@ public class DummyLoyaltyDataTest {
         }
     }
 
-    /**
-     * loyalty_grade 테이블: GENERAL/EXCELLENT 전역 2개만 유지(없는 것만 insert)
-     * hotelGroupCodes별로는 캐시만 공유
-     */
     private void seedLoyaltyGradesIfNeeded(List<Long> hotelGroupCodes, LocalDateTime now) {
-
-        if (hotelGroupCodes == null || hotelGroupCodes.isEmpty()) {
-            throw new IllegalArgumentException("hotelGroupCodes is empty");
-        }
 
         List<LoyaltyGrade> all = loyaltyGradeRepository.findAll();
 
-        Map<LoyaltyGradeName, LoyaltyGrade> unique = new EnumMap<>(LoyaltyGradeName.class);
+        Map<Long, Map<String, LoyaltyGrade>> byHg = new HashMap<>();
         for (LoyaltyGrade g : all) {
-            unique.putIfAbsent(g.getGradeName(), g);
+            byHg.computeIfAbsent(g.getHotelGroupCode(), k -> new HashMap<>())
+                    .putIfAbsent(g.getGradeName(), g);
         }
 
-        Long seedHotelGroupCode = hotelGroupCodes.get(0);
-        String standard = "{\"windowMonths\":12}";
-
-        unique.putIfAbsent(
-                LoyaltyGradeName.GENERAL,
-                loyaltyGradeRepository.save(
-                        LoyaltyGrade.registerLoyaltyGrade(seedHotelGroupCode, LoyaltyGradeName.GENERAL, 1L, standard, true, now)
-                )
-        );
-        unique.putIfAbsent(
-                LoyaltyGradeName.EXCELLENT,
-                loyaltyGradeRepository.save(
-                        LoyaltyGrade.registerLoyaltyGrade(seedHotelGroupCode, LoyaltyGradeName.EXCELLENT, 2L, standard, true, now)
-                )
-        );
-
-        List<LoyaltyGrade> grades = new ArrayList<>(unique.values());
-        grades.sort(Comparator.comparing(LoyaltyGrade::getTierLevel));
-
         for (Long hg : hotelGroupCodes) {
+            Map<String, LoyaltyGrade> existing = byHg.computeIfAbsent(hg, k -> new HashMap<>());
+
+            for (GradeSeed seed : GRADE_SEEDS) {
+                if (!existing.containsKey(seed.gradeName())) {
+                    LoyaltyGrade saved = loyaltyGradeRepository.save(
+                            LoyaltyGrade.registerLoyaltyGrade(
+                                    hg,
+                                    seed.gradeName(),
+                                    seed.tierLevel(),
+                                    STANDARD,
+                                    true,
+                                    now
+                            )
+                    );
+                    existing.put(saved.getGradeName(), saved);
+                }
+            }
+
+            List<LoyaltyGrade> grades = new ArrayList<>(existing.values());
+            grades.sort(Comparator.comparing(LoyaltyGrade::getTierLevel));
             gradeCache.put(hg, grades);
         }
     }
@@ -101,13 +104,10 @@ public class DummyLoyaltyDataTest {
         Long customerCode = customer.getCustomerCode();
         Long hg = customer.getHotelGroupCode();
 
-        Optional<Loyalty> existing = loyaltyRepository.findByHotelGroupCodeAndCustomerCode(hg, customerCode);
-        if (existing.isPresent()) return;
+        if (loyaltyRepository.findByHotelGroupCodeAndCustomerCode(hg, customerCode).isPresent()) return;
 
         List<LoyaltyGrade> grades = gradeCache.get(hg);
-        if (grades == null || grades.isEmpty()) {
-            throw new IllegalStateException("LoyaltyGrade not seeded for hotelGroupCode=" + hg);
-        }
+        if (grades == null || grades.isEmpty()) return;
 
         LoyaltyGrade picked = pickLoyaltyGrade(grades);
         LocalDateTime joinedAt = now.minusDays(randomInt(0, 30));
@@ -121,7 +121,6 @@ public class DummyLoyaltyDataTest {
         );
         loyaltyRepository.save(loyalty);
 
-        // 등급 부여 이력 1건
         loyaltyHistoryRepository.save(
                 LoyaltyHistory.recordLoyaltyChange(
                         customerCode,
@@ -137,7 +136,6 @@ public class DummyLoyaltyDataTest {
                 )
         );
 
-        // 일부 등급 변경 이력
         if (chance(LOYALTY_CHANGE_RATE)) {
             LoyaltyGrade after = pickOtherGrade(grades, picked);
             LocalDateTime changedAt = now.plusDays(randomInt(1, 30));
@@ -159,26 +157,27 @@ public class DummyLoyaltyDataTest {
                     )
             );
         }
+
+        // 상태 다양화(상세 최신 1건 정책 테스트용)
+        if (chance(0.10)) loyalty.changeLoyaltyStatus(LoyaltyStatus.INACTIVE, now.plusDays(5));
     }
 
     private LoyaltyGrade pickLoyaltyGrade(List<LoyaltyGrade> grades) {
         double r = ThreadLocalRandom.current().nextDouble();
-        if (r < 0.80) return findGrade(grades, LoyaltyGradeName.GENERAL);
-        return findGrade(grades, LoyaltyGradeName.EXCELLENT);
+        if (r < 0.80) return findGrade(grades, "GENERAL");
+        return findGrade(grades, "EXCELLENT");
     }
 
     private LoyaltyGrade pickOtherGrade(List<LoyaltyGrade> grades, LoyaltyGrade current) {
-        LoyaltyGradeName currentName = current.getGradeName();
-        LoyaltyGradeName target =
-                (currentName == LoyaltyGradeName.GENERAL) ? LoyaltyGradeName.EXCELLENT : LoyaltyGradeName.GENERAL;
+        String target = "GENERAL".equals(current.getGradeName()) ? "EXCELLENT" : "GENERAL";
         return findGrade(grades, target);
     }
 
-    private LoyaltyGrade findGrade(List<LoyaltyGrade> grades, LoyaltyGradeName name) {
+    private LoyaltyGrade findGrade(List<LoyaltyGrade> grades, String name) {
         return grades.stream()
-                .filter(g -> g.getGradeName() == name)
+                .filter(g -> name.equals(g.getGradeName()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("LoyaltyGrade not found: " + name));
+                .orElseGet(() -> grades.get(ThreadLocalRandom.current().nextInt(grades.size())));
     }
 
     private boolean chance(double probability) {
@@ -188,4 +187,6 @@ public class DummyLoyaltyDataTest {
     private int randomInt(int minInclusive, int maxExclusive) {
         return ThreadLocalRandom.current().nextInt(minInclusive, maxExclusive);
     }
+
+    private record GradeSeed(String gradeName, Long tierLevel) {}
 }
