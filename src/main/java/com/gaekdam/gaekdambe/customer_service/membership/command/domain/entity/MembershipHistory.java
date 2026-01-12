@@ -26,12 +26,14 @@ public class MembershipHistory {
     @Column(name = "membership_code", nullable = false)
     private Long membershipCode;
 
+    // ✅ ERD 컬럼명 기준: change_source
     @Enumerated(EnumType.STRING)
-    @Column(name = "membership_change_source", nullable = false, length = 20)
+    @Column(name = "change_source", nullable = false, length = 20)
     private ChangeSource changeSource;
 
-    @Column(name = "changed_by_user_id")
-    private Long changedByUserId;
+    // ✅ ERD 변경: 변경자 FK = employee_code
+    @Column(name = "employee_code")
+    private Long changedByEmployeeCode;
 
     @Column(name = "change_reason", length = 255)
     private String changeReason;
@@ -66,7 +68,7 @@ public class MembershipHistory {
             Long customerCode,
             Long membershipCode,
             ChangeSource changeSource,
-            Long changedByUserId,
+            Long changedByEmployeeCode,
             String changeReason,
             String beforeGrade,
             String afterGrade,
@@ -80,7 +82,7 @@ public class MembershipHistory {
         this.customerCode = customerCode;
         this.membershipCode = membershipCode;
         this.changeSource = changeSource;
-        this.changedByUserId = changedByUserId;
+        this.changedByEmployeeCode = changedByEmployeeCode;
         this.changeReason = changeReason;
         this.beforeGrade = beforeGrade;
         this.afterGrade = afterGrade;
@@ -96,7 +98,7 @@ public class MembershipHistory {
             Long customerCode,
             Long membershipCode,
             ChangeSource changeSource,
-            Long changedByUserId,
+            Long changedByEmployeeCode,
             String changeReason,
             String beforeGrade,
             String afterGrade,
@@ -111,7 +113,7 @@ public class MembershipHistory {
                 customerCode,
                 membershipCode,
                 changeSource,
-                changedByUserId,
+                changedByEmployeeCode,
                 changeReason,
                 beforeGrade,
                 afterGrade,

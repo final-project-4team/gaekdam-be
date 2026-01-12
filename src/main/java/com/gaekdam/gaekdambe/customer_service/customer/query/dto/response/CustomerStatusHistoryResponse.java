@@ -1,13 +1,20 @@
 package com.gaekdam.gaekdambe.customer_service.customer.query.dto.response;
 
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerStatusHistoryItem;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
-public record CustomerStatusHistoryResponse(
-        Long customerCode,
-        Long hotelGroupCode,
-        List<CustomerDetailResponse.StatusHistory> items
-) {
-    public static CustomerStatusHistoryResponse of(Long customerCode, Long hotelGroupCode, List<CustomerDetailResponse.StatusHistory> items) {
-        return new CustomerStatusHistoryResponse(customerCode, hotelGroupCode, items);
-    }
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class CustomerStatusHistoryResponse {
+
+    private List<CustomerStatusHistoryItem> content;
+    private Integer page;
+    private Integer size;
+    private Long totalElements;
+    private Integer totalPages;
 }
