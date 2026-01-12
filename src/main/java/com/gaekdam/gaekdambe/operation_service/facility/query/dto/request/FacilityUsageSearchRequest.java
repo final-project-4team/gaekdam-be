@@ -2,12 +2,16 @@ package com.gaekdam.gaekdambe.operation_service.facility.query.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Getter
+@Setter
 @NoArgsConstructor
 public class FacilityUsageSearchRequest {
+
+    private Long hotelGroupCode;
 
     private Long stayCode;
     private Long facilityCode;
@@ -17,4 +21,6 @@ public class FacilityUsageSearchRequest {
 
     private LocalDate fromDate;
     private LocalDate toDate;
+
+    private LocalDate date; // 오늘날짜 (today집계용)
 }
