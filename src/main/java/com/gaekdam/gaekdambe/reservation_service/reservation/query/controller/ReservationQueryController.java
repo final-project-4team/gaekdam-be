@@ -10,10 +10,7 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationSummaryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,10 +46,11 @@ public class ReservationQueryController {
 
     @GetMapping("/today/summary/{hotelGroupCode}")
     public ApiResponse<TodayReservationSummaryResponse> getTodayReservationSummary(
-            @PathVariable Long hotelGroupCode
+            @PathVariable Long hotelGroupCode,
+            @RequestParam(required = false) Long propertyCode
     ) {
         return ApiResponse.success(
-                reservationSummaryService.getTodaySummary(hotelGroupCode)
+                reservationSummaryService.getTodaySummary(hotelGroupCode, propertyCode)
         );
     }
 

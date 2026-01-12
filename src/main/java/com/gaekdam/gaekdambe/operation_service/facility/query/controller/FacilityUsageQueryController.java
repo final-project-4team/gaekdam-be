@@ -10,10 +10,7 @@ import com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.Facil
 import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityUsageQueryService;
 import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityUsageSummaryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -63,12 +60,15 @@ public class FacilityUsageQueryController {
      */
     @GetMapping("/today/summary/{hotelGroupCode}")
     public ApiResponse<List<FacilityUsageSummaryResponse>> getTodayFacilityUsageSummary(
-            @PathVariable Long hotelGroupCode
+            @PathVariable Long hotelGroupCode,
+            @RequestParam(required = false) Long propertyCode
     ) {
+
         return ApiResponse.success(
                 facilityUsageSummaryService.getTodaySummary(
                         LocalDate.now(),
-                        hotelGroupCode
+                        hotelGroupCode,
+                        propertyCode
                 )
         );
     }

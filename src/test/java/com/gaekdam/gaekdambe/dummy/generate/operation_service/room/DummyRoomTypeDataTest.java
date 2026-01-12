@@ -44,7 +44,7 @@ public class DummyRoomTypeDataTest {
                 {"로얄 스위트", 4, "KING+DOUBLE", "OCEAN", 450000, "최상급 스위트"}
         };
 
-        for (long hotelCode = 1; hotelCode <= 10; hotelCode++) {
+        for (long propertyCode = 1; propertyCode <= 20; propertyCode++) {
 
             // 공통 3개
             for (Object[] r : baseRoomTypes) {
@@ -56,13 +56,13 @@ public class DummyRoomTypeDataTest {
                                 (String) r[3],
                                 BigDecimal.valueOf((int) r[4]),
                                 (String) r[5],
-                                hotelCode
+                                propertyCode
                         )
                 );
             }
 
             // 호텔별 추가 2개 → 총 5개 보장
-            Object[][] extraTypes = (hotelCode % 2 == 0)
+            Object[][] extraTypes = (propertyCode % 2 == 0)
                     ? oceanRoomTypes
                     : suiteRoomTypes;
 
@@ -75,7 +75,7 @@ public class DummyRoomTypeDataTest {
                                 (String) r[3],
                                 BigDecimal.valueOf((int) r[4]),
                                 (String) r[5],
-                                hotelCode
+                                propertyCode
                         )
                 );
             }

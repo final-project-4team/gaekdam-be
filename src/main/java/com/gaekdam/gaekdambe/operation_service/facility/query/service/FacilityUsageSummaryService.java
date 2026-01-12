@@ -12,13 +12,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FacilityUsageSummaryService {
 
-    private final FacilityUsageSummaryMapper facilityUsageSummaryMapper;
+    private final FacilityUsageSummaryMapper mapper;
 
     public List<FacilityUsageSummaryResponse> getTodaySummary(
             LocalDate date,
-            Long hotelGroupCode
+            Long hotelGroupCode,
+            Long propertyCode
     ) {
-
-        return facilityUsageSummaryMapper.findTodayUsageSummary(date, hotelGroupCode);
+        return mapper.findTodayUsageSummary(date, hotelGroupCode, propertyCode);
     }
 }

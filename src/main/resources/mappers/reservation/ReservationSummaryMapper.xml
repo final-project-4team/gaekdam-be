@@ -3,40 +3,62 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-
 <mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.ReservationSummaryMapper">
 
-    <!-- ALL (오늘 기준 예약) -->
+    <!-- =========================
+         ALL (오늘 기준 예약)
+         ========================= -->
     <select id="countAllToday" resultType="long">
         SELECT COUNT(*)
         FROM reservation r
         JOIN property p ON r.property_code = p.property_code
         WHERE p.hotel_group_code = #{hotelGroupCode}
+
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
+
         AND r.checkin_date <![CDATA[ <= ]]> #{today}
         AND r.checkout_date <![CDATA[ >= ]]> #{today}
     </select>
 
-    <!-- 체크인 예정 -->
+    <!-- =========================
+         체크인 예정
+         ========================= -->
     <select id="countTodayCheckIn" resultType="long">
         SELECT COUNT(*)
         FROM reservation r
         JOIN property p ON r.property_code = p.property_code
         WHERE p.hotel_group_code = #{hotelGroupCode}
+
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
+
         AND r.checkin_date = #{today}
         AND r.reservation_status = 'RESERVED'
     </select>
 
-    <!-- 체크아웃 예정 -->
+    <!-- =========================
+         체크아웃 예정
+         ========================= -->
     <select id="countTodayCheckOut" resultType="long">
         SELECT COUNT(*)
         FROM reservation r
         JOIN property p ON r.property_code = p.property_code
         WHERE p.hotel_group_code = #{hotelGroupCode}
+
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
+
         AND r.checkout_date = #{today}
         AND r.reservation_status = 'RESERVED'
     </select>
 
-    <!-- 현재 투숙 객실 -->
+    <!-- =========================
+         현재 투숙 객실
+         ========================= -->
     <select id="countStayingRooms" resultType="long">
         SELECT COUNT(*)
         FROM stay s
@@ -44,6 +66,10 @@
         JOIN property p ON r.property_code = p.property_code
         WHERE s.stay_status = 'STAYING'
         AND p.hotel_group_code = #{hotelGroupCode}
+
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
     </select>
 
 </mapper>

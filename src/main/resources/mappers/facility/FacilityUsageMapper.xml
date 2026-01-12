@@ -6,116 +6,109 @@
 <mapper namespace="com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityUsageMapper">
 
     <!-- =========================
-         부대시설 이용내역 조회 (SaaS 단일 호텔)
+         부대시설 이용내역 조회 (SaaS 호텔그룹 기준)
          ========================= -->
     <select id="findFacilityUsages"
             resultType="com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageResponse">
 
         SELECT
         fu.facility_usage_code AS facilityUsageCode,
-        fu.usage_at            AS usageAt,
-        fu.usage_type          AS usageType,
-        fu.used_person_count   AS usedPersonCount,
-        fu.usage_quantity      AS usageQuantity,
-        fu.usage_price         AS usagePrice,
-        fu.price_source        AS priceSource,
-        fu.stay_code           AS stayCode,
-        fu.facility_code       AS facilityCode
+        fu.usage_at AS usageAt,
+        fu.usage_type AS usageType,
+        fu.used_person_count AS usedPersonCount,
+        fu.usage_quantity AS usageQuantity,
+        fu.usage_price AS usagePrice,
+        fu.price_source AS priceSource,
+        fu.stay_code AS stayCode,
+        fu.facility_code AS facilityCode
         FROM facility_usage fu
         JOIN facility f ON fu.facility_code = f.facility_code
+        JOIN property p ON f.property_code = p.property_code
 
         <where>
-            <if test="search != null">
+            <!-- SaaS 호텔 그룹 스코프 (필수) -->
+            p.hotel_group_code = #{search.hotelGroupCode}
 
-                <!-- 🔐 SaaS 호텔 스코프 (필수) -->
-                <if test="search.hotelGroupCode != null">
-                    AND f.hotel_group_code = #{search.hotelGroupCode}
-                </if>
+            <if test="search.propertyCode != null">
+                AND p.property_code = #{search.propertyCode}
+            </if>
 
-                <if test="search.stayCode != null">
-                    AND fu.stay_code = #{search.stayCode}
-                </if>
+            <if test="search.stayCode != null">
+                AND fu.stay_code = #{search.stayCode}
+            </if>
 
-                <if test="search.facilityCode != null">
-                    AND fu.facility_code = #{search.facilityCode}
-                </if>
+            <if test="search.facilityCode != null">
+                AND fu.facility_code = #{search.facilityCode}
+            </if>
 
-                <if test="search.usageType != null and search.usageType != ''">
-                    AND fu.usage_type = #{search.usageType}
-                </if>
+            <if test="search.usageType != null and search.usageType != ''">
+                AND fu.usage_type = #{search.usageType}
+            </if>
 
-                <if test="search.priceSource != null and search.priceSource != ''">
-                    AND fu.price_source = #{search.priceSource}
-                </if>
+            <if test="search.priceSource != null and search.priceSource != ''">
+                AND fu.price_source = #{search.priceSource}
+            </if>
 
-                <!-- 날짜 조건 (date 우선) -->
-                <if test="search.date != null">
-                    AND DATE(fu.usage_at) = #{search.date}
-                </if>
+            <!-- 날짜 조건 -->
+            <if test="search.date != null">
+                AND DATE(fu.usage_at) = #{search.date}
+            </if>
 
-                <if test="search.date == null and search.fromDate != null">
-                    AND fu.usage_at <![CDATA[ >= ]]> #{search.fromDate}
-                </if>
+            <if test="search.date == null and search.fromDate != null">
+                AND fu.usage_at <![CDATA[ >= ]]> #{search.fromDate}
+            </if>
 
-                <if test="search.date == null and search.toDate != null">
-                    AND fu.usage_at <![CDATA[ <= ]]> #{search.toDate}
-                </if>
-
+            <if test="search.date == null and search.toDate != null">
+                AND fu.usage_at <![CDATA[ <= ]]> #{search.toDate}
             </if>
         </where>
 
-        <if test="sort != null and sort.sortBy != null">
-            ORDER BY ${sort.sortBy} ${sort.direction}
-        </if>
-
+        ORDER BY fu.usage_at DESC
         LIMIT #{page.size} OFFSET #{page.offset}
     </select>
 
     <!-- =========================
-         총 개수 (리스트와 조건 100% 동일)
+         총 개수 (리스트와 JOIN/조건 100% 동일)
          ========================= -->
     <select id="countFacilityUsages" resultType="long">
         SELECT COUNT(*)
         FROM facility_usage fu
         JOIN facility f ON fu.facility_code = f.facility_code
+        JOIN property p ON f.property_code = p.property_code
 
         <where>
-            <if test="search != null">
+            p.hotel_group_code = #{search.hotelGroupCode}
 
-                <!-- SaaS 호텔 스코프 (필수) -->
-                <if test="search.hotelGroupCode != null">
-                    AND f.hotel_group_code = #{search.hotelGroupCode}
-                </if>
+            <if test="search.propertyCode != null">
+                AND p.property_code = #{search.propertyCode}
+            </if>
 
-                <if test="search.stayCode != null">
-                    AND fu.stay_code = #{search.stayCode}
-                </if>
+            <if test="search.stayCode != null">
+                AND fu.stay_code = #{search.stayCode}
+            </if>
 
-                <if test="search.facilityCode != null">
-                    AND fu.facility_code = #{search.facilityCode}
-                </if>
+            <if test="search.facilityCode != null">
+                AND fu.facility_code = #{search.facilityCode}
+            </if>
 
-                <if test="search.usageType != null and search.usageType != ''">
-                    AND fu.usage_type = #{search.usageType}
-                </if>
+            <if test="search.usageType != null and search.usageType != ''">
+                AND fu.usage_type = #{search.usageType}
+            </if>
 
-                <if test="search.priceSource != null and search.priceSource != ''">
-                    AND fu.price_source = #{search.priceSource}
-                </if>
+            <if test="search.priceSource != null and search.priceSource != ''">
+                AND fu.price_source = #{search.priceSource}
+            </if>
 
-                <!-- 날짜 조건 -->
-                <if test="search.date != null">
-                    AND DATE(fu.usage_at) = #{search.date}
-                </if>
+            <if test="search.date != null">
+                AND DATE(fu.usage_at) = #{search.date}
+            </if>
 
-                <if test="search.date == null and search.fromDate != null">
-                    AND fu.usage_at <![CDATA[ >= ]]> #{search.fromDate}
-                </if>
+            <if test="search.date == null and search.fromDate != null">
+                AND fu.usage_at <![CDATA[ >= ]]> #{search.fromDate}
+            </if>
 
-                <if test="search.date == null and search.toDate != null">
-                    AND fu.usage_at <![CDATA[ <= ]]> #{search.toDate}
-                </if>
-
+            <if test="search.date == null and search.toDate != null">
+                AND fu.usage_at <![CDATA[ <= ]]> #{search.toDate}
             </if>
         </where>
     </select>
