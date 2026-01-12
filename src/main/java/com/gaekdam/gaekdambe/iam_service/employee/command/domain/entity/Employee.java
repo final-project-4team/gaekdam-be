@@ -1,11 +1,22 @@
 package com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity;
 
+import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;
+import com.gaekdam.gaekdambe.hotel_service.position.command.domain.entity.HotelPosition;
+import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
+import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -55,24 +66,35 @@ public class Employee {
   @Column(name = "hired_at", nullable = false)
   private LocalDateTime hiredAt;
 
-  @Column(name = "department_code")
-  private Long departmentCode;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "department_code", nullable = false)
+  private Department department;
 
-  @Column(name = "position_code")
-  private Long positionCode;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "hotel_position_code", nullable = false)
+  private HotelPosition hotelPosition;
 
-  @Column(name = "property_code")
-  private Long propertyCode;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "property_code")
+  private Property property;
 
-  @Column(name = "hotel_group_code")
-  private Long hotelGroupCode;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "hotel_group_code", nullable = false)
+  private HotelGroup hotelGroup;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "permission_code", nullable = false)
+  private Permission permission;
 
-  @Column(name = "role_code")
-  private Long roleCode;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "employee_status", nullable = false)
+  private EmployeeStatus employeeStatus;
 
-  @Column(name = "is_active", nullable = false)
-  private boolean isActive = true;
+  @Column(name = "failed_login_count", nullable = false)
+  private int failedLoginCount;
+
+  @Column(name = "last_login_at")
+  private LocalDateTime lastLoginAt;
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
@@ -99,11 +121,11 @@ public class Employee {
       byte[] employeeNameHash,
       byte[] dekEnc,
       LocalDateTime hiredAt,
-      Long departmentCode,
-      Long positionCode,
-      Long propertyCode,
-      Long hotelGroupCode,
-      Long roleCode) {
+      Department department,
+      HotelPosition hotelPosition,
+      Property property,
+      HotelGroup hotelGroup,
+      Permission permission) {
 
     if (employeeNumber == null)
       throw new IllegalArgumentException("employeeNumber is required");
@@ -136,16 +158,108 @@ public class Employee {
     e.employeeNameHash = employeeNameHash;
     e.dekEnc = dekEnc;
     e.hiredAt = hiredAt;
-    e.departmentCode = departmentCode;
-    e.positionCode = positionCode;
-    e.propertyCode = propertyCode;
-    e.hotelGroupCode = hotelGroupCode;
-    e.roleCode = roleCode;
+    e.department = department;
+    e.hotelPosition = hotelPosition;
+    e.property = property;
+    e.hotelGroup = hotelGroup;
+    e.permission = permission;
     e.createdAt = LocalDateTime.now();
     e.updatedAt = LocalDateTime.now();
-    e.isActive = true;
+    e.employeeStatus = EmployeeStatus.ACTIVE;
+    e.failedLoginCount = 0;
 
     return e;
+  }
+
+  // 개인정보 업데이트
+  public void updatePersonalInfo(
+      byte[] nameEnc, byte[] nameHash,
+      byte[] phoneEnc, byte[] phoneHash,
+      byte[] emailEnc, byte[] emailHash) {
+    if (nameEnc != null)
+      this.employeeNameEnc = nameEnc;
+    if (nameHash != null)
+      this.employeeNameHash = nameHash;
+    if (phoneEnc != null)
+      this.phoneNumberEnc = phoneEnc;
+    if (phoneHash != null)
+      this.phoneNumberHash = phoneHash;
+    if (emailEnc != null)
+      this.emailEnc = emailEnc;
+    if (emailHash != null)
+      this.emailHash = emailHash;
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  // 조직 정보 업데이트
+  public void updateOrganization(
+      Department department,
+      HotelPosition hotelPosition,
+      Property property,
+      HotelGroup hotelGroup,
+      Permission permission) {
+    if (department != null)
+      this.department = department;
+    if (hotelPosition != null)
+      this.hotelPosition = hotelPosition;
+    if (property != null)
+      this.property = property;
+    if (hotelGroup != null)
+      this.hotelGroup = hotelGroup;
+    if (permission != null)
+      this.permission = permission;
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  // 상태 업데이트
+  public void updateStatus(EmployeeStatus status) {
+    if (status != null) {
+      this.employeeStatus = status;
+      this.updatedAt = LocalDateTime.now();
+    }
+  }
+
+  // 직원 상태 잠김
+  public void employeeLocked() {
+    this.employeeStatus = EmployeeStatus.LOCKED;
+  }
+
+  // 유저 상태 활성화
+  public void employeeUnlocked() {
+    this.employeeStatus = EmployeeStatus.ACTIVE;
+  }
+
+  // 유저 휴면 상태
+  public void employeeDormancy() {
+    this.employeeStatus = EmployeeStatus.DORMANCY;
+  }
+
+  // 로그인 성공 시 처리
+  public void loginSuccess() {
+    this.failedLoginCount = 0;
+    this.lastLoginAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  // 비밀번호 변경 및 실패 횟수 초기화
+  public void changePassword(String newPasswordHash) {
+    this.passwordHash = newPasswordHash;
+    this.failedLoginCount = 0;
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  // 관리자에 의한 계정 잠금 해제 및 비밀번호 초기화
+  public void resetToActive(String temporaryPasswordHash) {
+    this.passwordHash = temporaryPasswordHash;
+    this.failedLoginCount = 0;
+    this.employeeStatus = EmployeeStatus.ACTIVE;
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  // 로그인 실패 시 처리
+  public void loginFailed() {
+    this.failedLoginCount++;
+    this.updatedAt = LocalDateTime.now();
   }
 
 }

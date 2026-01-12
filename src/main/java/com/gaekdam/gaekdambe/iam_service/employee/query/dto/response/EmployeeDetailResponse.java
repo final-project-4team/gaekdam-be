@@ -1,19 +1,27 @@
 package com.gaekdam.gaekdambe.iam_service.employee.query.dto.response;
 
+import java.time.LocalDateTime;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+public record EmployeeDetailResponse(
+                Long employeeCode,
+                Long employeeNumber,
+                String loginId,
+                String name,
+                String phone,
+                String email,
 
-@Getter
-@Setter
-@NoArgsConstructor
-public class EmployeeDetailResponse {
-  private Long employeeCode;
-  private Long employeeNumber;
-  private String loginId;
-  private byte[] employeeNameEnc;
-  private byte[] phoneNumberEnc;
-  private byte[] emailEnc;
-  private byte[] dekEnc;
+                // JOIN 필드 추가
+                String departmentName,
+                String hotelPositionName,
+                String propertyName,
+                String hotelGroupName,
+                String permissionName,
+
+                // 기타 필드
+                LocalDateTime hiredAt,
+                String employeeStatus,
+                LocalDateTime createdAt,
+                LocalDateTime updatedAt,
+                int failedLoginCount,
+                LocalDateTime lastLoginAt) {
 }

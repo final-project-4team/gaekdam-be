@@ -2,8 +2,8 @@ package com.gaekdam.gaekdambe.dummy.generate.iam_service.employee;
 
 import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
 import com.gaekdam.gaekdambe.global.crypto.KmsService;
+import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.EmployeeSecureRegistrationRequest;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.service.EmployeeSecureRegistrationService;
-import com.gaekdam.gaekdambe.iam_service.employee.command.application.service.EmployeeSecureRegistrationService.RegisterEmployeeCommand;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ public class EmployeeEncryptedRegistrationTest {
             String originalName = "홍길동" + employeeCount;
             long count = (long) (Math.random() * 8) + 1;
 
-            RegisterEmployeeCommand command = new RegisterEmployeeCommand(
+            EmployeeSecureRegistrationRequest command = new EmployeeSecureRegistrationRequest(
                     employeeNumber, loginId, "password123",
                     originalEmail, originalPhone, originalName,
                     count, 2L, 1L, 1L, 1L);

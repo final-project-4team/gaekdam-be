@@ -30,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     Employee emp = employeeRepository.findByLoginId(employeeId)
         .orElseThrow(() -> new UsernameNotFoundException("Employee not found: " + employeeId));
 
-    Permission permission = permissionRepository.findById(emp.getRoleCode())
+    Permission permission = permissionRepository.findById(emp.getPermission().getPermissionCode())
         .orElseThrow(() -> new UsernameNotFoundException("Role not found for employee"));
 
     List<GrantedAuthority> authorities = new ArrayList<>();
