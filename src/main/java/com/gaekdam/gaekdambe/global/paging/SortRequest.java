@@ -7,6 +7,8 @@ import lombok.Setter;
 @Setter
 public class SortRequest {
 
-    private String sortBy = "created_at"; // DB 컬럼명
+    private String sortBy;
     private String direction = "DESC";    // ASC / DESC
+
+
 }

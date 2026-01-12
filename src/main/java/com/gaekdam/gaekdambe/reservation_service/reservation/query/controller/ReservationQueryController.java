@@ -25,6 +25,12 @@ public class ReservationQueryController {
             ReservationSearchRequest search,
             SortRequest sort
     ) {
+
+        if (sort == null || sort.getSortBy() == null) {
+            sort = new SortRequest();
+            sort.setSortBy("created_at");
+        }
+
         PageResponse<ReservationResponse> result =
                 reservationQueryService.getReservations(page, search, sort);
 
