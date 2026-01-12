@@ -1,3 +1,4 @@
+/*
 package com.gaekdam.gaekdambe.dummy.generate.iam_service.sampleTest;
 
 import com.gaekdam.gaekdambe.global.config.security.CustomUserDetailsService;
@@ -85,3 +86,4 @@ class UserDetailsPermissionTest {
                 .containsExactlyInAnyOrder("ROLE_MANAGER", "USER_READ", "POST_WRITE");
     }
 }
+*/

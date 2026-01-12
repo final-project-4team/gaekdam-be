@@ -14,4 +14,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
   Optional<Employee> findByEmployeeNameHash(byte[] employeeNameHash);
 
   Optional<Employee> findByLoginId(String employeeId);
+
+  boolean existsByLoginId(String loginId);
+
+  boolean existsByPhoneNumberHash(byte[] phoneNumberHash);
 }
