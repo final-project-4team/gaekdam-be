@@ -35,7 +35,7 @@ public class ReservationResponse {
     private LocalDateTime updatedAt;
 
     // 연관 코드
-    private Long tenantCode;
+    private Long propertyCode;
     private Long roomCode;
     private Long customerCode;
     private Long packageCode;

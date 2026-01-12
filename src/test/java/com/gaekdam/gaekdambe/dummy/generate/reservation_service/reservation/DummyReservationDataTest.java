@@ -42,7 +42,7 @@ public class DummyReservationDataTest {
                 reservationStatus = "RESERVED";
             }
 
-            long tenantCode = (i % 10) + 1;
+            long propertyCode = (i % 10) + 1;
             long roomCode = random.nextInt(500) + 1;
             long customerCode = random.nextInt(5_000) + 1;
 
@@ -69,7 +69,7 @@ public class DummyReservationDataTest {
                     random.nextBoolean() ? "WEB" : "OTA",
                     roomPrice,
                     packagePrice,
-                    tenantCode,
+                    propertyCode,
                     roomCode,
                     customerCode,
                     packageCode,
@@ -92,7 +92,7 @@ public class DummyReservationDataTest {
                         .reservedAt(reservation.getReservedAt())
                         .canceledAt(reservation.getReservedAt().plusHours(1 + random.nextInt(72)))
                         .createdAt(reservation.getCreatedAt())
-                        .tenantCode(reservation.getTenantCode())
+                        .propertyCode(reservation.getPropertyCode())
                         .roomCode(reservation.getRoomCode())
                         .customerCode(reservation.getCustomerCode())
                         .packageCode(reservation.getPackageCode())

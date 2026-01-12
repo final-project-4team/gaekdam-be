@@ -82,7 +82,7 @@
         <where>
             <if test="search != null">
 
-                <!-- 🔐 SaaS 호텔 스코프 (필수) -->
+                <!-- SaaS 호텔 스코프 (필수) -->
                 <if test="search.hotelGroupCode != null">
                     AND f.hotel_group_code = #{search.hotelGroupCode}
                 </if>
