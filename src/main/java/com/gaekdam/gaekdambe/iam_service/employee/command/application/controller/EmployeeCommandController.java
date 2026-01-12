@@ -4,6 +4,7 @@ package com.gaekdam.gaekdambe.iam_service.employee.command.application.controlle
 import com.gaekdam.gaekdambe.global.config.jwt.JwtTokenProvider;
 import com.gaekdam.gaekdambe.global.config.jwt.RefreshTokenService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
+import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
@@ -11,7 +12,6 @@ import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.reques
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.EmployeeUpdateSecureRequest;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.LoginRequest;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.PasswordChangeRequest;
-import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.PasswordResetRequest;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.response.TokenResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.service.EmployeeSecureRegistrationService;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.service.EmployeeUpdateService;
@@ -19,6 +19,7 @@ import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.PermissionRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,7 @@ public class EmployeeCommandController {
   private static final String COOKIE_NAME = "refreshToken";
   private final long REFRESH_TOKEN_EXPIRE = 1000 * 60 * 60;
 
+  //직원 추가
   @PostMapping("/add")
   public ResponseEntity<ApiResponse<String>> registerEmployee(@RequestBody EmployeeSecureRegistrationRequest request) {
 
@@ -55,6 +57,7 @@ public class EmployeeCommandController {
     return ResponseEntity.ok(ApiResponse.success("유저 추가"));
   }
 
+  //직원 로그인
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<TokenResponse>> login(
       @RequestBody LoginRequest request) {
@@ -112,30 +115,35 @@ public class EmployeeCommandController {
         .body(ApiResponse.success(body));
   }
 
+  //직원 정보 수정
   @PutMapping("/{employeeCode}")
   public ResponseEntity<ApiResponse<String>> updateEmployee(
       @PathVariable Long employeeCode,
-      @RequestBody EmployeeUpdateSecureRequest request) {
+      //정규식 검사
+      @Valid @RequestBody EmployeeUpdateSecureRequest request) {
     employeeUpdateService.updateEmployee(employeeCode, request);
     return ResponseEntity.ok(ApiResponse.success("유저 정보 수정 완료"));
   }
 
-  @PatchMapping("/{employeeCode}/password")
-  public ResponseEntity<ApiResponse<Void>> changePassword(
-      @PathVariable Long employeeCode,
+  //직원 본인 비밀번호 변경
+  @PatchMapping("/password")
+  public ResponseEntity<ApiResponse<String>> changePassword(
+      @AuthenticationPrincipal CustomUser customUser,
       @RequestBody PasswordChangeRequest request) {
-    employeeUpdateService.changePassword(employeeCode, request);
-    return ResponseEntity.ok(ApiResponse.success(null ));
+    Employee employee =employeeRepository.findByLoginId(customUser.getUsername()).orElseThrow();
+    employeeUpdateService.changePassword(employee, request);
+    return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 변경 되었습니다." ));
   }
 
-  @PostMapping("/{employeeCode}/password-reset")
-  public ResponseEntity<ApiResponse<Void>> resetPassword(
-      @PathVariable Long employeeCode,
-      @RequestBody PasswordResetRequest request) {
-    employeeUpdateService.resetPassword(employeeCode, request.tempPassword());
-    return ResponseEntity.ok(ApiResponse.success(null));
+  //직원 비밀번호 초기화
+  @PatchMapping("/password-reset/{employeeCode}")
+  public ResponseEntity<ApiResponse<String>> resetPassword(
+      @PathVariable Long employeeCode) {
+    String tempPassword=employeeUpdateService.resetPassword(employeeCode);
+    return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 초기화 되었습니다. 임시 비밀번호는 : "+tempPassword));
   }
 
+  //직원 로그 아웃
   @DeleteMapping("/logout")
   public ResponseEntity<ApiResponse<Void>> logout(
       @AuthenticationPrincipal UserDetails userDetails,
@@ -158,6 +166,19 @@ public class EmployeeCommandController {
         .body(ApiResponse.success(null));
   }
 
+  //직원 잠금 해제
+  @PatchMapping("/unlock/{employeeCode}")
+  public ResponseEntity<ApiResponse<String>> unlock(
+      @PathVariable Long employeeCode
+  ){
+
+    employeeUpdateService.unlockEmployee(employeeCode);
+    return ResponseEntity.ok(null);
+
+  }
+
+
+  //
   @PostMapping("/refresh")
   public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
       @CookieValue(name = COOKIE_NAME, required = false) String refreshToken) {
@@ -211,4 +232,6 @@ public class EmployeeCommandController {
     boolean exists = employeeRepository.existsByPhoneNumberHash(phoneHash);
     return ResponseEntity.ok(ApiResponse.success(exists));
   }
+
+
 }
