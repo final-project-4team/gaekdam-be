@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.dummy.generate.iam_service.permission;
 
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
 import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.PermissionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class DummyPermissionDataTest {
   @Autowired
   private PermissionRepository permissionRepository;
+
+  @Autowired
+  private HotelGroupRepository hotelGroupRepository;
 
  @Transactional
   public void generate()
@@ -62,7 +66,8 @@ public class DummyPermissionDataTest {
           "시설-난방 기사"};
       for(String permissions:permissionDummy) {
       Permission permission = Permission.createPermission(
-          permissions,hotel
+          permissions,
+          hotelGroupRepository.findById(hotel).orElseThrow()
         );
         permissionRepository.save(permission);
       }

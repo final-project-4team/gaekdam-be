@@ -4,9 +4,22 @@ import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
 import com.gaekdam.gaekdambe.global.crypto.DataKey;
 import com.gaekdam.gaekdambe.global.crypto.KmsService;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
+import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
+import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.PropertyRepository;
+import com.gaekdam.gaekdambe.hotel_service.position.command.domain.entity.HotelPosition;
+import com.gaekdam.gaekdambe.hotel_service.position.command.infrastructure.repository.HotelPositionRepository;
+import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.EmployeeSecureRegistrationRequest;
+import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
+import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.PermissionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +33,14 @@ public class EmployeeSecureRegistrationService {
   private final EmployeeRepository employeeRepository;
   private final KmsService kmsService;
   private final SearchHashService searchHashService;
+  private final PasswordEncoder passwordEncoder;
+
+  // 관련 엔티티 조회를 위한 레포지토리 추가
+  private final DepartmentRepository departmentRepository;
+  private final HotelPositionRepository hotelPositionRepository;
+  private final PropertyRepository propertyRepository;
+  private final HotelGroupRepository hotelGroupRepository;
+  private final PermissionRepository permissionRepository;
 
   public record RegisterEmployeeCommand(
       Long employeeNumber,
@@ -35,34 +56,46 @@ public class EmployeeSecureRegistrationService {
       Long roleCode) {
   }
 
- // KMS를 통한 데이터 암호화 키(DEK) 생성
- // 개인정보(이름, 전화번호, 이메일) AES-256 암호화
- // 검색용 해시 생성 (HMAC-SHA256)
- //DB 저장 (Envelope Encryption 적용)
+  // KMS를 통한 데이터 암호화 키(DEK) 생성
+  // 개인정보(이름, 전화번호, 이메일) AES-256 암호화
+  // 검색용 해시 생성 (HMAC-SHA256)
+  // DB 저장 (Envelope Encryption 적용)
   @Transactional
-  public Long registerEmployee(RegisterEmployeeCommand command) {
+  public Long registerEmployee(EmployeeSecureRegistrationRequest command) {
 
-    // 사용자 요청에 따라 암호화 로직 제거 (추후 JWT/Spring Security 적용 예정)
-    String passwordToSave = command.password();
+    // 비밀번호 암호화 (BCrypt)
+    String passwordToSave = passwordEncoder.encode(command.password());
 
     // KMS에서 데이터 키(DEK) 생성
     DataKey dek = kmsService.generateDataKey();
 
     // 민감 정보 AES-256 암호화 (Plaintext DEK 사용)
     // 이메일은 선택사항이므로 null 체크
-    byte[] emailEnc = (command.email() != null) 
-        ? AesCryptoUtils.encrypt(command.email(), dek.plaintext()) 
+    byte[] emailEnc = (command.email() != null)
+        ? AesCryptoUtils.encrypt(command.email(), dek.plaintext())
         : null;
     byte[] phoneEnc = AesCryptoUtils.encrypt(command.phoneNumber(), dek.plaintext());
     byte[] nameEnc = AesCryptoUtils.encrypt(command.name(), dek.plaintext());
 
     // 검색용 해시 생성 (HMAC-SHA256)
     // 이메일은 선택사항이므로 null 체크
-    byte[] emailHash = (command.email() != null) 
-        ? searchHashService.emailHash(command.email()) 
+    byte[] emailHash = (command.email() != null)
+        ? searchHashService.emailHash(command.email())
         : null;
     byte[] phoneHash = searchHashService.phoneHash(command.phoneNumber());
     byte[] nameHash = searchHashService.nameHash(command.name());
+
+    // 연관 엔티티 조회
+    Department department = departmentRepository.findById(command.departmentCode())
+        .orElseThrow(() -> new IllegalArgumentException("Department not found: " + command.departmentCode()));
+    HotelPosition position = hotelPositionRepository.findById(command.positionCode())
+        .orElseThrow(() -> new IllegalArgumentException("Position not found: " + command.positionCode()));
+    Property property = propertyRepository.findById(command.propertyCode())
+        .orElseThrow(() -> new IllegalArgumentException("Property not found: " + command.propertyCode()));
+    HotelGroup hotelGroup = hotelGroupRepository.findById(command.hotelGroupCode())
+        .orElseThrow(() -> new IllegalArgumentException("HotelGroup not found: " + command.hotelGroupCode()));
+    Permission role = permissionRepository.findById(command.roleCode())
+        .orElseThrow(() -> new IllegalArgumentException("Role not found: " + command.roleCode()));
 
     Employee employee = Employee.createEmployee(
         command.employeeNumber(),
@@ -76,15 +109,34 @@ public class EmployeeSecureRegistrationService {
         nameHash,
         dek.encrypted(),
         LocalDateTime.now(),
-        command.departmentCode(),
-        command.positionCode(),
-        command.propertyCode(),
-        command.hotelGroupCode(),
-        command.roleCode()
-    );
+        department,
+        position,
+        property,
+        hotelGroup,
+        role);
 
     Employee saved = employeeRepository.save(employee);
 
     return saved.getEmployeeCode();
+  }
+
+  @Transactional
+  public void loginFailed(Employee employee) {
+
+    employee.loginFailed();
+
+    // 증가된 횟수가 5회 이상이면 즉시 잠금 처리
+    if (employee.getFailedLoginCount() >= 5 && employee.getEmployeeStatus() == EmployeeStatus.ACTIVE) {
+      employee.employeeLocked();
+    }
+
+    // 변경 사항 저장
+    employeeRepository.save(employee);
+  }
+
+  @Transactional
+  public void loginSuccess(Employee employee) {
+    employee.loginSuccess();
+    employeeRepository.save(employee);
   }
 }
