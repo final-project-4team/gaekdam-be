@@ -21,7 +21,7 @@ public class CustomerStatusHistory {
     private Long customerStatusHistoryCode;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "brfore_status", nullable = false, length = 30) // ERD 오타 그대로
+    @Column(name = "before_status", nullable = false, length = 30)
     private CustomerStatus beforeStatus;
 
     @Enumerated(EnumType.STRING)
@@ -32,8 +32,8 @@ public class CustomerStatusHistory {
     @Column(name = "change_source", length = 20)
     private ChangeSource changeSource;
 
-    @Column(name = "changed_by_user_id")
-    private Long changedByUserId;
+    @Column(name = "employee_code")
+    private Long changedByEmployeeCode;
 
     @Column(name = "change_reason", length = 255)
     private String changeReason;
@@ -49,7 +49,7 @@ public class CustomerStatusHistory {
             CustomerStatus beforeStatus,
             CustomerStatus afterStatus,
             ChangeSource changeSource,
-            Long changedByUserId,
+            Long changedByEmployeeCode,
             String changeReason,
             LocalDateTime changedAt
     ) {
@@ -57,7 +57,7 @@ public class CustomerStatusHistory {
         this.beforeStatus = beforeStatus;
         this.afterStatus = afterStatus;
         this.changeSource = changeSource;
-        this.changedByUserId = changedByUserId;
+        this.changedByEmployeeCode = changedByEmployeeCode;
         this.changeReason = changeReason;
         this.changedAt = changedAt;
     }
@@ -67,7 +67,7 @@ public class CustomerStatusHistory {
             CustomerStatus beforeStatus,
             CustomerStatus afterStatus,
             ChangeSource changeSource,
-            Long changedByUserId,
+            Long changedByEmployeeCode,
             String changeReason,
             LocalDateTime changedAt
     ) {
@@ -76,7 +76,7 @@ public class CustomerStatusHistory {
                 beforeStatus,
                 afterStatus,
                 changeSource,
-                changedByUserId,
+                changedByEmployeeCode,
                 changeReason,
                 changedAt
         );
