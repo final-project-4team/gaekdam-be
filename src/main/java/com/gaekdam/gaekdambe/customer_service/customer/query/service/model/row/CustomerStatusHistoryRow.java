@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.customer_service.customer.query.service.model;
+package com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus;
@@ -10,7 +10,8 @@ public record CustomerStatusHistoryRow(
         CustomerStatus beforeStatus,
         CustomerStatus afterStatus,
         ChangeSource changeSource,
-        Long changedByMemberCode,
-        String reason,
-        LocalDateTime changedAt
-) {}
+        String changeReason,
+        LocalDateTime changedAt,
+        Long employeeCode
+) {
+}

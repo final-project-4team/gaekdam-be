@@ -21,8 +21,8 @@ public class CustomerMemo {
     @Column(name = "customer_code", nullable = false)
     private Long customerCode;
 
-    @Column(name = "user_code", nullable = false)
-    private Long userCode;
+    @Column(name = "employee_code", nullable = false)
+    private Long employeeCode;
 
     @Lob
     @Column(name = "customer_memo_content", nullable = false)
@@ -31,14 +31,19 @@ public class CustomerMemo {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    private CustomerMemo(Long customerCode, Long userCode, String customerMemoContent, LocalDateTime now) {
+    private CustomerMemo(Long customerCode, Long employeeCode, String customerMemoContent, LocalDateTime now) {
         this.customerCode = customerCode;
-        this.userCode = userCode;
+        this.employeeCode = employeeCode;
         this.customerMemoContent = customerMemoContent;
         this.createdAt = now;
     }
 
-    public static CustomerMemo registerCustomerMemo(Long customerCode, Long userCode, String customerMemoContent, LocalDateTime now) {
-        return new CustomerMemo(customerCode, userCode, customerMemoContent, now);
+    public static CustomerMemo registerCustomerMemo(
+            Long customerCode,
+            Long employeeCode,
+            String customerMemoContent,
+            LocalDateTime now
+    ) {
+        return new CustomerMemo(customerCode, employeeCode, customerMemoContent, now);
     }
 }

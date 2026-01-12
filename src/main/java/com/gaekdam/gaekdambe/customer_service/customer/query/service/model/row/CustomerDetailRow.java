@@ -1,37 +1,39 @@
-package com.gaekdam.gaekdambe.customer_service.customer.query.service.model;
+package com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType;
-import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.LoyaltyStatus;
-import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
 
 import java.time.LocalDateTime;
 
 public record CustomerDetailRow(
         Long customerCode,
-        Long hotelGroupCode,
-        byte[] customerNameEnc,
+        String customerName,
 
+        CustomerStatus status,
         NationalityType nationalityType,
         ContractType contractType,
-        CustomerStatus status,
 
-        LocalDateTime cautionAt,
-        LocalDateTime inactiveAt,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
+        String inflowChannel,
 
+        String primaryPhone,
+        String primaryEmail,
+
+        // member
         Long memberCode,
+        LocalDateTime memberCreatedAt,
 
-        MembershipStatus membershipStatus,
-        Long membershipGradeCode,
+        // membership (없으면 null일 수 있음)
         String membershipGradeName,
+        String membershipStatus,
         LocalDateTime membershipJoinedAt,
+        LocalDateTime membershipCalculatedAt,
         LocalDateTime membershipExpiredAt,
 
-        LoyaltyStatus loyaltyStatus,
-        Long loyaltyGradeCode,
+        // loyalty (없으면 null일 수 있음)
+        String loyaltyGradeName,
+        String loyaltyStatus,
         LocalDateTime loyaltyJoinedAt,
         LocalDateTime loyaltyCalculatedAt
-) {}
+) {
+}

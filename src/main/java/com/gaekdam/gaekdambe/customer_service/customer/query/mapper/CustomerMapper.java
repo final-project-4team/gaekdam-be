@@ -1,28 +1,54 @@
 package com.gaekdam.gaekdambe.customer_service.customer.query.mapper;
 
-import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.*;
+import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.condition.CustomerListSearchParam;
+import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.*;
+import com.gaekdam.gaekdambe.global.paging.PageRequest;
+import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 @Mapper
 public interface CustomerMapper {
 
-    // 고객 존재 여부만 확인
-    boolean existsCustomer(CustomerDetailCondition condition);
+    List<CustomerListRow> findCustomers(
+            @Param("page") PageRequest page,
+            @Param("search") CustomerListSearchParam search,
+            @Param("sort") SortRequest sort
+    );
 
-    // 고객 목록 조회
-    List<CustomerListRow> findCustomerList(CustomerListCondition condition);
+    long countCustomers(@Param("search") CustomerListSearchParam search);
 
-    // 고객 상세
-    CustomerDetailRow findCustomerDetail(CustomerDetailCondition condition);
+    CustomerDetailRow findCustomerDetail(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCode") Long customerCode
+    );
 
-    // 고객 연락처 리스트 조회
-    List<CustomerContactRow> findCustomerContacts(CustomerDetailCondition condition);
+    List<CustomerContactRow> findCustomerContacts(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCode") Long customerCode
+    );
 
-    // 고객 상태만 조회
-    CustomerStatusRow findCustomerStatus(CustomerDetailCondition condition);
+    CustomerStatusRow findCustomerStatus(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCode") Long customerCode
+    );
 
-    // 고객 상태 변경 이력 조회
-    List<CustomerStatusHistoryRow> findCustomerStatusHistories(CustomerDetailCondition condition);
+    List<CustomerStatusHistoryRow> findCustomerStatusHistories(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCode") Long customerCode,
+            @Param("page") PageRequest page,
+            @Param("sort") SortRequest sort
+    );
+
+    long countCustomerStatusHistories(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCode") Long customerCode
+    );
+
+    List<CustomerContactRow> findCustomerMarketingConsents(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCode") Long customerCode
+    );
 }

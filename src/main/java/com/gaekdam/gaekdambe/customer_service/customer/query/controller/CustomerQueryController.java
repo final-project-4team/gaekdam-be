@@ -1,9 +1,15 @@
 package com.gaekdam.gaekdambe.customer_service.customer.query.controller;
 
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerDetailRequest;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerListSearchRequest;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.*;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerStatusHistoryRequest;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerDetailResponse;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerMarketingConsentResponse;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusHistoryResponse;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusResponse;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerListItem;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerQueryService;
+import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
+import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,40 +20,64 @@ public class CustomerQueryController {
 
     private final CustomerQueryService customerQueryService;
 
+    /**
+     * 고객 목록 조회
+     * - 상단 keyword + 상세검색(모달) + 필터
+     */
     @GetMapping
-    public CustomerListResponse getCustomerList(@ModelAttribute CustomerListSearchRequest request) {
-        return customerQueryService.getCustomerList(request);
+    public ApiResponse<PageResponse<CustomerListItem>> getCustomerList(
+            @ModelAttribute CustomerListSearchRequest request
+    ) {
+        System.out.println("request.hotelGroupCode=" + request.getHotelGroupCode());
+        System.out.println("request.page=" + request.getPage() + ", size=" + request.getSize());
+        System.out.println("request.keyword=" + request.getKeyword());
+        return ApiResponse.success(customerQueryService.getCustomerList(request));
     }
 
+    /**
+     * 고객 상세 조회
+     */
     @GetMapping("/{customerCode}")
-    public CustomerDetailResponse getCustomerDetail(
+    public ApiResponse<CustomerDetailResponse> getCustomerDetail(
             @PathVariable Long customerCode,
             @RequestParam Long hotelGroupCode
     ) {
-        return customerQueryService.getCustomerDetail(new CustomerDetailRequest(hotelGroupCode, customerCode));
+        return ApiResponse.success(customerQueryService.getCustomerDetail(hotelGroupCode, customerCode));
     }
 
+    /**
+     * 고객 상태 조회
+     */
     @GetMapping("/{customerCode}/status")
-    public CustomerStatusResponse getCustomerStatus(
+    public ApiResponse<CustomerStatusResponse> getCustomerStatus(
             @PathVariable Long customerCode,
             @RequestParam Long hotelGroupCode
     ) {
-        return customerQueryService.getCustomerStatus(new CustomerDetailRequest(hotelGroupCode, customerCode));
+        return ApiResponse.success(customerQueryService.getCustomerStatus(hotelGroupCode, customerCode));
     }
 
+    /**
+     * 고객 상태 변경 이력 조회 (paging)
+     */
     @GetMapping("/{customerCode}/status-histories")
-    public CustomerStatusHistoryResponse getCustomerStatusHistories(
+    public ApiResponse<CustomerStatusHistoryResponse> getCustomerStatusHistories(
             @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode
+            @RequestParam Long hotelGroupCode,
+            @ModelAttribute CustomerStatusHistoryRequest request
     ) {
-        return customerQueryService.getCustomerStatusHistories(new CustomerDetailRequest(hotelGroupCode, customerCode));
+        return ApiResponse.success(
+                customerQueryService.getCustomerStatusHistories(hotelGroupCode, customerCode, request)
+        );
     }
 
+    /**
+     * 연락처별 마케팅 수신 동의 조회
+     */
     @GetMapping("/{customerCode}/marketing-consents")
-    public CustomerMarketingConsentResponse getCustomerMarketingConsents(
+    public ApiResponse<CustomerMarketingConsentResponse> getCustomerMarketingConsents(
             @PathVariable Long customerCode,
             @RequestParam Long hotelGroupCode
     ) {
-        return customerQueryService.getCustomerMarketingConsents(new CustomerDetailRequest(hotelGroupCode, customerCode));
+        return ApiResponse.success(customerQueryService.getCustomerMarketingConsents(hotelGroupCode, customerCode));
     }
 }

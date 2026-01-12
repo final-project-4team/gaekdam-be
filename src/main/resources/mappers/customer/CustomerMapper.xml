@@ -4,18 +4,37 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerMapper">
 
-    <select id="existsCustomer"
-            parameterType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerDetailCondition"
-            resultType="boolean">
-        SELECT EXISTS(
-        SELECT 1
-        FROM customer c
-        WHERE c.hotel_group_code = #{hotelGroupCode}
-        AND c.customer_code = #{customerCode}
-        )
-    </select>
+    <!--  record(CustomerListRow) 생성자 매핑 고정 -->
+    <resultMap id="CustomerListRowMap"
+               type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerListRow">
+        <constructor>
+            <idArg column="customerCode" javaType="java.lang.Long"/>
+            <arg column="customerNameEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
 
-    <sql id="BaseFrom">
+            <arg column="primaryContactEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="status"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+
+            <arg column="membershipGrade" javaType="java.lang.String"/>
+            <arg column="loyaltyGrade" javaType="java.lang.String"/>
+
+            <arg column="lastUsedDate" javaType="java.time.LocalDate"/>
+            <arg column="inflowChannel" javaType="java.lang.String"/>
+
+            <arg column="contractType"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType"/>
+            <arg column="nationalityType"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="CustomerListBaseFrom">
         FROM customer c
 
         <!-- 대표 연락처 1개 -->
@@ -35,10 +54,9 @@
         FROM customer_contact cc
         ) t
         WHERE t.rn = 1
-        ) pc
-        ON pc.customer_code = c.customer_code
+        ) pc ON pc.customer_code = c.customer_code
 
-        <!-- 목록: 현재 ACTIVE 멤버십 1건(현재 등급용) -->
+        <!-- 목록: ACTIVE 멤버십 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -52,15 +70,14 @@
         WHERE m.membership_status = 'ACTIVE'
         ) t
         WHERE t.rn = 1
-        ) m
-        ON m.customer_code = c.customer_code
+        ) m ON m.customer_code = c.customer_code
         AND m.hotel_group_code = c.hotel_group_code
 
         LEFT JOIN membership_grade mg
         ON mg.membership_grade_code = m.membership_grade_code
         AND mg.hotel_group_code = c.hotel_group_code
 
-        <!-- 목록: 현재 ACTIVE 로열티 1건 -->
+        <!-- 목록: ACTIVE 로열티 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -74,81 +91,142 @@
         WHERE l.loyalty_status = 'ACTIVE'
         ) t
         WHERE t.rn = 1
-        ) l
-        ON l.customer_code = c.customer_code
+        ) l ON l.customer_code = c.customer_code
         AND l.hotel_group_code = c.hotel_group_code
+
+        <!-- ✅ 로열티 등급명 -->
+        LEFT JOIN loyalty_grade lg
+        ON lg.loyalty_grade_code = l.loyalty_grade_code
+        AND lg.hotel_group_code = c.hotel_group_code
+
+        <!-- ✅ 최근 예약 1건: reservation에는 hotel_group_code가 없어서 property로 호텔그룹 매핑 -->
+        LEFT JOIN (
+        SELECT *
+        FROM (
+        SELECT
+        r.customer_code,
+        p.hotel_group_code,
+        r.reservation_channel,
+        r.reserved_at,
+        ROW_NUMBER() OVER (
+        PARTITION BY p.hotel_group_code, r.customer_code
+        ORDER BY r.reserved_at DESC, r.reservation_code DESC
+        ) AS rn
+        FROM reservation r
+        JOIN property p
+        ON p.property_code = r.property_code
+        ) t
+        WHERE t.rn = 1
+        ) rr ON rr.customer_code = c.customer_code
+        AND rr.hotel_group_code = c.hotel_group_code
     </sql>
 
-    <sql id="BaseWhere">
-        WHERE c.hotel_group_code = #{hotelGroupCode}
+    <sql id="CustomerListBaseWhere">
+        WHERE c.hotel_group_code = #{search.hotelGroupCode}
 
-        <if test="status != null">
-            AND c.customer_status = #{status}
+        <if test="search.status != null">
+            AND c.customer_status = #{search.status}
         </if>
 
-        <if test="contractType != null">
-            AND c.contract_type = #{contractType}
+        <if test="search.contractType != null">
+            AND c.contract_type = #{search.contractType}
         </if>
 
-        <if test="nationalityType != null">
-            AND c.nationality_type = #{nationalityType}
+        <if test="search.nationalityType != null">
+            AND c.nationality_type = #{search.nationalityType}
         </if>
 
-        <!-- ✅ 등급 필터는 code로 -->
-        <if test="membershipGradeCode != null">
-            AND m.membership_grade_code = #{membershipGradeCode}
+        <if test="search.membershipGradeCode != null">
+            AND m.membership_grade_code = #{search.membershipGradeCode}
         </if>
 
-        <if test="loyaltyGradeCode != null">
-            AND l.loyalty_grade_code = #{loyaltyGradeCode}
+        <if test="search.loyaltyGradeCode != null">
+            AND l.loyalty_grade_code = #{search.loyaltyGradeCode}
         </if>
 
-        <if test="customerCode != null">
-            AND c.customer_code = #{customerCode}
+        <if test="search.customerCode != null">
+            AND c.customer_code = #{search.customerCode}
         </if>
 
-        <if test="customerNameHash != null">
-            AND c.customer_name_hash = #{customerNameHash}
+        <if test="search.customerNameHash != null">
+            AND c.customer_name_hash = #{search.customerNameHash}
         </if>
 
-        <if test="contactValueHash != null">
+        <if test="search.phoneHash != null">
             AND EXISTS (
             SELECT 1
             FROM customer_contact cx
             WHERE cx.customer_code = c.customer_code
-            AND cx.contact_value_hash = #{contactValueHash}
+            AND cx.contact_type = 'PHONE'
+            AND cx.contact_value_hash = #{search.phoneHash}
+            )
+        </if>
+
+        <if test="search.emailHash != null">
+            AND EXISTS (
+            SELECT 1
+            FROM customer_contact cx
+            WHERE cx.customer_code = c.customer_code
+            AND cx.contact_type = 'EMAIL'
+            AND cx.contact_value_hash = #{search.emailHash}
             )
         </if>
     </sql>
 
-    <select id="findCustomerList"
-            parameterType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerListCondition"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerListRow">
+    <!-- =========================
+         Customer List
+       ========================= -->
 
+    <select id="findCustomers" resultMap="CustomerListRowMap">
         SELECT
-        c.customer_code       AS customerCode,
-        c.customer_name_enc   AS customerNameEnc,
-        pc.contact_value_enc  AS primaryContactValueEnc,
+        c.customer_code        AS customerCode,
+        c.customer_name_enc    AS customerNameEnc,
+        pc.contact_value_enc   AS primaryContactEnc,
+        c.customer_status      AS status,
 
-        c.customer_status     AS status,
-        c.contract_type       AS contractType,
-        c.nationality_type    AS nationalityType,
+        mg.grade_name          AS membershipGrade,
+        lg.grade_name          AS loyaltyGrade,
 
-        m.membership_grade_code AS membershipGradeCode,
-        mg.grade_name           AS membershipGradeName,
+        DATE(c.updated_at)     AS lastUsedDate,
+        rr.reservation_channel AS inflowChannel,
 
-        l.loyalty_grade_code    AS loyaltyGradeCode
+        c.contract_type        AS contractType,
+        c.nationality_type     AS nationalityType
 
-        <include refid="BaseFrom"/>
-        <include refid="BaseWhere"/>
+        <include refid="CustomerListBaseFrom"/>
+        <include refid="CustomerListBaseWhere"/>
 
-        ORDER BY c.created_at DESC, c.customer_code DESC
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy == 'created_at'">c.created_at</when>
+            <when test="sort != null and sort.sortBy == 'customer_code'">c.customer_code</when>
+            <when test="sort != null and sort.sortBy == 'customer_name'">c.customer_name_enc</when>
+            <when test="sort != null and sort.sortBy == 'last_used_date'">c.updated_at</when>
+            <otherwise>c.created_at</otherwise>
+        </choose>
+        <choose>
+            <when test="sort != null and sort.direction == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        , c.customer_code DESC
+
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
     </select>
 
-    <select id="findCustomerDetail"
-            parameterType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerDetailCondition"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerDetailRow">
+    <select id="countCustomers" resultType="long">
+        SELECT COUNT(DISTINCT c.customer_code)
+        <include refid="CustomerListBaseFrom"/>
+        <include refid="CustomerListBaseWhere"/>
+    </select>
 
+
+    <!-- =========================
+         Customer Detail
+       ========================= -->
+
+    <select id="findCustomerDetail"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerDetailRow">
         SELECT
         c.customer_code        AS customerCode,
         c.hotel_group_code     AS hotelGroupCode,
@@ -165,14 +243,12 @@
 
         mb.member_code         AS memberCode,
 
-        -- ✅ 상세: 멤버십 최신 1건(상태 제한 없음) -> EXPIRED/SUSPENDED도 표시 가능
         m2.membership_status        AS membershipStatus,
         m2.membership_grade_code    AS membershipGradeCode,
         mg2.grade_name              AS membershipGradeName,
         m2.joined_at                AS membershipJoinedAt,
         m2.expired_at               AS membershipExpiredAt,
 
-        -- ✅ 상세: 로열티 최신 1건(상태 제한 없음)
         l2.loyalty_status           AS loyaltyStatus,
         l2.loyalty_grade_code       AS loyaltyGradeCode,
         l2.joined_at                AS loyaltyJoinedAt,
@@ -192,8 +268,7 @@
         FROM member mb
         ) t
         WHERE t.rn = 1
-        ) mb
-        ON mb.customer_code = c.customer_code
+        ) mb ON mb.customer_code = c.customer_code
 
         LEFT JOIN (
         SELECT *
@@ -207,8 +282,7 @@
         FROM membership m
         ) t
         WHERE t.rn = 1
-        ) m2
-        ON m2.customer_code = c.customer_code
+        ) m2 ON m2.customer_code = c.customer_code
         AND m2.hotel_group_code = c.hotel_group_code
 
         LEFT JOIN membership_grade mg2
@@ -227,8 +301,7 @@
         FROM loyalty l
         ) t
         WHERE t.rn = 1
-        ) l2
-        ON l2.customer_code = c.customer_code
+        ) l2 ON l2.customer_code = c.customer_code
         AND l2.hotel_group_code = c.hotel_group_code
 
         WHERE c.hotel_group_code = #{hotelGroupCode}
@@ -236,8 +309,7 @@
     </select>
 
     <select id="findCustomerContacts"
-            parameterType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerDetailCondition"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerContactRow">
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerContactRow">
         SELECT
         cc.contact_code        AS contactCode,
         cc.contact_type        AS contactType,
@@ -257,8 +329,7 @@
     </select>
 
     <select id="findCustomerStatus"
-            parameterType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerDetailCondition"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerStatusRow">
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusRow">
         SELECT
         c.customer_code    AS customerCode,
         c.hotel_group_code AS hotelGroupCode,
@@ -271,22 +342,73 @@
         AND c.customer_code = #{customerCode}
     </select>
 
-    <!-- 테이블/컬럼명은 스키마에 맞춰 조정 -->
+    <!-- =========================
+         Status Histories
+       ========================= -->
+
     <select id="findCustomerStatusHistories"
-            parameterType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerDetailCondition"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.CustomerStatusHistoryRow">
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusHistoryRow">
         SELECT
         h.customer_status_history_code  AS customerStatusHistoryCode,
         h.before_status                 AS beforeStatus,
         h.after_status                  AS afterStatus,
         h.change_source                 AS changeSource,
-        h.changed_by_member_code        AS changedByMemberCode,
-        h.reason                        AS reason,
+        h.changed_by_user_id            AS changedByUserId,
+        h.change_reason                 AS changeReason,
         h.changed_at                    AS changedAt
         FROM customer_status_history h
+        JOIN customer c
+        ON c.customer_code = h.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
         WHERE h.customer_code = #{customerCode}
-        ORDER BY h.changed_at DESC, h.customer_status_history_code DESC
-        LIMIT 200
+
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy == 'changed_at'">h.changed_at</when>
+            <when test="sort != null and sort.sortBy == 'customer_status_history_code'">h.customer_status_history_code</when>
+            <otherwise>h.changed_at</otherwise>
+        </choose>
+        <choose>
+            <when test="sort != null and sort.direction == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        , h.customer_status_history_code DESC
+
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
+    </select>
+
+    <select id="countCustomerStatusHistories" resultType="long">
+        SELECT COUNT(1)
+        FROM customer_status_history h
+        JOIN customer c
+        ON c.customer_code = h.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+        WHERE h.customer_code = #{customerCode}
+    </select>
+
+    <!-- =========================
+         Marketing Consents
+       ========================= -->
+
+    <select id="findCustomerMarketingConsents"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerContactRow">
+        SELECT
+        cc.contact_code        AS contactCode,
+        cc.contact_type        AS contactType,
+        cc.contact_value_enc   AS contactValueEnc,
+        cc.is_primary          AS isPrimary,
+        cc.marketing_opt_in    AS marketingOptIn,
+        cc.consent_at          AS consentAt,
+        cc.created_at          AS createdAt,
+        cc.updated_at          AS updatedAt
+        FROM customer_contact cc
+        WHERE cc.customer_code = #{customerCode}
+        ORDER BY
+        cc.is_primary DESC,
+        CASE WHEN cc.contact_type = 'PHONE' THEN 1 ELSE 0 END DESC,
+        cc.updated_at DESC,
+        cc.contact_code DESC
     </select>
 
 </mapper>

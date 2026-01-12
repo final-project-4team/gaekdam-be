@@ -1,76 +1,65 @@
 package com.gaekdam.gaekdambe.customer_service.customer.query.dto.response;
 
-import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
-import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContactType;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType;
-import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.LoyaltyStatus;
-import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerContactItem;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record CustomerDetailResponse(
-        Basic basic,
-        Classification classification,
-        Membership membership,
-        Loyalty loyalty,
-        List<Contact> contacts,
-        List<StatusHistory> statusHistories
-) {
-    public record Basic(
-            Long customerCode,
-            Long hotelGroupCode,
-            String customerName,      // 복호화 붙이면 채움
-            CustomerStatus status,
-            LocalDateTime cautionAt,
-            LocalDateTime inactiveAt,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt,
-            Long memberCode
-    ) {}
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class CustomerDetailResponse {
 
-    public record Classification(
-            NationalityType nationalityType,
-            ContractType contractType
-    ) {}
+    private Long customerCode;
+    private String customerName;
 
-    public record Membership(
-            Boolean hasMembership,
-            MembershipStatus membershipStatus,
-            Long membershipGradeCode,
-            String membershipGradeName,
-            LocalDateTime joinedAt,
-            LocalDateTime expiredAt
-    ) {}
+    private CustomerStatus status;
+    private NationalityType nationalityType;
+    private ContractType contractType;
 
-    public record Loyalty(
-            Boolean hasLoyalty,
-            LoyaltyStatus loyaltyStatus,
-            Long loyaltyGradeCode,
-            LocalDateTime joinedAt,
-            LocalDateTime calculatedAt
-    ) {}
+    private String inflowChannel;
 
-    public record Contact(
-            Long contactCode,
-            ContactType contactType,
-            String contactValue,      // 복호화 붙이면 채움
-            Boolean isPrimary,
-            Boolean marketingOptIn,
-            LocalDateTime consentAt,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
-    ) {}
+    private String primaryPhone;
+    private String primaryEmail;
 
-    public record StatusHistory(
-            Long customerStatusHistoryCode,
-            CustomerStatus beforeStatus,
-            CustomerStatus afterStatus,
-            ChangeSource changeSource,
-            Long changedByMemberCode,
-            String reason,
-            LocalDateTime changedAt
-    ) {}
+    private MemberInfo member;           // 없으면 null
+    private MembershipInfo membership;   // 없으면 gradeName="미가입" 세팅해서 내려주기
+    private LoyaltyInfo loyalty;         // 없으면 null
+
+    private List<CustomerContactItem> contacts;
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MemberInfo {
+        private Long memberCode;
+        private LocalDateTime createdAt;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MembershipInfo {
+        private String gradeName;        // 없으면 "미가입"
+        private String membershipStatus; // 없으면 null
+        private LocalDateTime joinedAt;
+        private LocalDateTime calculatedAt;
+        private LocalDateTime expiredAt;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LoyaltyInfo {
+        private String gradeName;
+        private String loyaltyStatus;
+        private LocalDateTime joinedAt;
+        private LocalDateTime calculatedAt;
+    }
 }

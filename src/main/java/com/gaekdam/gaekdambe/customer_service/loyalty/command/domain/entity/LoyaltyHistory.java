@@ -36,8 +36,8 @@ public class LoyaltyHistory {
     @Column(name = "change_source", nullable = false, length = 20)
     private ChangeSource changeSource;
 
-    @Column(name = "changed_by_user_id")
-    private Long changedByUserId;
+    @Column(name = "employee_code")
+    private Long changedByEmployeeCode;
 
     @Column(name = "change_reason", length = 255)
     private String changeReason;
@@ -63,7 +63,7 @@ public class LoyaltyHistory {
             Long customerCode,
             Long loyaltyCode,
             ChangeSource changeSource,
-            Long changedByUserId,
+            Long changedByEmployeeCode,
             String changeReason,
             Long beforeLoyaltyGradeCode,
             Long afterLoyaltyGradeCode,
@@ -74,7 +74,7 @@ public class LoyaltyHistory {
         this.customerCode = customerCode;
         this.loyaltyCode = loyaltyCode;
         this.changeSource = changeSource;
-        this.changedByUserId = changedByUserId;
+        this.changedByEmployeeCode = changedByEmployeeCode;
         this.changeReason = changeReason;
         this.beforeLoyaltyGradeCode = beforeLoyaltyGradeCode;
         this.afterLoyaltyGradeCode = afterLoyaltyGradeCode;
@@ -87,7 +87,7 @@ public class LoyaltyHistory {
             Long customerCode,
             Long loyaltyCode,
             ChangeSource changeSource,
-            Long changedByUserId,
+            Long changedByEmployeeCode,
             String changeReason,
             Long beforeLoyaltyGradeCode,
             Long afterLoyaltyGradeCode,
@@ -99,7 +99,7 @@ public class LoyaltyHistory {
                 customerCode,
                 loyaltyCode,
                 changeSource,
-                changedByUserId,
+                changedByEmployeeCode,
                 changeReason,
                 beforeLoyaltyGradeCode,
                 afterLoyaltyGradeCode,

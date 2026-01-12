@@ -3,6 +3,10 @@ package com.gaekdam.gaekdambe.dummy.generate.customer_service.customer;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.*;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.*;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.*;
+import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
+import com.gaekdam.gaekdambe.global.crypto.DataKey;
+import com.gaekdam.gaekdambe.global.crypto.KmsService;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import jakarta.persistence.EntityManager;
@@ -11,8 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,59 +30,69 @@ public class DummyCustomerDataTest {
     @Autowired(required = false)
     private CustomerStatusHistoryRepository customerStatusHistoryRepository;
 
-    @Autowired private HotelGroupRepository hotelGroupRepository; // 변경: 호텔 그룹 코드 소스
+    @Autowired private HotelGroupRepository hotelGroupRepository;
+
+    @Autowired private KmsService kmsService;
+    @Autowired private SearchHashService searchHashService;
 
     @PersistenceContext
     private EntityManager em;
 
+
+    // 기본 5000명 생성
     @Transactional
     public void generate() {
-
-        if (customerRepository.count() > 0) {
-            return;
-        }
-
-        // 변경: hotel_group에 있는 실제 코드만 사용
         List<Long> hotelGroupCodes = hotelGroupRepository.findAll().stream()
                 .map(HotelGroup::getHotelGroupCode)
                 .toList();
+        if (hotelGroupCodes.isEmpty()) return;
 
-        if (hotelGroupCodes.isEmpty()) {
-            return; // 호텔 더미가 아직 안 들어간 상태면 고객 더미 생성 안 함
-        }
+        long existing = customerRepository.count();
 
-        int count = Integer.getInteger("dummy.customer.count", 1000);
+        // 기본 5000, -Ddummy.customer.count=5000 같은 JVM 옵션으로 변경 가능
+        int target = Integer.getInteger("dummy.customer.count", 5000);
+
+        if (existing >= target) return;
+
         LocalDateTime now = LocalDateTime.now();
 
-        for (int i = 1; i <= count; i++) {
-            Long hotelGroupCode = hotelGroupCodes.get((i - 1) % hotelGroupCodes.size());
+        // seq는 phone/email 유니크용이라 existing+1부터 이어가야 안전
+        for (long seq = existing + 1; seq <= target; seq++) {
+            Long hotelGroupCode = hotelGroupCodes.get((int)((seq - 1) % hotelGroupCodes.size()));
             LocalDateTime createdAt = now.minusDays(randomInt(0, 365));
 
-            createFullCustomerData(i, hotelGroupCode, createdAt);
+            createFullCustomerData((int) seq, hotelGroupCode, createdAt);
 
-            if (i % 100 == 0) {
+            if (seq % 200 == 0) {
                 em.flush();
                 em.clear();
             }
         }
     }
 
-    private Customer createFullCustomerData(int seq, Long hotelGroupCode, LocalDateTime createdAt) {
+    private void createFullCustomerData(int seq, Long hotelGroupCode, LocalDateTime createdAt) {
+        // 1) KMS DEK 생성 (Envelope Encryption)
+        DataKey dek = kmsService.generateDataKey();
+        byte[] plaintextDek = dek.plaintext();
+        byte[] dekEnc = dek.encrypted();
 
+
+        String kmsKeyId = "kms-key-dev-001";
+
+        // 2) 고객명 AES 암호화
         String customerName = "고객" + seq;
-        byte[] customerNameEnc = fakeEnc(customerName);
-        String customerNameHash = sha256Hex(customerName);
+        byte[] customerNameEnc = AesCryptoUtils.encrypt(customerName, plaintextDek);
+
+        // 3) 검색용 해시(HMAC-SHA256) → DB 컬럼이 String이면 HEX로 저장
+        String customerNameHashHex = toHex(searchHashService.nameHash(customerName));
 
         NationalityType nationalityType = pickNationalityType();
         ContractType contractType = pickContractType();
 
-        String kmsKeyId = "kms-key-dev-001";
-        byte[] dekEnc = randomBytes(64);
-
         Customer customer = Customer.createCustomer(
                 hotelGroupCode,
                 customerNameEnc,
-                customerNameHash,
+                customerNameHashHex,
                 nationalityType,
                 contractType,
                 kmsKeyId,
@@ -90,6 +102,7 @@ public class DummyCustomerDataTest {
 
         customerRepository.save(customer);
 
+        // 4) 상태 변경 + 이력
         CustomerStatus before = customer.getCustomerStatus();
         CustomerStatus after = pickCustomerStatus();
         if (after != before) {
@@ -111,8 +124,10 @@ public class DummyCustomerDataTest {
             }
         }
 
-        createContacts(customer.getCustomerCode(), seq, createdAt);
+        // 5) 연락처 AES + 해시
+        createContacts(customer.getCustomerCode(), seq, plaintextDek, createdAt);
 
+        // 6) member / memo (기존 로직 유지)
         if (chance(0.60)) {
             memberRepository.save(Member.registerMember(customer.getCustomerCode(), createdAt));
         }
@@ -130,13 +145,14 @@ public class DummyCustomerDataTest {
                 );
             }
         }
-
-        return customer;
     }
 
-    private void createContacts(Long customerCode, int seq, LocalDateTime createdAt) {
-
+    private void createContacts(Long customerCode, int seq, byte[] plaintextDek, LocalDateTime createdAt) {
+        // PHONE
         String phone = "010" + String.format("%08d", seq);
+        byte[] phoneEnc = AesCryptoUtils.encrypt(phone, plaintextDek);
+        String phoneHashHex = toHex(searchHashService.phoneHash(phone));
+
         Boolean phoneOptIn = chance(0.50);
         LocalDateTime phoneConsentAt = phoneOptIn ? createdAt : null;
 
@@ -144,8 +160,8 @@ public class DummyCustomerDataTest {
                 CustomerContact.createCustomerContact(
                         customerCode,
                         ContactType.PHONE,
-                        fakeEnc(phone),
-                        sha256Hex(phone),
+                        phoneEnc,
+                        phoneHashHex,
                         Boolean.TRUE,
                         phoneOptIn,
                         phoneConsentAt,
@@ -153,7 +169,11 @@ public class DummyCustomerDataTest {
                 )
         );
 
+        // EMAIL
         String email = "dummy" + seq + "@gaekdam.test";
+        byte[] emailEnc = AesCryptoUtils.encrypt(email, plaintextDek);
+        String emailHashHex = toHex(searchHashService.emailHash(email));
+
         Boolean emailOptIn = chance(0.50);
         LocalDateTime emailConsentAt = emailOptIn ? createdAt : null;
 
@@ -161,14 +181,24 @@ public class DummyCustomerDataTest {
                 CustomerContact.createCustomerContact(
                         customerCode,
                         ContactType.EMAIL,
-                        fakeEnc(email),
-                        sha256Hex(email),
+                        emailEnc,
+                        emailHashHex,
                         Boolean.FALSE,
                         emailOptIn,
                         emailConsentAt,
                         createdAt
                 )
         );
+    }
+
+    // ===== helpers =====
+
+    private boolean chance(double probability) {
+        return ThreadLocalRandom.current().nextDouble() < probability;
+    }
+
+    private int randomInt(int minInclusive, int maxExclusive) {
+        return ThreadLocalRandom.current().nextInt(minInclusive, maxExclusive);
     }
 
     private NationalityType pickNationalityType() {
@@ -186,33 +216,10 @@ public class DummyCustomerDataTest {
         return CustomerStatus.ACTIVE;
     }
 
-    private boolean chance(double probability) {
-        return ThreadLocalRandom.current().nextDouble() < probability;
-    }
-
-    private int randomInt(int minInclusive, int maxExclusive) {
-        return ThreadLocalRandom.current().nextInt(minInclusive, maxExclusive);
-    }
-
-    private byte[] fakeEnc(String plain) {
-        return plain.getBytes(StandardCharsets.UTF_8);
-    }
-
-    private byte[] randomBytes(int size) {
-        byte[] b = new byte[size];
-        ThreadLocalRandom.current().nextBytes(b);
-        return b;
-    }
-
-    private String sha256Hex(String value) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (byte d : digest) sb.append(String.format("%02x", d));
-            return sb.toString();
-        } catch (Exception e) {
-            throw new IllegalStateException("sha256 failed", e);
-        }
+    private String toHex(byte[] bytes) {
+        if (bytes == null) return null;
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) sb.append(String.format("%02x", b));
+        return sb.toString();
     }
 }
