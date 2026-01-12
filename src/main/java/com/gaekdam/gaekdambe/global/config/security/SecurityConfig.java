@@ -42,8 +42,9 @@ public class SecurityConfig {
         // 권한 설정
         .authorizeHttpRequests(auth -> auth
                 // 우선 개발초기랑 다 열어둠
-//                        .requestMatchers("/**").permitAll()
+                       .requestMatchers("/**").permitAll()
                 // 로그인/회원가입 공개
+              //  .requestMatchers("api/v1/employee/add").permitAll()
                 .requestMatchers(
                     "/api/v1/auth/**"
                 ).permitAll()

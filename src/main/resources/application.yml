@@ -8,10 +8,11 @@ spring:
     username: ${DB_USERNAME:gaekdam}
     password: ${DB_PASSWORD:gaekdam}
 
-#  data:
-#    redis:
-#      host: ${REDIS_HOST:localhost}
-#      port: ${REDIS_PORT:6379}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: gaekdam0110
 
   jpa:
     hibernate:
