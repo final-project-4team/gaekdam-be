@@ -1,11 +1,11 @@
 package com.gaekdam.gaekdambe.dummy;
 
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.employee.EmployeeEncryptedRegistrationTest;
+import com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionMapping.DummyPermissionMappingDataTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.incident.DummyIncidentDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry.DummyInquiryDataTest;
@@ -43,6 +43,7 @@ class DummyDataRunnerTest {
     // iam서비스
     @Autowired DummyPermissionTypeDataTest permissionTypeDataTest;
     @Autowired DummyPermissionDataTest permissionDataTest;
+    @Autowired DummyPermissionMappingDataTest permissionMappingDataTest;
     @Autowired
     EmployeeEncryptedRegistrationTest employeeDataTest;
 
@@ -82,6 +83,7 @@ class DummyDataRunnerTest {
         // iam서비스
         permissionTypeDataTest.generate();
         permissionDataTest.generate();
+        permissionMappingDataTest.generate();
         employeeDataTest.generate();
 
 

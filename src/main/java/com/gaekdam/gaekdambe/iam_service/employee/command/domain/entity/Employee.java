@@ -173,13 +173,8 @@ public class Employee {
 
   // 개인정보 업데이트
   public void updatePersonalInfo(
-      byte[] nameEnc, byte[] nameHash,
       byte[] phoneEnc, byte[] phoneHash,
       byte[] emailEnc, byte[] emailHash) {
-    if (nameEnc != null)
-      this.employeeNameEnc = nameEnc;
-    if (nameHash != null)
-      this.employeeNameHash = nameHash;
     if (phoneEnc != null)
       this.phoneNumberEnc = phoneEnc;
     if (phoneHash != null)
@@ -195,17 +190,11 @@ public class Employee {
   public void updateOrganization(
       Department department,
       HotelPosition hotelPosition,
-      Property property,
-      HotelGroup hotelGroup,
       Permission permission) {
     if (department != null)
       this.department = department;
     if (hotelPosition != null)
       this.hotelPosition = hotelPosition;
-    if (property != null)
-      this.property = property;
-    if (hotelGroup != null)
-      this.hotelGroup = hotelGroup;
     if (permission != null)
       this.permission = permission;
     this.updatedAt = LocalDateTime.now();
@@ -227,9 +216,10 @@ public class Employee {
   // 유저 상태 활성화
   public void employeeUnlocked() {
     this.employeeStatus = EmployeeStatus.ACTIVE;
+    this.failedLoginCount=0;
   }
 
-  // 유저 휴면 상태
+  // 유저 휴면으로 변경
   public void employeeDormancy() {
     this.employeeStatus = EmployeeStatus.DORMANCY;
   }
