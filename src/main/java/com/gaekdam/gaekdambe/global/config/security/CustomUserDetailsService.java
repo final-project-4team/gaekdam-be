@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
   private final PermissionMappingRepository permissionMappingRepository;
 
   @Override
+  @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String employeeId) throws UsernameNotFoundException {
 
     Employee emp = employeeRepository.findByLoginId(employeeId)
@@ -41,7 +43,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     // 권한에 해당하는 세부 권한 타입 리스트 추가
     List<PermissionMapping> mappings = permissionMappingRepository.findAllByPermission(permission);
     for (PermissionMapping mapping : mappings) {
-      String authority = mapping.getPermissionType().getPermissionTypeKey();
+      String authority = mapping.getPermissionType().getPermissionTypeKey().name();
       authorities.add(new SimpleGrantedAuthority(authority));
     }
 

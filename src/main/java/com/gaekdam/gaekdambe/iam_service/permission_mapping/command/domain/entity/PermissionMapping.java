@@ -17,18 +17,27 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name="permission_mapping")
+@Table(name = "permission_mapping")
 public class PermissionMapping {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name="permission_mapping_code")
+  @Column(name = "permission_mapping_code")
   private Long permissionMappingCode;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name="permission_code",nullable = false)
+  @JoinColumn(name = "permission_code", nullable = false)
   private Permission permission;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name="permission_type_code",nullable = false)
+  @JoinColumn(name = "permission_type_code", nullable = false)
   private PermissionType permissionType;
+
+  private PermissionMapping(Permission permission, PermissionType permissionType) {
+    this.permission = permission;
+    this.permissionType = permissionType;
+  }
+
+  public static PermissionMapping createPermissionMapping(Permission permission, PermissionType permissionType) {
+    return new PermissionMapping(permission, permissionType);
+  }
 }

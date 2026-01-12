@@ -1,8 +1,11 @@
 package com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.entity;
 
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,8 +26,9 @@ public class PermissionType {
   @Column(name="permission_type_code")
   private Long permissionTypeCode;
 
+  @Enumerated(EnumType.STRING)
   @Column(name="permission_type_key",nullable = false)
-  private String permissionTypeKey;//여기서 식별
+  private PermissionTypeKey permissionTypeKey;//여기서 식별
 
   @Column(name="permission_type_name",nullable = false)
   private String permissionTypeName;//화면 표시용
@@ -40,8 +44,8 @@ public class PermissionType {
   @JoinColumn(name="hotel_group_code",nullable = false)
   private HotelGroup hotelGroup;
 
-  private PermissionType(String permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction, HotelGroup hotelGroup) {
-    if (permissionTypeKey == null || permissionTypeKey.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
+  private PermissionType(PermissionTypeKey permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction, HotelGroup hotelGroup) {
+    if (permissionTypeKey == null) throw new IllegalArgumentException("permissionTypeKey is required");
     if (permissionTypeName == null || permissionTypeName.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
     if (permissionTypeResource == null || permissionTypeResource.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
     if (permissionTypeAction == null || permissionTypeAction.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
@@ -54,7 +58,7 @@ public class PermissionType {
     this.hotelGroup=hotelGroup;
   }
 
-  public static PermissionType createPermissionType(String permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction, HotelGroup hotelGroup) {
+  public static PermissionType createPermissionType(PermissionTypeKey permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction, HotelGroup hotelGroup) {
     return new PermissionType(permissionTypeKey,permissionTypeName,permissionTypeResource,permissionTypeAction,hotelGroup);
   }
 }

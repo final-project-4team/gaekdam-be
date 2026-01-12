@@ -7,7 +7,9 @@ import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeDetailResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse;
+import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryListEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.mapper.EmployeeQueryMapper;
+import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +26,6 @@ public class EmployeeQueryService {
     private final DecryptionService decryptionService;
     private final SearchHashService searchHashService;
 
-    public List<EmployeeListResponse> getEmployeeList() {
-        List<EmployeeQueryEncResponse> employees = employeeQueryMapper.findAllEmployees();
-        return employees.stream().map(this::toListDto).collect(Collectors.toList());
-    }
-
     public EmployeeDetailResponse getEmployeeDetail(Long employeeCode) {
         EmployeeQueryEncResponse response = employeeQueryMapper.findByEmployeeCode(employeeCode);
         if (response == null)
@@ -37,14 +34,18 @@ public class EmployeeQueryService {
     }
 
     public PageResponse<EmployeeListResponse> searchEmployees(String name, String phone, String email,
+            String departmentName, String hotelPositionName,
+            EmployeeStatus employeeStatus,
             Pageable pageable) {
         byte[] nameHash = (name != null) ? searchHashService.nameHash(name) : null;
         byte[] phoneHash = (phone != null) ? searchHashService.phoneHash(phone) : null;
         byte[] emailHash = (email != null) ? searchHashService.emailHash(email) : null;
 
-        long totalElements = employeeQueryMapper.countSearchEmployees(nameHash, phoneHash, emailHash);
-        List<EmployeeQueryEncResponse> employees = employeeQueryMapper.searchEmployees(
-                nameHash, phoneHash, emailHash, pageable.getOffset(), pageable.getPageSize());
+        long totalElements = employeeQueryMapper.countSearchEmployees(nameHash, phoneHash, emailHash, departmentName,
+                hotelPositionName, employeeStatus);
+        List<EmployeeQueryListEncResponse> employees = employeeQueryMapper.searchEmployees(
+                nameHash, phoneHash, emailHash, departmentName, hotelPositionName, employeeStatus, pageable.getOffset(),
+                pageable.getPageSize());
 
         List<EmployeeListResponse> content = employees.stream()
                 .map(this::toListDto)
@@ -53,13 +54,8 @@ public class EmployeeQueryService {
         return new PageResponse<>(content, pageable.getPageNumber(), pageable.getPageSize(), totalElements);
     }
 
-    public List<EmployeeListResponse> findByPassword(String password) {
-        List<EmployeeQueryEncResponse> employees = employeeQueryMapper.findByPassword(password);
-        return employees.stream().map(this::toListDto).collect(Collectors.toList());
-    }
-
     // 목록용 DTO 변환 (마스킹 적용)
-    private EmployeeListResponse toListDto(EmployeeQueryEncResponse response) {
+    private EmployeeListResponse toListDto(EmployeeQueryListEncResponse response) {
         Long code = response.employeeCode();
         byte[] dekEnc = response.dekEnc();
 
@@ -69,13 +65,12 @@ public class EmployeeQueryService {
 
         return new EmployeeListResponse(
                 code,
-                response.employeeNumber(),
-                response.loginId(),
+                response.departmentName(),
+                response.hotelPositionName(),
                 MaskingUtils.maskName(name),
                 MaskingUtils.maskPhone(phone),
                 (email != null) ? MaskingUtils.maskEmail(email) : null,
-                response.departmentName(),
-                response.hotelPositionName(),
+                response.loginId(),
                 response.employeeStatus());
     }
 
