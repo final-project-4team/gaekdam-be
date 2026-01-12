@@ -40,8 +40,8 @@ public class RoomType {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "hotel_group_code", nullable = false)
-    private Long hotelGroupCode;
+    @Column(name = "property_code", nullable = false)
+    private Long propertyCode;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -57,7 +57,7 @@ public class RoomType {
             String viewType,
             BigDecimal price,
             String description,
-            Long hotelGroupCode
+            Long propertyCode
     ) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -68,7 +68,7 @@ public class RoomType {
                 .viewType(viewType)
                 .basePrice(price)
                 .description(description)
-                .hotelGroupCode(hotelGroupCode)
+                .propertyCode(propertyCode)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

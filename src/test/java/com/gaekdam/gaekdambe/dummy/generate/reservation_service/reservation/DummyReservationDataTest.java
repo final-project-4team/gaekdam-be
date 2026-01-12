@@ -42,7 +42,7 @@ public class DummyReservationDataTest {
                 reservationStatus = "RESERVED";
             }
 
-            long propertyCode = (i % 10) + 1;
+            long propertyCode = (i % 20) + 1;
             long roomCode = random.nextInt(500) + 1;
             long customerCode = random.nextInt(5_000) + 1;
 

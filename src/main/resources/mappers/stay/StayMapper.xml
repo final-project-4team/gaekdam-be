@@ -5,124 +5,103 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.reservation_service.stay.query.mapper.StayMapper">
 
-    <!-- =========================
-         1. 상태 검색
-         ========================= -->
-    <sql id="StayStatusSearch">
-        AND stay_status = #{search.stayStatus}
-    </sql>
-
-    <!-- =========================
-         2. 예약 코드 검색
-         ========================= -->
-    <sql id="StayReservationSearch">
-        AND reservation_code = #{search.reservationCode}
-    </sql>
-
-    <!-- =========================
-         3. 객실 검색
-         ========================= -->
-    <sql id="StayRoomSearch">
-        AND room_code = #{search.roomCode}
-    </sql>
-
-    <!-- =========================
-         4. 고객 검색
-         ========================= -->
-    <sql id="StayCustomerSearch">
-        AND customer_code = #{search.customerCode}
-    </sql>
-
-    <!-- =========================
-         5. 체크인 날짜 검색
-         ========================= -->
-    <sql id="StayDateRangeSearch">
-        <if test="search.fromDate != null">
-            AND actual_checkin_at <![CDATA[ >= ]]> #{search.fromDate}
-        </if>
-        <if test="search.toDate != null">
-            AND actual_checkin_at <![CDATA[ <= ]]> #{search.toDate}
-        </if>
-    </sql>
-
-    <!-- =========================
-         투숙 목록
-         ========================= -->
     <select id="findStays"
             resultType="com.gaekdam.gaekdambe.reservation_service.stay.query.dto.response.StayResponse">
 
         SELECT
-        stay_code AS stayCode,
-        stay_status AS stayStatus,
-        actual_checkin_at AS actualCheckinAt,
-        actual_checkout_at AS actualCheckoutAt,
-        guest_count AS guestCount,
-        reservation_code AS reservationCode,
-        room_code AS roomCode,
-        customer_code AS customerCode,
-        created_at AS createdAt
-        FROM stay
+        s.stay_code AS stayCode,
+        s.stay_status AS stayStatus,
+        s.actual_checkin_at AS actualCheckinAt,
+        s.actual_checkout_at AS actualCheckoutAt,
+        s.guest_count AS guestCount,
+        s.reservation_code AS reservationCode,
+        s.room_code AS roomCode,
+        s.customer_code AS customerCode,
+        s.created_at AS createdAt
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
 
         <where>
-            <if test="search != null">
+            <!-- 호텔그룹 기준 필수 -->
+            p.hotel_group_code = #{search.hotelGroupCode}
 
-                <if test="search.stayStatus != null">
-                    <include refid="StayStatusSearch"/>
-                </if>
+            <!-- 선택: 지점 -->
+            <if test="search.propertyCode != null">
+                AND r.property_code = #{search.propertyCode}
+            </if>
 
-                <if test="search.reservationCode != null">
-                    <include refid="StayReservationSearch"/>
-                </if>
+            <if test="search.stayStatus != null">
+                AND s.stay_status = #{search.stayStatus}
+            </if>
 
-                <if test="search.roomCode != null">
-                    <include refid="StayRoomSearch"/>
-                </if>
+            <if test="search.reservationCode != null">
+                AND s.reservation_code = #{search.reservationCode}
+            </if>
 
-                <if test="search.customerCode != null">
-                    <include refid="StayCustomerSearch"/>
-                </if>
+            <if test="search.roomCode != null">
+                AND s.room_code = #{search.roomCode}
+            </if>
 
-                <include refid="StayDateRangeSearch"/>
+            <if test="search.customerCode != null">
+                AND s.customer_code = #{search.customerCode}
+            </if>
 
+            <if test="search.fromDate != null">
+                AND s.actual_checkin_at <![CDATA[ >= ]]> #{search.fromDate}
+            </if>
+
+            <if test="search.toDate != null">
+                AND s.actual_checkin_at <![CDATA[ <= ]]> #{search.toDate}
             </if>
         </where>
 
-        <if test="sort != null">
+        <if test="sort != null and sort.sortBy != null">
             ORDER BY ${sort.sortBy} ${sort.direction}
         </if>
 
         LIMIT #{page.size} OFFSET #{page.offset}
     </select>
 
-    <!-- =========================
-         투숙 총 개수
-         ========================= -->
+
     <select id="countStays" resultType="long">
         SELECT COUNT(*)
-        FROM stay
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
+
         <where>
-            <if test="search != null">
+            p.hotel_group_code = #{search.hotelGroupCode}
 
-                <if test="search.stayStatus != null">
-                    <include refid="StayStatusSearch"/>
-                </if>
+            <if test="search.propertyCode != null">
+                AND r.property_code = #{search.propertyCode}
+            </if>
 
-                <if test="search.reservationCode != null">
-                    <include refid="StayReservationSearch"/>
-                </if>
+            <if test="search.stayStatus != null">
+                AND s.stay_status = #{search.stayStatus}
+            </if>
 
-                <if test="search.roomCode != null">
-                    <include refid="StayRoomSearch"/>
-                </if>
+            <if test="search.reservationCode != null">
+                AND s.reservation_code = #{search.reservationCode}
+            </if>
 
-                <if test="search.customerCode != null">
-                    <include refid="StayCustomerSearch"/>
-                </if>
+            <if test="search.roomCode != null">
+                AND s.room_code = #{search.roomCode}
+            </if>
 
-                <include refid="StayDateRangeSearch"/>
+            <if test="search.customerCode != null">
+                AND s.customer_code = #{search.customerCode}
+            </if>
 
+            <if test="search.fromDate != null">
+                AND s.actual_checkin_at <![CDATA[ >= ]]> #{search.fromDate}
+            </if>
+
+            <if test="search.toDate != null">
+                AND s.actual_checkin_at <![CDATA[ <= ]]> #{search.toDate}
             </if>
         </where>
     </select>
+
 
 </mapper>

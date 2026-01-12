@@ -12,6 +12,7 @@ import java.time.LocalDate;
 public class FacilityUsageSearchRequest {
 
     private Long hotelGroupCode;
+    private Long propertyCode;
 
     private Long stayCode;
     private Long facilityCode;

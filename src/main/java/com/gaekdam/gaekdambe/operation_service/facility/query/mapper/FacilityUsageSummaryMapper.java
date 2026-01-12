@@ -12,7 +12,8 @@ public interface FacilityUsageSummaryMapper {
 
     List<FacilityUsageSummaryResponse> findTodayUsageSummary(
             @Param("date") LocalDate date,
-            @Param("hotelGroupCode") Long hotelGroupCode
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("propertyCode") Long propertyCode
     );
 
 }

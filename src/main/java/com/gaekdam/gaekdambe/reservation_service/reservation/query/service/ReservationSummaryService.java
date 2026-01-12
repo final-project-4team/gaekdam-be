@@ -13,14 +13,17 @@ public class ReservationSummaryService {
 
     private final ReservationSummaryMapper summaryMapper;
 
-    public TodayReservationSummaryResponse getTodaySummary(Long hotelGroupCode) {
+    public TodayReservationSummaryResponse getTodaySummary(
+            Long hotelGroupCode,
+            Long propertyCode
+    ) {
         LocalDate today = LocalDate.now();
 
         return new TodayReservationSummaryResponse(
-                summaryMapper.countAllToday(hotelGroupCode, today),
-                summaryMapper.countTodayCheckIn(hotelGroupCode, today),
-                summaryMapper.countTodayCheckOut(hotelGroupCode, today),
-                summaryMapper.countStayingRooms(hotelGroupCode)
+                summaryMapper.countAllToday(hotelGroupCode, propertyCode, today),
+                summaryMapper.countTodayCheckIn(hotelGroupCode, propertyCode, today),
+                summaryMapper.countTodayCheckOut(hotelGroupCode, propertyCode, today),
+                summaryMapper.countStayingRooms(hotelGroupCode, propertyCode)
         );
     }
 }
