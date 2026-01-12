@@ -65,8 +65,8 @@ public class Reservation {
     private LocalDateTime updatedAt;
 
     // 연관 코드 (FK는 느슨하게 숫자로)
-    @Column(name = "tenant_code", nullable = false)
-    private Long tenantCode;
+    @Column(name = "property_code", nullable = false)
+    private Long propertyCode;
 
     @Column(name = "room_code", nullable = false)
     private Long roomCode;
@@ -87,7 +87,7 @@ public class Reservation {
             String reservationChannel,
             BigDecimal roomPrice,
             BigDecimal packagePrice,
-            Long tenantCode,
+            Long propertyCode,
             Long roomCode,
             Long customerCode,
             Long packageCode,
@@ -110,7 +110,7 @@ public class Reservation {
                 .totalPrice(totalPrice)
                 .reservedAt(now)
                 .createdAt(now)
-                .tenantCode(tenantCode)
+                .propertyCode(propertyCode)
                 .roomCode(roomCode)
                 .customerCode(customerCode)
                 .packageCode(packageCode)

@@ -38,7 +38,7 @@ public class DummyFacilityDataTest {
                 {"라운지 바", "식사", "18:00~02:00"}
         };
 
-        for (long hotelCode = 1; hotelCode <= 10; hotelCode++) {
+        for (long propertyCode = 1; propertyCode <= 20; propertyCode++) {
 
             // 공통 시설 4개
             for (String[] f : baseFacilities) {
@@ -48,13 +48,13 @@ public class DummyFacilityDataTest {
                                 f[1],
                                 f[2],
                                 "ACTIVE",
-                                hotelCode
+                                propertyCode
                         )
                 );
             }
 
             // 호텔별 프리미엄 시설 1개 선택
-            int index = (int) ((hotelCode - 1) % premiumFacilities.length);
+            int index = (int) ((propertyCode - 1) % premiumFacilities.length);
             String[] premium = premiumFacilities[index];
 
             facilityRepository.save(
@@ -63,7 +63,7 @@ public class DummyFacilityDataTest {
                             premium[1],
                             premium[2],
                             "ACTIVE",
-                            hotelCode
+                            propertyCode
                     )
             );
         }

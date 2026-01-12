@@ -11,6 +11,7 @@ import com.gaekdam.gaekdambe.reservation_service.stay.query.dto.response.StayRes
 import com.gaekdam.gaekdambe.reservation_service.stay.query.service.StayQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,16 +22,20 @@ public class StayQueryController {
 
     private final StayQueryService stayQueryService;
 
-    @GetMapping
+    @GetMapping("/{hotelGroupCode}")
     public ApiResponse<PageResponse<StayResponse>> getStays(
+            @PathVariable Long hotelGroupCode,
             PageRequest page,
             StaySearchRequest search,
             SortRequest sort
     ) {
 
+
+        search.setHotelGroupCode(hotelGroupCode);
+
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
-            sort.setSortBy("created_at");
+            sort.setSortBy("s.created_at");
         }
 
         PageResponse<StayResponse> result =

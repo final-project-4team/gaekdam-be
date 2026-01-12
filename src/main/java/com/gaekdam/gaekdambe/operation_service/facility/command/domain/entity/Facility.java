@@ -31,8 +31,8 @@ public class Facility {
     @Column(name = "operating_status", nullable = false)
     private String operatingStatus;
 
-    @Column(name = "hotel_group_code", nullable = false)
-    private Long hotelGroupCode;
+    @Column(name = "property_code", nullable = false)
+    private Long propertyCode;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -46,7 +46,7 @@ public class Facility {
             String type,
             String hours,
             String status,
-            Long hotelGroupCode
+            Long propertyCode
     ) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -55,7 +55,7 @@ public class Facility {
                 .facilityType(type)
                 .operatingHours(hours)
                 .operatingStatus(status != null ? status : "ACTIVE")
-                .hotelGroupCode(hotelGroupCode)
+                .propertyCode(propertyCode)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

@@ -31,15 +31,15 @@ public class DummyReservationPackageDataTest {
             return;
         }
 
-        for (long hotelCode = 1; hotelCode <= 10; hotelCode++) {
+        for (long propertyCode = 1; propertyCode <= 20; propertyCode++) {
 
-            long f1 = (hotelCode - 1) * 5 + 1;
+            long f1 = (propertyCode - 1) * 5 + 1;
             long f2 = f1 + 1;
             long f3 = f1 + 2;
             long f4 = f1 + 3;
             long f5 = f1 + 4;
 
-            createPackage(hotelCode,
+            createPackage(propertyCode,
                     "베이직 패키지",
                     "부대시설 1 포함",
                     "30000",
@@ -47,7 +47,7 @@ public class DummyReservationPackageDataTest {
                     new int[]{1}
             );
 
-            createPackage(hotelCode,
+            createPackage(propertyCode,
                     "레저 패키지",
                     "부대시설 2 포함",
                     "45000",
@@ -55,7 +55,7 @@ public class DummyReservationPackageDataTest {
                     new int[]{1}
             );
 
-            createPackage(hotelCode,
+            createPackage(propertyCode,
                     "웰니스 패키지",
                     "부대시설 1 + 3",
                     "60000",
@@ -63,7 +63,7 @@ public class DummyReservationPackageDataTest {
                     new int[]{1, 1}
             );
 
-            createPackage(hotelCode,
+            createPackage(propertyCode,
                     "프리미엄 패키지",
                     "부대시설 2 + 4",
                     "75000",
@@ -71,7 +71,7 @@ public class DummyReservationPackageDataTest {
                     new int[]{1, 1}
             );
 
-            createPackage(hotelCode,
+            createPackage(propertyCode,
                     "올인원 패키지",
                     "부대시설 1 + 2 + 5",
                     "100000",
@@ -82,7 +82,7 @@ public class DummyReservationPackageDataTest {
     }
 
     private void createPackage(
-            Long hotelGroupCode,
+            Long propertyCode,
             String name,
             String content,
             String price,
@@ -96,7 +96,7 @@ public class DummyReservationPackageDataTest {
                                 name,
                                 content,
                                 new BigDecimal(price),
-                                hotelGroupCode
+                                propertyCode
                         )
                 );
 
