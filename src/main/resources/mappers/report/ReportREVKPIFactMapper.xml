@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportREVKPIFactMapper">
+
+    <resultMap id="ReportREVKPIFactResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportREVKPIFact">
+        <result property="kpiDate" column="kpi_date" />
+        <result property="hotelGroupCode" column="hotel_group_code" />
+        <result property="totalRevenue" column="total_revenue" />
+        <result property="stayRevenue" column="stay_revenue" />
+        <result property="facilityRevenue" column="facility_revenue" />
+        <result property="adr" column="adr" />
+        <result property="reservationCount" column="reservation_count" />
+        <result property="cancelRate" column="cancel_rate" />
+        <result property="noShowRate" column="no_show_rate" />
+        <result property="cancelCount" column="cancel_count" />
+        <result property="noShowCount" column="no_show_count" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <select id="findByDateAndGroup" resultMap="ReportREVKPIFactResult">
+        SELECT * FROM ReportREVKPIFact WHERE kpi_date = #{kpiDate} AND hotel_group_code = #{hotelGroupCode}
+    </select>
+
+</mapper>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportKPITargetMapper">
+
+    <resultMap id="ReportKPITargetResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportKPITarget">
+        <id property="targetId" column="target_id" />
+        <result property="hotelGroupCode" column="hotel_group_code" />
+        <result property="kpiCode" column="kpi_code" />
+        <result property="periodType" column="period_type" />
+        <result property="periodValue" column="period_value" />
+        <result property="targetValue" column="target_value" />
+        <result property="warningThreshold" column="warning_threshold" />
+        <result property="dangerThreshold" column="danger_threshold" />
+        <result property="seasonType" column="season_type" />
+        <result property="effectiveFrom" column="effective_from" />
+        <result property="effectiveTo" column="effective_to" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <select id="findById" resultMap="ReportKPITargetResult" parameterType="string">
+        SELECT * FROM ReportKPITarget WHERE target_id = #{targetId}
+    </select>
+
+</mapper>

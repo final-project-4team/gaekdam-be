@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportKPICodeDimMapper">
+
+    <resultMap id="ReportKPICodeDimResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportKPICodeDim">
+        <id property="kpiCode" column="kpi_code" />
+        <result property="kpiName" column="kpi_name" />
+        <result property="domainType" column="domain_type" />
+        <result property="unit" column="unit" />
+        <result property="description" column="description" />
+        <result property="calcRuleJson" column="calc_rule_json" />
+        <result property="isActive" column="is_active" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <select id="findByCode" resultMap="ReportKPICodeDimResult" parameterType="string">
+        SELECT * FROM ReportKPICodeDim WHERE kpi_code = #{kpiCode}
+    </select>
+
+    <select id="findAllActive" resultMap="ReportKPICodeDimResult">
+        SELECT * FROM ReportKPICodeDim WHERE is_active = 1
+    </select>
+
+</mapper>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportTemplateMapper">
+
+    <resultMap id="ReportTemplateResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplate">
+        <id property="templateId" column="template_id" />
+        <result property="employeeCode" column="employee_code" />
+        <result property="templateName" column="template_name" />
+        <result property="templateDesc" column="template_desc" />
+        <result property="isActive" column="is_active" />
+        <result property="version" column="version" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplate" useGeneratedKeys="true" keyProperty="templateId">
+        INSERT INTO ReportTemplate (employee_code, template_name, template_desc, is_active, version, created_at, updated_at)
+        VALUES (#{employeeCode}, #{templateName}, #{templateDesc}, #{isActive}, #{version}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="ReportTemplateResult" parameterType="long">
+        SELECT * FROM ReportTemplate WHERE template_id = #{templateId}
+    </select>
+
+    <select id="findAllActive" resultMap="ReportTemplateResult">
+        SELECT * FROM ReportTemplate WHERE is_active = 1
+    </select>
+
+    <update id="update" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplate">
+        UPDATE ReportTemplate
+        SET template_name = #{templateName}, template_desc = #{templateDesc}, is_active = #{isActive}, version = #{version}, updated_at = #{updatedAt}
+        WHERE template_id = #{templateId}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM ReportTemplate WHERE template_id = #{templateId}
+    </delete>
+
+</mapper>
