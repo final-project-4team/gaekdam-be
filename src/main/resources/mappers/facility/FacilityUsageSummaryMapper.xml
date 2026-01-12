@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityUsageSummaryMapper">
+
+    <!-- =========================
+         오늘 부대시설 이용 현황 (SaaS 단일 호텔)
+         ========================= -->
+    <select id="findTodayUsageSummary"
+            resultType="com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageSummaryResponse">
+
+        SELECT
+            fu.facility_code AS facilityCode,
+            f.facility_name  AS facilityName,
+            COUNT(*)         AS usageCount
+        FROM facility_usage fu
+                 JOIN facility f ON fu.facility_code = f.facility_code
+        WHERE DATE(fu.usage_at) = #{date}
+          AND f.hotel_group_code = #{hotelGroupCode}
+        GROUP BY fu.facility_code, f.facility_name
+        ORDER BY usageCount DESC
+    </select>
+
+</mapper>
