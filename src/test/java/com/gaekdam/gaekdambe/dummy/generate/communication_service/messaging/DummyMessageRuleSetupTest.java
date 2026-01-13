@@ -18,6 +18,13 @@ public class DummyMessageRuleSetupTest {
     private JdbcTemplate jdbcTemplate;
 
     public void generate() {
+
+
+        // 테이블이 이미 존재하면 실행 안 함
+        if (isTableExists("message_rule")) {
+            return;
+        }
+
         String createSql = "CREATE TABLE IF NOT EXISTS `message_rule` ("
                 + "`rule_id` VARCHAR(255) NOT NULL,"
                 + "`stage_code` VARCHAR(40) NOT NULL COMMENT '고객여정코드',"
@@ -89,5 +96,17 @@ public class DummyMessageRuleSetupTest {
                 idx++;
             }
         }
+    }
+
+    // 테이블 존재여부
+    private boolean isTableExists(String tableName) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+              AND table_name = ?
+        """, Integer.class, tableName);
+
+        return count != null && count > 0;
     }
 }

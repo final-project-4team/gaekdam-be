@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Random;
 
+import com.gaekdam.gaekdambe.communication_service.incident.command.domain.infrastructure.repository.IncidentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,16 @@ public class DummyIncidentDataTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private IncidentRepository incidentRepository;
+
     public void generate() {
+
+        // 테이블이 이미 존재하면 실행 안 함
+        if (isTableExists("Incident")) {
+            return;
+        }
+
         String createSql = "CREATE TABLE IF NOT EXISTS `Incident` ("
                 + "`incident_code` BIGINT NOT NULL AUTO_INCREMENT COMMENT '사건 사고 보고서 식별코드',"
                 + "`inquiry_code` BIGINT NULL COMMENT '필요시 문의 참조에 사용',"
@@ -84,5 +94,20 @@ public class DummyIncidentDataTest {
                     property
             );
         }
+    }
+
+
+    /**
+     * 테이블 존재 여부 확인
+     */
+    private boolean isTableExists(String tableName) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+              AND table_name = ?
+        """, Integer.class, tableName);
+
+        return count != null && count > 0;
     }
 }
