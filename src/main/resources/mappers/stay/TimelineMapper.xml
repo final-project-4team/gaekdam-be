@@ -95,9 +95,10 @@
 
 
     <!-- =========================
-             타임라인 요약카드
-             ========================= -->
+           3. 요약 카드
+           ========================= -->
 
+    <!-- 고객 타입 -->
     <select id="findCustomerType" resultType="string">
         SELECT
             CASE
@@ -110,12 +111,14 @@
         )
     </select>
 
+    <!-- 부대시설 이용 횟수 -->
     <select id="countFacilityUsage" resultType="int">
         SELECT COUNT(*)
         FROM facility_usage
         WHERE stay_code = #{stayCode}
     </select>
 
+    <!-- 이용한 부대시설 목록 -->
     <select id="findUsedFacilities" resultType="string">
         SELECT DISTINCT f.facility_name
         FROM facility_usage fu
