@@ -25,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,6 +51,7 @@ public class EmployeeCommandController {
 
   //직원 추가
   @PostMapping("/add")
+  @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
   public ResponseEntity<ApiResponse<String>> registerEmployee(@RequestBody EmployeeSecureRegistrationRequest request) {
 
     employeeSecureRegistrationService.registerEmployee(request);
