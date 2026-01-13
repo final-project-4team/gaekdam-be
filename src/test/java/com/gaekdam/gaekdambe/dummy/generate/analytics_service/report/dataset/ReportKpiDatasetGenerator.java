@@ -11,10 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportKPICodeDim;
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportKPITarget;
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.infrastructure.repository.ReportKPICodeDimRepository;
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.infrastructure.repository.ReportKPITargetRepository;
+import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.entity.ReportKPICodeDim;
+import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.entity.ReportKPITarget;
+import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.infrastructure.repository.ReportKPICodeDimRepository;
+import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.infrastructure.repository.ReportKPITargetRepository;
 
 @Component
 public class ReportKpiDatasetGenerator {
