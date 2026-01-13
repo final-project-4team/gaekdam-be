@@ -18,33 +18,35 @@ public class DummyInquiryDataTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public void generate() {
+    @Autowired
+    private InquiryRepository inquiryRepository;
 
-        // 테이블이 이미 존재하면 실행 안 함
-        if (isTableExists("Inquiry")) {
+    public void generate() {
+        // 이미 데이터 있으면 스킵
+        if (inquiryRepository.count() > 0) {
             return;
         }
 
-        // 테이블 생성
-        String createSql = """
-            CREATE TABLE `Inquiry` (
-                `inquiry_code` BIGINT NOT NULL AUTO_INCREMENT,
-                `inquiry_status` VARCHAR(30) NOT NULL DEFAULT 'IN_PROGRESS',
-                `inquiry_title` VARCHAR(255) NOT NULL,
-                `inquiry_content` TEXT NOT NULL,
-                `answer_content` TEXT NULL,
-                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                `updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                `customer_code` BIGINT NOT NULL,
-                `user_code` BIGINT NULL,
-                `inquiry_category_code` BIGINT NOT NULL,
-                `hotel_group_code` BIGINT NOT NULL,
-                `property_code` BIGINT NOT NULL,
-                PRIMARY KEY (`inquiry_code`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-        """;
-
-        jdbcTemplate.execute(createSql);
+//        // 테이블 생성
+//        String createSql = """
+//            CREATE TABLE `Inquiry` (
+//                `inquiry_code` BIGINT NOT NULL AUTO_INCREMENT,
+//                `inquiry_status` VARCHAR(30) NOT NULL DEFAULT 'IN_PROGRESS',
+//                `inquiry_title` VARCHAR(255) NOT NULL,
+//                `inquiry_content` TEXT NOT NULL,
+//                `answer_content` TEXT NULL,
+//                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+//                `updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//                `customer_code` BIGINT NOT NULL,
+//                `user_code` BIGINT NULL,
+//                `inquiry_category_code` BIGINT NOT NULL,
+//                `hotel_group_code` BIGINT NOT NULL,
+//                `property_code` BIGINT NOT NULL,
+//                PRIMARY KEY (`inquiry_code`)
+//            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+//        """;
+//
+//        jdbcTemplate.execute(createSql);
 
         String insertSql = """
             INSERT INTO Inquiry (
@@ -98,17 +100,4 @@ public class DummyInquiryDataTest {
         }
     }
 
-    /**
-     * 테이블 존재 여부 확인
-     */
-    private boolean isTableExists(String tableName) {
-        Integer count = jdbcTemplate.queryForObject("""
-            SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_schema = DATABASE()
-              AND table_name = ?
-        """, Integer.class, tableName);
-
-        return count != null && count > 0;
-    }
 }

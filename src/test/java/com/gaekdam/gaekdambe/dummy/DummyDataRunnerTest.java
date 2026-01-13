@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry.DummyInquiryCategoryDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging.DummyMessageSendHistoryDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.employee.EmployeeEncryptedRegistrationTest;
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionMapping.DummyPermissionMappingDataTest;
@@ -89,6 +90,8 @@ class DummyDataRunnerTest {
     @Autowired
     DummyInquiryDataTest inquiryDataTest;
     @Autowired
+    DummyInquiryCategoryDataTest inquiryCategoryDataTest;
+    @Autowired
     DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
     @Autowired
     DummyMessageRuleSetupTest messageRuleSetupTest;
@@ -96,6 +99,7 @@ class DummyDataRunnerTest {
     DummyMessageTemplateSetupTest messageTemplateSetupTest;
     @Autowired
     DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
+
 
 
     @Test
@@ -132,6 +136,7 @@ class DummyDataRunnerTest {
 
         // communication_service (문의, 사건, 메세지 더미데이터 생성)
         incidentDataTest.generate();
+        inquiryCategoryDataTest.generate();
         inquiryDataTest.generate();
         messageJourneyStageSetupTest.generate();
         messageTemplateSetupTest.generate();
