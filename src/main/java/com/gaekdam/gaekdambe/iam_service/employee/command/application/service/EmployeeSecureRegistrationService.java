@@ -7,9 +7,9 @@ import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;
+import com.gaekdam.gaekdambe.hotel_service.property.command.domain.entity.Property;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.PropertyRepository;
+import com.gaekdam.gaekdambe.hotel_service.property.command.infrastructure.PropertyRepository;
 import com.gaekdam.gaekdambe.hotel_service.position.command.domain.entity.HotelPosition;
 import com.gaekdam.gaekdambe.hotel_service.position.command.infrastructure.repository.HotelPositionRepository;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.EmployeeSecureRegistrationRequest;
@@ -42,24 +42,7 @@ public class EmployeeSecureRegistrationService {
   private final HotelGroupRepository hotelGroupRepository;
   private final PermissionRepository permissionRepository;
 
-  public record RegisterEmployeeCommand(
-      Long employeeNumber,
-      String loginId,
-      String password,
-      String email,
-      String phoneNumber,
-      String name,
-      Long departmentCode,
-      Long positionCode,
-      Long propertyCode,
-      Long hotelGroupCode,
-      Long roleCode) {
-  }
 
-  // KMS를 통한 데이터 암호화 키(DEK) 생성
-  // 개인정보(이름, 전화번호, 이메일) AES-256 암호화
-  // 검색용 해시 생성 (HMAC-SHA256)
-  // DB 저장 (Envelope Encryption 적용)
   @Transactional
   public Long registerEmployee(EmployeeSecureRegistrationRequest command) {
 
@@ -87,13 +70,17 @@ public class EmployeeSecureRegistrationService {
 
     // 연관 엔티티 조회
     Department department = departmentRepository.findById(command.departmentCode())
-        .orElseThrow(() -> new IllegalArgumentException("Department not found: " + command.departmentCode()));
+        .orElseThrow(() -> new IllegalArgumentException(
+            "Department not found: " + command.departmentCode()));
     HotelPosition position = hotelPositionRepository.findById(command.positionCode())
-        .orElseThrow(() -> new IllegalArgumentException("Position not found: " + command.positionCode()));
+        .orElseThrow(
+            () -> new IllegalArgumentException("Position not found: " + command.positionCode()));
     Property property = propertyRepository.findById(command.propertyCode())
-        .orElseThrow(() -> new IllegalArgumentException("Property not found: " + command.propertyCode()));
+        .orElseThrow(
+            () -> new IllegalArgumentException("Property not found: " + command.propertyCode()));
     HotelGroup hotelGroup = hotelGroupRepository.findById(command.hotelGroupCode())
-        .orElseThrow(() -> new IllegalArgumentException("HotelGroup not found: " + command.hotelGroupCode()));
+        .orElseThrow(() -> new IllegalArgumentException(
+            "HotelGroup not found: " + command.hotelGroupCode()));
     Permission role = permissionRepository.findById(command.roleCode())
         .orElseThrow(() -> new IllegalArgumentException("Role not found: " + command.roleCode()));
 
@@ -126,7 +113,8 @@ public class EmployeeSecureRegistrationService {
     employee.loginFailed();
 
     // 증가된 횟수가 5회 이상이면 즉시 잠금 처리
-    if (employee.getFailedLoginCount() >= 5 && employee.getEmployeeStatus() == EmployeeStatus.ACTIVE) {
+    if (employee.getFailedLoginCount() >= 5
+        && employee.getEmployeeStatus() == EmployeeStatus.ACTIVE) {
       employee.employeeLocked();
     }
 
@@ -139,4 +127,5 @@ public class EmployeeSecureRegistrationService {
     employee.loginSuccess();
     employeeRepository.save(employee);
   }
+
 }

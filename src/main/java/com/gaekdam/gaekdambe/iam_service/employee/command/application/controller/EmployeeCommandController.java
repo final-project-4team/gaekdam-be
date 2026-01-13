@@ -91,9 +91,11 @@ public class EmployeeCommandController {
 
     String role = permissionRepository.findById(employee.getPermission().getPermissionCode()).get()
         .getPermissionName();
+    Long hotelGroupCode = employee.getHotelGroup().getHotelGroupCode();
+    Long propertyCode = employee.getProperty().getPropertyCode();
 
-    String accessToken = jwtTokenProvider.createAccessToken(loginId, role);
-    String refreshToken = jwtTokenProvider.createRefreshToken(loginId, role);
+    String accessToken = jwtTokenProvider.createAccessToken(loginId, role, hotelGroupCode, propertyCode);
+    String refreshToken = jwtTokenProvider.createRefreshToken(loginId, role, hotelGroupCode, propertyCode);
 
     // refreshToken을 Redis에 저장(회전 / 검증용)
     redisRefreshTokenService.save(loginId, refreshToken, REFRESH_TOKEN_EXPIRE);
@@ -198,8 +200,11 @@ public class EmployeeCommandController {
     }
 
     String role = jwtTokenProvider.getRole(refreshToken);
-    String newAccessToken = jwtTokenProvider.createAccessToken(userId, role);
-    String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, role);
+    Long hotelGroupCode=jwtTokenProvider.getHotelGroupCode(refreshToken);
+    Long propertyCode=jwtTokenProvider.getPropertyCode(refreshToken);
+
+    String newAccessToken = jwtTokenProvider.createAccessToken(userId, role,hotelGroupCode,propertyCode);
+    String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, role,hotelGroupCode,propertyCode);
 
     redisRefreshTokenService.save(userId, newRefreshToken, REFRESH_TOKEN_EXPIRE);
 

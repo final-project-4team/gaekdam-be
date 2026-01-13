@@ -30,24 +30,26 @@ public class JwtTokenProvider {
   }
 
   // Access Token 생성
-  public String createAccessToken(String userId, String role) {
-    return createToken(userId, role, "access", accessTokenValidity);
+  public String createAccessToken(String userId, String role,Long hotelGroupCode,Long propertyCode) {
+    return createToken(userId, role, "access",hotelGroupCode,propertyCode,accessTokenValidity);
   }
 
   // Refresh Token 생성
-  public String createRefreshToken(String userId, String role) {
-    return createToken(userId, role, "refresh", refreshTokenValidity);
+  public String createRefreshToken(String userId, String role,Long hotelGroupCode,Long propertyCode) {
+    return createToken(userId, role, "refresh",hotelGroupCode,propertyCode, refreshTokenValidity);
   }
 
   // 공통 생성 로직
-  private String createToken(String userId, String role, String type, long validity) {
+  private String createToken(String userId, String role, String type,Long hotelGroupCode,Long propertyCode, long validity) {
     Date now = new Date();
 
     return Jwts.builder()
         .setSubject(userId)  // sub
         .addClaims(Map.of(
             "role", role,
-            "type", type
+            "type", type,
+            "hotelGroupCode", hotelGroupCode,
+            "propertyCode", propertyCode
         ))
         .setIssuedAt(now)
         .setExpiration(new Date(now.getTime() + validity))
@@ -68,6 +70,22 @@ public class JwtTokenProvider {
   public String getRole(String token) {
     try {
       return parseClaims(token).get("role", String.class);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public Long getHotelGroupCode(String token) {
+    try {
+      return parseClaims(token).get("hotelGroupCode", Long.class);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public Long getPropertyCode(String token) {
+    try {
+      return parseClaims(token).get("propertyCode", Long.class);
     } catch (Exception e) {
       return null;
     }
