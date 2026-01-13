@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity;
 
+import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.enums.StayStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +22,9 @@ public class Stay {
     @Column(name = "stay_code")
     private Long stayCode;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "stay_status", nullable = false, length = 20)
-    private String stayStatus; // STAYING, COMPLETED
+    private StayStatus stayStatus;
 
     @Column(name = "actual_checkin_at")
     private LocalDateTime actualCheckinAt;
@@ -39,7 +41,7 @@ public class Stay {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // FK
+    // FK (느슨한 참조 유지)
     @Column(name = "reservation_code", nullable = false)
     private Long reservationCode;
 
@@ -57,7 +59,7 @@ public class Stay {
             int guestCount,
             LocalDateTime checkinAt,
             LocalDateTime checkoutAt,
-            String stayStatus
+            StayStatus stayStatus
     ) {
         LocalDateTime now = LocalDateTime.now();
 

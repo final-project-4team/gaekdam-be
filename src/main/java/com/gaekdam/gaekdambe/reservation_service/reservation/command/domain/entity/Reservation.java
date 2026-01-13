@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity;
 
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.*;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,8 +21,9 @@ public class Reservation {
     @Column(name = "reservation_code")
     private Long reservationCode;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "reservation_status", nullable = false, length = 20)
-    private String reservationStatus; // RESERVED, CANCELED, NO_SHOW
+    private ReservationStatus reservationStatus;
 
     @Column(name = "checkin_date", nullable = false)
     private LocalDate checkinDate;
@@ -32,11 +34,13 @@ public class Reservation {
     @Column(name = "guest_count", nullable = false)
     private int guestCount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "guest_type", nullable = false, length = 20)
-    private String guestType; // INDIVIDUAL, FAMILY, GROUP
+    private GuestType guestType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "reservation_channel", nullable = false, length = 20)
-    private String reservationChannel; // WEB, PHONE, OTA
+    private ReservationChannel reservationChannel;
 
     @Column(name = "request_note", length = 255)
     private String requestNote;
@@ -64,7 +68,7 @@ public class Reservation {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 연관 코드 (FK는 느슨하게 숫자로)
+    // 느슨한 FK
     @Column(name = "property_code", nullable = false)
     private Long propertyCode;
 
@@ -77,21 +81,20 @@ public class Reservation {
     @Column(name = "package_code")
     private Long packageCode;
 
-
-
+    /* 생성 메서드 */
     public static Reservation createReservation(
             LocalDate checkin,
             LocalDate checkout,
             int guestCount,
-            String guestType,
-            String reservationChannel,
+            GuestType guestType,
+            ReservationChannel reservationChannel,
             BigDecimal roomPrice,
             BigDecimal packagePrice,
             Long propertyCode,
             Long roomCode,
             Long customerCode,
             Long packageCode,
-            String reservationStatus
+            ReservationStatus reservationStatus
     ) {
         LocalDateTime now = LocalDateTime.now();
 
