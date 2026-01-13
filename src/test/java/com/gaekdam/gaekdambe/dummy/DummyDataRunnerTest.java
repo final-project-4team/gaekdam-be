@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging.DummyMessageSendHistoryDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.employee.EmployeeEncryptedRegistrationTest;
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionMapping.DummyPermissionMappingDataTest;
 import org.junit.jupiter.api.Test;
@@ -35,41 +36,66 @@ import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDa
 class DummyDataRunnerTest {
 
     // 호텔서비스
-    @Autowired DummyHotelGroupDataTest hotelGroupDataTest;
-    @Autowired DummyDepartmentDataTest departmentDataTest;
-    @Autowired DummyPositionDataTest positionDataTest;
-    @Autowired DummyPropertyDataTest propertyDataTest;
+    @Autowired
+    DummyHotelGroupDataTest hotelGroupDataTest;
+    @Autowired
+    DummyDepartmentDataTest departmentDataTest;
+    @Autowired
+    DummyPositionDataTest positionDataTest;
+    @Autowired
+    DummyPropertyDataTest propertyDataTest;
 
     // iam서비스
-    @Autowired DummyPermissionTypeDataTest permissionTypeDataTest;
-    @Autowired DummyPermissionDataTest permissionDataTest;
-    @Autowired DummyPermissionMappingDataTest permissionMappingDataTest;
+    @Autowired
+    DummyPermissionTypeDataTest permissionTypeDataTest;
+    @Autowired
+    DummyPermissionDataTest permissionDataTest;
+    @Autowired
+    DummyPermissionMappingDataTest permissionMappingDataTest;
     @Autowired
     EmployeeEncryptedRegistrationTest employeeDataTest;
 
     // 오퍼레이션 서비스
-    @Autowired DummyFacilityDataTest facilityDataTest;
-    @Autowired DummyFacilityUsageDataTest facilityUsageDataTest;
-    @Autowired DummyReservationPackageDataTest reservationPackageDataTest;
-    @Autowired DummyRoomDataTest roomDataTest;
-    @Autowired DummyRoomTypeDataTest roomTypeDataTest;
+    @Autowired
+    DummyFacilityDataTest facilityDataTest;
+    @Autowired
+    DummyFacilityUsageDataTest facilityUsageDataTest;
+    @Autowired
+    DummyReservationPackageDataTest reservationPackageDataTest;
+    @Autowired
+    DummyRoomDataTest roomDataTest;
+    @Autowired
+    DummyRoomTypeDataTest roomTypeDataTest;
 
     // 예약 서비스
-    @Autowired DummyReservationDataTest reservationDataTest;
-    @Autowired DummyStayDataTest stayDataTest;
-    @Autowired DummyCheckInOutDataTest checkInOutDataTest;
+    @Autowired
+    DummyReservationDataTest reservationDataTest;
+    @Autowired
+    DummyStayDataTest stayDataTest;
+    @Autowired
+    DummyCheckInOutDataTest checkInOutDataTest;
 
     // 고객 서비스
-    @Autowired DummyCustomerDataTest customerDataTest;
-    @Autowired DummyMembershipDataTest membershipDataTest;
-    @Autowired DummyLoyaltyDataTest loyaltyDataTest;
+    @Autowired
+    DummyCustomerDataTest customerDataTest;
+    @Autowired
+    DummyMembershipDataTest membershipDataTest;
+    @Autowired
+    DummyLoyaltyDataTest loyaltyDataTest;
 
     // 커뮤니케이션 서비스 (문의, 사건, 메세지 더미데이터 생성)
-    @Autowired DummyIncidentDataTest incidentDataTest;
-    @Autowired DummyInquiryDataTest inquiryDataTest;
-    @Autowired DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
-    @Autowired DummyMessageRuleSetupTest messageRuleSetupTest;
-    @Autowired DummyMessageTemplateSetupTest messageTemplateSetupTest;
+    @Autowired
+    DummyIncidentDataTest incidentDataTest;
+    @Autowired
+    DummyInquiryDataTest inquiryDataTest;
+    @Autowired
+    DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
+    @Autowired
+    DummyMessageRuleSetupTest messageRuleSetupTest;
+    @Autowired
+    DummyMessageTemplateSetupTest messageTemplateSetupTest;
+    @Autowired
+    DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
 
 
     @Test
@@ -108,8 +134,10 @@ class DummyDataRunnerTest {
         incidentDataTest.generate();
         inquiryDataTest.generate();
         messageJourneyStageSetupTest.generate();
-        messageRuleSetupTest.generate();
         messageTemplateSetupTest.generate();
+        messageRuleSetupTest.generate();
+        messageSendHistoryDataTest.generate();
+
 
     }
 }
