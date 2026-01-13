@@ -27,6 +27,10 @@ public class EmployeeEncryptedRegistrationTest {
     @Transactional
     public void generate() {
 
+        if (employeeRepository.count() > 0) {
+            return;
+        }
+
         for (long employeeCount = 0; employeeCount < 100; employeeCount++) {
             long employeeNumber = 10001L + employeeCount; // 사번
             String loginId = "hong" + employeeCount; // 로그인ID

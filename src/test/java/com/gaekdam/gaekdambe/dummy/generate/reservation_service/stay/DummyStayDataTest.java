@@ -1,16 +1,14 @@
 package com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay;
 
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.ReservationStatus;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity.Stay;
+import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.enums.StayStatus;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.infrastructure.repository.StayRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,26 +34,26 @@ public class DummyStayDataTest {
 
         // RESERVED 상태 예약만 투숙 생성
         List<Reservation> reservations =
-                reservationRepository.findByReservationStatus("RESERVED");
+                reservationRepository.findByReservationStatus(ReservationStatus.RESERVED);
 
         int count = 0;
 
         for (Reservation reservation : reservations) {
             if (count >= 8_000) break;
 
-            // 실제 체크인 시간 (예약 체크인 날짜, 14~16시)
+            // 실제 체크인 시간 (14~16시)
             LocalDateTime checkinAt =
                     reservation.getCheckinDate().atTime(14 + random.nextInt(3), 0);
 
             boolean completed = random.nextBoolean();
 
-            // 실제 체크아웃 시간은 예약 checkout_date를 넘어가지 않음
             LocalDateTime checkoutAt =
                     completed
                             ? reservation.getCheckoutDate().atTime(10 + random.nextInt(2), 0)
                             : null;
 
-            String stayStatus = completed ? "COMPLETED" : "STAYING";
+            StayStatus stayStatus =
+                    completed ? StayStatus.COMPLETED : StayStatus.STAYING;
 
             Stay stay = Stay.createStay(
                     reservation.getReservationCode(),

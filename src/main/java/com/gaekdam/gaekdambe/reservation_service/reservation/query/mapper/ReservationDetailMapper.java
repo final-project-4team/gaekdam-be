@@ -10,7 +10,7 @@ public interface ReservationDetailMapper {
 
     ReservationInfo findReservationInfo(Long reservationCode);
 
-    CustomerInfo findCustomerInfo(Long reservationCode);
+    CustomerCryptoRow findCustomerCrypto(Long reservationCode);
 
     RoomInfo findRoomInfo(Long reservationCode);
 

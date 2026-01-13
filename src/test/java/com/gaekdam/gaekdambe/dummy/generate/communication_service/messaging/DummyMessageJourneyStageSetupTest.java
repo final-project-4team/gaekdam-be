@@ -14,19 +14,28 @@ public class DummyMessageJourneyStageSetupTest {
     private JdbcTemplate jdbcTemplate;
 
     public void generate() {
-        String createSql = "CREATE TABLE IF NOT EXISTS message_journey_stage ("
-                + "stage_code VARCHAR(40) NOT NULL,"
-                + "stage_name VARCHAR(200) NULL,"
-                + "sort_order INT NULL,"
-                + "PRIMARY KEY (stage_code)"
-                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
-        jdbcTemplate.execute(createSql);
+        // 테이블이 이미 있으면 실행 안 함
+        if (isTableExists("message_journey_stage")) {
+            return;
+        }
 
-        String insertSql = "INSERT INTO message_journey_stage (stage_code, stage_name, sort_order) VALUES (?, ?, ?)"
-                + " ON DUPLICATE KEY UPDATE stage_name = VALUES(stage_name), sort_order = VALUES(sort_order)";
+        // 테이블 생성
+        jdbcTemplate.execute("""
+            CREATE TABLE message_journey_stage (
+                stage_code VARCHAR(40) NOT NULL,
+                stage_name VARCHAR(200),
+                sort_order INT,
+                PRIMARY KEY (stage_code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """);
 
-        String[][] rows = new String[][]{
+        String insertSql = """
+            INSERT INTO message_journey_stage (stage_code, stage_name, sort_order)
+            VALUES (?, ?, ?)
+        """;
+
+        String[][] rows = {
                 {"RESERVATION_CONFIRMED", "예약확정"},
                 {"CHECKIN_PLANNED", "체크인 예정"},
                 {"CHECKIN_CONFIRMED", "체크인 확정"},
@@ -38,10 +47,24 @@ public class DummyMessageJourneyStageSetupTest {
         };
 
         for (int i = 0; i < rows.length; i++) {
-            String code = rows[i][0];
-            String name = rows[i][1];
-            int sortOrder = i + 1;
-            jdbcTemplate.update(insertSql, code, name, sortOrder);
+            jdbcTemplate.update(
+                    insertSql,
+                    rows[i][0],
+                    rows[i][1],
+                    i + 1
+            );
         }
+    }
+
+   // 테이블 존재여부
+    private boolean isTableExists(String tableName) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+              AND table_name = ?
+        """, Integer.class, tableName);
+
+        return count != null && count > 0;
     }
 }

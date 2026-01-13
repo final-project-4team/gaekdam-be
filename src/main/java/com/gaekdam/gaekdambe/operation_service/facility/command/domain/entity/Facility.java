@@ -1,6 +1,5 @@
 package com.gaekdam.gaekdambe.operation_service.facility.command.domain.entity;
 
-import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
 import jakarta.persistence.*;
 import lombok.*;
 

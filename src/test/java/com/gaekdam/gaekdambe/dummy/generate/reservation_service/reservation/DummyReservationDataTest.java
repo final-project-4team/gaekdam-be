@@ -1,14 +1,11 @@
 package com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation;
 
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.*;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,7 +18,7 @@ public class DummyReservationDataTest {
     private ReservationRepository reservationRepository;
 
     @Transactional
-    public void generate(){
+    public void generate() {
 
         if (reservationRepository.count() > 0) {
             return;
@@ -32,14 +29,13 @@ public class DummyReservationDataTest {
 
         for (int i = 1; i <= totalCount; i++) {
 
-            // 상태 결정
-            String reservationStatus;
+            ReservationStatus reservationStatus;
             if (i <= 1_200) {
-                reservationStatus = "NO_SHOW";
+                reservationStatus = ReservationStatus.NO_SHOW;
             } else if (i <= 2_000) {
-                reservationStatus = "CANCELED";
+                reservationStatus = ReservationStatus.CANCELED;
             } else {
-                reservationStatus = "RESERVED";
+                reservationStatus = ReservationStatus.RESERVED;
             }
 
             long propertyCode = (i % 20) + 1;
@@ -60,13 +56,18 @@ public class DummyReservationDataTest {
             LocalDate checkin = LocalDate.now().minusDays(random.nextInt(60));
             LocalDate checkout = checkin.plusDays(1 + random.nextInt(3));
 
-            // 예약 생성
+            GuestType guestType =
+                    random.nextBoolean() ? GuestType.INDIVIDUAL : GuestType.FAMILY;
+
+            ReservationChannel channel =
+                    random.nextBoolean() ? ReservationChannel.WEB : ReservationChannel.OTA;
+
             Reservation reservation = Reservation.createReservation(
                     checkin,
                     checkout,
                     1 + random.nextInt(4),
-                    random.nextBoolean() ? "INDIVIDUAL" : "FAMILY",
-                    random.nextBoolean() ? "WEB" : "OTA",
+                    guestType,
+                    channel,
                     roomPrice,
                     packagePrice,
                     propertyCode,
@@ -76,8 +77,8 @@ public class DummyReservationDataTest {
                     reservationStatus
             );
 
-            // 취소 상태면 취소 시간 세팅
-            if ("CANCELED".equals(reservationStatus)) {
+            // 취소 예약이면 취소 시각 세팅
+            if (reservationStatus == ReservationStatus.CANCELED) {
                 reservation = Reservation.builder()
                         .reservationCode(reservation.getReservationCode())
                         .reservationStatus(reservation.getReservationStatus())
@@ -90,7 +91,10 @@ public class DummyReservationDataTest {
                         .reservationPackagePrice(reservation.getReservationPackagePrice())
                         .totalPrice(reservation.getTotalPrice())
                         .reservedAt(reservation.getReservedAt())
-                        .canceledAt(reservation.getReservedAt().plusHours(1 + random.nextInt(72)))
+                        .canceledAt(
+                                reservation.getReservedAt()
+                                        .plusHours(1 + random.nextInt(72))
+                        )
                         .createdAt(reservation.getCreatedAt())
                         .propertyCode(reservation.getPropertyCode())
                         .roomCode(reservation.getRoomCode())
@@ -101,8 +105,5 @@ public class DummyReservationDataTest {
 
             reservationRepository.save(reservation);
         }
-
     }
-
-
 }
