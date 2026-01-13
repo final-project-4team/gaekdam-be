@@ -1,8 +1,8 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity;
 
-import lombok.Data;
-
 import java.time.LocalDateTime;
+
+import lombok.Data;
 
 @Data
 public class ReportLayoutUserState {

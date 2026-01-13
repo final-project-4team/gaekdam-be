@@ -1,9 +1,10 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper;
 
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportKPICodeDim;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
-import java.util.List;
+import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportKPICodeDim;
 
 @Mapper
 public interface ReportKPICodeDimMapper {
