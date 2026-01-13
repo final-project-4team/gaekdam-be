@@ -1,8 +1,14 @@
 package com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageJourneyStage;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageTemplate;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums.LanguageCode;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums.VisitorType;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.infrastructure.repository.MessageJourneyStageRepository;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.infrastructure.repository.MessageTemplateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -14,111 +20,47 @@ import jakarta.transaction.Transactional;
 public class DummyMessageTemplateSetupTest {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private MessageTemplateRepository repository;
+
+    @Autowired
+    private MessageJourneyStageRepository stageRepository;
 
     public void generate() {
 
-        // 테이블이 이미 존재하면 실행 안 함
-        if (isTableExists("message_template")) {
-            return;
-        }
+        if (repository.count() > 0) return;
 
-        String createSql = "CREATE TABLE IF NOT EXISTS `message_template` ("
-                + "`template_id` BIGINT NOT NULL,"
-                + "`stage_code` VARCHAR(40) NOT NULL COMMENT '고객여정코드',"
-                + "`visitor_type` VARCHAR(10) NOT NULL COMMENT 'FIRST, REPEAT',"
-                + "`language_code` VARCHAR(10) NULL DEFAULT 'KOR' COMMENT 'KOR, ENG, JPN',"
-                + "`membership_grade` VARCHAR(10) NULL DEFAULT 'BASIC' COMMENT '맴버십 등급 : BASIC/SILVER/GOLD/VIP 등',"
-                + "`title` VARCHAR(200) NULL COMMENT '메세지 제목',"
-                + "`content` TEXT NULL COMMENT '메세지 본문',"
-                + "`condition_expr` VARCHAR(500) NULL COMMENT '추가 조건(선택, 간단표현식)',"
-                + "`is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '활성여부',"
-                + "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',"
-                + "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',"
-                + "`membership_grade_code` BIGINT NOT NULL COMMENT '맴버십 등급 식별코드',"
-                + "PRIMARY KEY (`template_id`)"
-                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+        LocalDateTime now = LocalDateTime.now();
 
-        jdbcTemplate.execute(createSql);
+        List<MessageJourneyStage> stages =
+                stageRepository.findAll();
 
-        String insertSql = "INSERT INTO message_template (template_id, stage_code, visitor_type, language_code, membership_grade, title, content, condition_expr, is_active, created_at, updated_at, membership_grade_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        for (MessageJourneyStage stage : stages) {
+            if (!stage.isActive()) continue;
 
-        String[] stageCodes = {
-                "RESERVATION_CONFIRMED",
-                "CHECKIN_PLANNED",
-                "CHECKIN_CONFIRMED",
-                "CHECKOUT_PLANNED",
-                "CHECKOUT_CONFIRMED",
-                "RESERVATION_CANCELLED",
-                "RESERVATION_UPDATED",
-                "NOSHOW_CONFIRMED"
-        };
+            for (VisitorType visitor : VisitorType.values()) {
 
-        String[] stageNames = {
-                "예약 확정",
-                "체크인 예정",
-                "체크인 확정",
-                "체크아웃 예정",
-                "체크아웃 확정",
-                "예약 취소",
-                "예약 업데이트",
-                "노쇼 알림"
-        };
+                MessageTemplate template = MessageTemplate.builder()
+                        .stageCode(stage.getStageCode())
+                        .visitorType(visitor)
+                        .languageCode(LanguageCode.KOR)
+                        .title(stage.getStageNameKor() + " 안내 메시지")
+                        .content(
+                                visitor == VisitorType.FIRST
+                                        ? "첫 방문 고객님을 위한 안내입니다."
+                                        : "재방문 고객님을 위한 맞춤 안내입니다."
+                        )
+                        .conditionExpr(null)
+                        .isActive(true)
+                        .membershipGradeCode(
+                                visitor == VisitorType.FIRST ? 1L : 2L
+                        )
+                        .propertyCode(1L) // 또는 랜덤
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build();
 
-        String[] visitors = {"FIRST", "REPEAT"};
-
-        // Avoid primary key collisions: if table exists, get current max(template_id), otherwise start at 1000
-        Integer exists = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND LOWER(table_name) = LOWER('message_template')",
-                Integer.class);
-        Long currentMax = 0L;
-        if (exists != null && exists > 0) {
-            currentMax = jdbcTemplate.queryForObject("SELECT COALESCE(MAX(template_id), 0) FROM `message_template`", Long.class);
-        }
-        long templateBase = Math.max(1000L, currentMax != null ? currentMax : 0L);
-        int idx = 0;
-
-        for (int i = 0; i < stageCodes.length; i++) {
-            String code = stageCodes[i];
-            String name = stageNames[i];
-            for (String visitor : visitors) {
-                long templateId = templateBase + (++idx);
-
-                String visitorLabel = visitor.equals("FIRST") ? "첫 방문 고객님" : "재방문 고객님";
-                String title = String.format("%s - %s님을 위한 안내", name, visitor.equals("FIRST") ? "고객" : "재방문");
-                String content = String.format("안녕하세요. %s. %s님께 알맞은 안내를 드립니다. (상태: %s, 대상: %s)", name, visitorLabel, code, visitor);
-                String condition = null;
-
-                long membershipGradeCode = visitor.equals("FIRST") ? 1L : 2L;
-                String membershipGrade = visitor.equals("FIRST") ? "BASIC" : "SILVER";
-
-                jdbcTemplate.update(insertSql,
-                        templateId,
-                        code,
-                        visitor,
-                        "KOR",
-                        membershipGrade,
-                        title,
-                        content,
-                        condition,
-                        1,
-                        Timestamp.valueOf(LocalDateTime.now()),
-                        Timestamp.valueOf(LocalDateTime.now()),
-                        membershipGradeCode
-                );
+                repository.save(template);
             }
         }
-    }
-
-    // 테이블 존재여부
-    private boolean isTableExists(String tableName) {
-        Integer count = jdbcTemplate.queryForObject("""
-            SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_schema = DATABASE()
-              AND table_name = ?
-        """, Integer.class, tableName);
-
-        return count != null && count > 0;
     }
 }
