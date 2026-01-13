@@ -2,7 +2,7 @@ package com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity;
 
 import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;
+import com.gaekdam.gaekdambe.hotel_service.property.command.domain.entity.Property;
 import com.gaekdam.gaekdambe.hotel_service.position.command.domain.entity.HotelPosition;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;

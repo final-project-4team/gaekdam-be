@@ -1,15 +1,11 @@
 package com.gaekdam.gaekdambe.dummy.generate.hotel_service.hotel.property;
 
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.PropertyStatus;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.Property;
+import com.gaekdam.gaekdambe.hotel_service.property.command.domain.PropertyStatus;
+import com.gaekdam.gaekdambe.hotel_service.property.command.domain.entity.Property;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.PropertyRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.gaekdam.gaekdambe.hotel_service.property.command.infrastructure.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -55,7 +51,6 @@ public class DummyPropertyDataTest {
     for (Object[] objects : properties) {
       Property property = Property.createProperty(
           (String) objects[0],
-          (PropertyStatus) objects[1],
           (String) objects[2],
           hotelGroupRepository.findById((long) objects[3]).orElse(null)
       );

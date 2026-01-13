@@ -28,6 +28,11 @@ public class CustomUserDetailsService implements UserDetailsService {
   @Override
   @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String employeeId) throws UsernameNotFoundException {
+    return loadUserByUsername(employeeId, null, null);
+  }
+
+  @Transactional(readOnly = true)
+  public UserDetails loadUserByUsername(String employeeId,Long hotelGroupCode,Long propertyCode) throws UsernameNotFoundException {
 
     Employee emp = employeeRepository.findByLoginId(employeeId)
         .orElseThrow(() -> new UsernameNotFoundException("Employee not found: " + employeeId));
@@ -50,6 +55,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     return new CustomUser(
         emp.getLoginId(), // principal(식별자)
         emp.getPasswordHash(), // DB에 저장된 암호화된 비밀번호(BCrypt 등)
-        authorities);
+        authorities,
+        hotelGroupCode,
+        propertyCode
+    );
   }
 }

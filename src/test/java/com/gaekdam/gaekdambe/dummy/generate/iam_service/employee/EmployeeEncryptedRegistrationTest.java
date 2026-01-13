@@ -29,7 +29,7 @@ public class EmployeeEncryptedRegistrationTest {
 
         for (long employeeCount = 0; employeeCount < 100; employeeCount++) {
             long employeeNumber = 10001L + employeeCount; // 사번
-            String loginId = "hong.gildong" + employeeCount; // 로그인ID
+            String loginId = "hong" + employeeCount; // 로그인ID
             String originalEmail = "hong" + employeeCount + ".gildong@company.com"; // 이메일
             String originalPhone = String.format("010-1234-%04d", employeeCount); // 전화번호
             String originalName = "홍길동" + employeeCount;

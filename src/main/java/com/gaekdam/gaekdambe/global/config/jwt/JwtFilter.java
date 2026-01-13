@@ -50,8 +50,10 @@ public class JwtFilter extends OncePerRequestFilter {
       jwtTokenProvider.validateTokenOrThrow(token);
 
       String username = jwtTokenProvider.getUsername(token);
+      Long hotelGroupCode = jwtTokenProvider.getHotelGroupCode(token);
+      Long propertyCode = jwtTokenProvider.getPropertyCode(token);
 
-      var userDetails = customUserDetailsService.loadUserByUsername(username);
+      var userDetails = customUserDetailsService.loadUserByUsername(username,hotelGroupCode,propertyCode);
 
       var authentication =
           new UsernamePasswordAuthenticationToken(

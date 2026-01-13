@@ -1,6 +1,7 @@
-package com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity;
+package com.gaekdam.gaekdambe.hotel_service.property.command.domain.entity;
 
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.PropertyStatus;
+import com.gaekdam.gaekdambe.hotel_service.property.command.domain.PropertyStatus;
+import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,12 +46,19 @@ public class Property {
   private HotelGroup hotelGroup;
 
 
-  public static Property createProperty( String propertyName,PropertyStatus propertyStatus, String propertyCity, HotelGroup hotelGroup) {
+  public static Property createProperty( String propertyName, String propertyCity, HotelGroup hotelGroup) {
     return Property.builder()
         .propertyName(propertyName)
-        .propertyStatus(propertyStatus)
+        .propertyStatus(PropertyStatus.ACTIVE)
         .propertyCity(propertyCity)
         .hotelGroup(hotelGroup)
         .build();
+  }
+  public void updateProperty(String propertyName, String propertyCity) {
+    this.propertyName = propertyName;
+    this.propertyCity=propertyCity;
+  }
+  public void deleteProperty() {
+    this.propertyStatus=PropertyStatus.CLOSED;
   }
 }

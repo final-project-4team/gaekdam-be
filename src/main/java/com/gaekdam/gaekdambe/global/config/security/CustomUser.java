@@ -13,6 +13,8 @@ public class CustomUser implements UserDetails {
   private final String username; // loginId
   private final String password;
   private final Collection<? extends GrantedAuthority> authorities;
+  private final Long hotelGroupCode;
+  private final Long propertyCode;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
