@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.query.service;
 
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CustomerCryptoRow;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CustomerInfo;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.ReservationDetailResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.ReservationDetailMapper;
@@ -16,15 +17,21 @@ public class ReservationDetailQueryService {
 
     public ReservationDetailResponse getReservationDetail(Long reservationCode) {
 
-        CustomerInfo customer = mapper.findCustomerInfo(reservationCode);
+        CustomerCryptoRow row = mapper.findCustomerCrypto(reservationCode);
 
-//    // KMS / CryptoService 등으로 복호화
-//        String decryptedName =decryptionService.decrypt(
-//                customer.getCustomerNameEnc(),
-//                customer.getCustomerNameHash()
-//        );
-//
-//        customer.setCustomerName(decryptedName);
+        String decryptedName = decryptionService.decrypt(
+                row.getCustomerCode(),
+                row.getDekEnc(),
+                row.getCustomerNameEnc()
+        );
+
+        CustomerInfo customer = CustomerInfo.builder()
+                .customerCode(row.getCustomerCode())
+                .customerName(decryptedName)
+                .nationalityType(row.getNationalityType())
+                .contractType(row.getContractType())
+                .customerStatus(row.getCustomerStatus())
+                .build();
 
         return ReservationDetailResponse.builder()
                 .reservation(mapper.findReservationInfo(reservationCode))

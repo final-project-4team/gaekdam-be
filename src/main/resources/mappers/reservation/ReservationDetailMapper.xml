@@ -22,17 +22,18 @@
     </select>
 
     <!-- 고객 정보 -->
-    <select id="findCustomerInfo"
-            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CustomerInfo">
+    <select id="findCustomerCrypto"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CustomerCryptoRow">
 
-        SELECT
-        c.customer_code AS customerCode,
-        c.customer_name_enc AS customerName,   <!-- 평문 -->
-        c.nationality_type AS nationalityType,
-        c.contract_type AS contractType,
-        c.customer_status AS customerStatus
+        SELECT c.customer_code      AS customerCode,
+               c.customer_name_enc  AS customerNameEnc,
+               c.dek_enc            AS dekEnc,
+               c.customer_name_hash AS customerNameHash,
+               c.nationality_type   AS nationalityType,
+               c.contract_type      AS contractType,
+               c.customer_status    AS customerStatus
         FROM reservation r
-        JOIN customer c ON r.customer_code = c.customer_code
+                 JOIN customer c ON r.customer_code = c.customer_code
         WHERE r.reservation_code = #{reservationCode}
     </select>
 

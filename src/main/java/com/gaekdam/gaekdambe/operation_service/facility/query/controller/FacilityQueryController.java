@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.operation_service.facility.query.controller;
 
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
+import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
@@ -8,6 +9,7 @@ import com.gaekdam.gaekdambe.operation_service.facility.query.dto.request.Facili
 import com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityResponse;
 import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,14 +19,14 @@ public class FacilityQueryController {
 
     private final FacilityQueryService service;
 
-    @GetMapping("/{hotelGroupCode}")
+    @GetMapping()
     public ApiResponse<PageResponse<FacilityResponse>> getFacilities(
-            @PathVariable Long hotelGroupCode,
+            @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,
             FacilitySearchRequest search,
             SortRequest sort
     ) {
-        search.setHotelGroupCode(hotelGroupCode);
+        search.setHotelGroupCode(customUser.getHotelGroupCode());
 
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
