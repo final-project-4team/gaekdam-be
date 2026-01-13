@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportExportMapper">
+
+    <resultMap id="ReportExportResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportExport">
+        <id property="exportId" column="export_id" />
+        <result property="layoutId" column="layout_id" />
+        <result property="layoutTemplateId" column="layout_template_id" />
+        <result property="layoutWidgetId" column="layout_widget_id" />
+        <result property="requestedBy" column="requested_by" />
+        <result property="exportFormat" column="export_format" />
+        <result property="exportScope" column="export_scope" />
+        <result property="paramsJson" column="params_json" />
+        <result property="successYn" column="success_yn" />
+        <result property="failureReason" column="failure_reason" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportExport">
+        INSERT INTO ReportExport (export_id, layout_id, layout_template_id, layout_widget_id, requested_by, export_format, export_scope, params_json, success_yn, failure_reason, created_at)
+        VALUES (#{exportId}, #{layoutId}, #{layoutTemplateId}, #{layoutWidgetId}, #{requestedBy}, #{exportFormat}, #{exportScope}, #{paramsJson}, #{successYn}, #{failureReason}, #{createdAt})
+    </insert>
+
+    <select id="findById" resultMap="ReportExportResult" parameterType="string">
+        SELECT * FROM ReportExport WHERE export_id = #{exportId}
+    </select>
+
+    <select id="findByLayoutId" resultMap="ReportExportResult" parameterType="long">
+        SELECT * FROM ReportExport WHERE layout_id = #{layoutId}
+    </select>
+
+    <update id="update" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportExport">
+        UPDATE ReportExport
+        SET success_yn = #{successYn}, failure_reason = #{failureReason}
+        WHERE export_id = #{exportId}
+    </update>
+
+    <delete id="delete" parameterType="string">
+        DELETE FROM ReportExport WHERE export_id = #{exportId}
+    </delete>
+
+</mapper>

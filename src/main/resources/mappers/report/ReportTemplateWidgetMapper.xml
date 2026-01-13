@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportTemplateWidgetMapper">
+
+    <resultMap id="ReportTemplateWidgetResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplateWidget">
+        <id property="templateWidgetId" column="template_widget_id" />
+        <result property="templateId" column="template_id" />
+        <result property="widgetType" column="widget_type" />
+        <result property="title" column="title" />
+        <result property="datasetType" column="dataset_type" />
+        <result property="metricKey" column="metric_key" />
+        <result property="dimensionKey" column="dimension_key" />
+        <result property="defaultPeriod" column="default_period" />
+        <result property="defaultSortOrder" column="default_sort_order" />
+        <result property="optionsJson" column="options_json" />
+        <result property="defaultFilterJson" column="default_filter_json" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplateWidget">
+        INSERT INTO ReportTemplateWidget (template_widget_id, template_id, widget_type, title, dataset_type, metric_key, dimension_key, default_period, default_sort_order, options_json, default_filter_json, created_at, updated_at)
+        VALUES (#{templateWidgetId}, #{templateId}, #{widgetType}, #{title}, #{datasetType}, #{metricKey}, #{dimensionKey}, #{defaultPeriod}, #{defaultSortOrder}, #{optionsJson}, #{defaultFilterJson}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="ReportTemplateWidgetResult" parameterType="string">
+        SELECT * FROM ReportTemplateWidget WHERE template_widget_id = #{templateWidgetId}
+    </select>
+
+    <select id="findByTemplateId" resultMap="ReportTemplateWidgetResult" parameterType="long">
+        SELECT * FROM ReportTemplateWidget WHERE template_id = #{templateId}
+    </select>
+
+    <update id="update" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplateWidget">
+        UPDATE ReportTemplateWidget
+        SET widget_type = #{widgetType}, title = #{title}, dataset_type = #{datasetType}, metric_key = #{metricKey}, dimension_key = #{dimensionKey}, default_period = #{defaultPeriod}, default_sort_order = #{defaultSortOrder}, options_json = #{optionsJson}, default_filter_json = #{defaultFilterJson}, updated_at = #{updatedAt}
+        WHERE template_widget_id = #{templateWidgetId}
+    </update>
+
+    <delete id="delete" parameterType="string">
+        DELETE FROM ReportTemplateWidget WHERE template_widget_id = #{templateWidgetId}
+    </delete>
+
+</mapper>

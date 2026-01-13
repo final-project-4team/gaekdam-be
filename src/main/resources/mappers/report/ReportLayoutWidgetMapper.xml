@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportLayoutWidgetMapper">
+
+    <resultMap id="ReportLayoutWidgetResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayoutWidget">
+        <id property="layoutWidgetId" column="layout_widget_id" />
+        <result property="layoutId" column="layout_id" />
+        <result property="layoutTemplateId" column="layout_template_id" />
+        <result property="templateWidgetId" column="template_widget_id" />
+        <result property="widgetType" column="widget_type" />
+        <result property="title" column="title" />
+        <result property="x" column="x" />
+        <result property="y" column="y" />
+        <result property="w" column="w" />
+        <result property="h" column="h" />
+        <result property="optionsJson" column="options_json" />
+        <result property="filterJson" column="filter_json" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayoutWidget" useGeneratedKeys="true" keyProperty="layoutWidgetId">
+        INSERT INTO ReportLayoutWidget (layout_id, layout_template_id, template_widget_id, widget_type, title, x, y, w, h, options_json, filter_json, created_at, updated_at)
+        VALUES (#{layoutId}, #{layoutTemplateId}, #{templateWidgetId}, #{widgetType}, #{title}, #{x}, #{y}, #{w}, #{h}, #{optionsJson}, #{filterJson}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="ReportLayoutWidgetResult" parameterType="long">
+        SELECT * FROM ReportLayoutWidget WHERE layout_widget_id = #{layoutWidgetId}
+    </select>
+
+    <select id="findByLayoutId" resultMap="ReportLayoutWidgetResult" parameterType="long">
+        SELECT * FROM ReportLayoutWidget WHERE layout_id = #{layoutId}
+    </select>
+
+    <update id="update" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayoutWidget">
+        UPDATE ReportLayoutWidget
+        SET layout_template_id = #{layoutTemplateId}, template_widget_id = #{templateWidgetId}, widget_type = #{widgetType}, title = #{title}, x = #{x}, y = #{y}, w = #{w}, h = #{h}, options_json = #{optionsJson}, filter_json = #{filterJson}, updated_at = #{updatedAt}
+        WHERE layout_widget_id = #{layoutWidgetId}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM ReportLayoutWidget WHERE layout_widget_id = #{layoutWidgetId}
+    </delete>
+
+</mapper>

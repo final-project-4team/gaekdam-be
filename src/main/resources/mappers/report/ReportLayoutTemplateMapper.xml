@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportLayoutTemplateMapper">
+
+    <resultMap id="ReportLayoutTemplateResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayoutTemplate">
+        <id property="layoutTemplateId" column="layout_template_id" />
+        <result property="layoutId" column="layout_id" />
+        <result property="templateId" column="template_id" />
+        <result property="createdBy" column="created_by" />
+        <result property="displayName" column="display_name" />
+        <result property="sortOrder" column="sort_order" />
+        <result property="isActive" column="is_active" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayoutTemplate" useGeneratedKeys="false">
+        INSERT INTO ReportLayoutTemplate (layout_template_id, layout_id, template_id, created_by, display_name, sort_order, is_active, created_at)
+        VALUES (#{layoutTemplateId}, #{layoutId}, #{templateId}, #{createdBy}, #{displayName}, #{sortOrder}, #{isActive}, #{createdAt})
+    </insert>
+
+    <select id="findById" resultMap="ReportLayoutTemplateResult" parameterType="string">
+        SELECT * FROM ReportLayoutTemplate WHERE layout_template_id = #{layoutTemplateId}
+    </select>
+
+    <select id="findByLayoutId" resultMap="ReportLayoutTemplateResult" parameterType="long">
+        SELECT * FROM ReportLayoutTemplate WHERE layout_id = #{layoutId}
+    </select>
+
+    <update id="update" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayoutTemplate">
+        UPDATE ReportLayoutTemplate
+        SET template_id = #{templateId}, display_name = #{displayName}, sort_order = #{sortOrder}, is_active = #{isActive}
+        WHERE layout_template_id = #{layoutTemplateId}
+    </update>
+
+    <delete id="delete" parameterType="string">
+        DELETE FROM ReportLayoutTemplate WHERE layout_template_id = #{layoutTemplateId}
+    </delete>
+
+</mapper>

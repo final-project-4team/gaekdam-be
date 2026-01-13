@@ -38,7 +38,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.junit.platform:junit-platform-suite'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
+    testImplementation 'org.testcontainers:testcontainers:1.16.0' // Test Container 테스트 환경
+    testImplementation 'org.testcontainers:junit-jupiter:1.16.2'  // Test Container 테스트 환경
     
     // dek 캐싱
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'

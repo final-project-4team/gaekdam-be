@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.mapper.ReportLayoutMapper">
+
+    <resultMap id="ReportLayoutResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayout">
+        <id property="layoutId" column="layout_id" />
+        <result property="employeeCode" column="employee_code" />
+        <result property="tenantCode" column="tenant_code" />
+        <result property="name" column="name" />
+        <result property="description" column="description" />
+        <result property="isDefault" column="is_default" />
+        <result property="isArchived" column="is_archived" />
+        <result property="visibilityScope" column="visibility_scope" />
+        <result property="dateRangePreset" column="date_range_preset" />
+        <result property="defaultFilterJson" column="default_filter_json" />
+        <result property="layoutJson" column="layout_json" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayout" useGeneratedKeys="true" keyProperty="layoutId">
+        INSERT INTO ReportLayout (employee_code, tenant_code, name, description, is_default, is_archived, visibility_scope, date_range_preset, default_filter_json, layout_json, created_at, updated_at)
+        VALUES (#{employeeCode}, #{tenantCode}, #{name}, #{description}, #{isDefault}, #{isArchived}, #{visibilityScope}, #{dateRangePreset}, #{defaultFilterJson}, #{layoutJson}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="ReportLayoutResult" parameterType="long">
+        SELECT * FROM ReportLayout WHERE layout_id = #{layoutId}
+    </select>
+
+    <select id="findByEmployeeCode" resultMap="ReportLayoutResult" parameterType="long">
+        SELECT * FROM ReportLayout WHERE employee_code = #{employeeCode}
+    </select>
+
+    <update id="update" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayout">
+        UPDATE ReportLayout
+        SET name = #{name}, description = #{description}, is_default = #{isDefault}, is_archived = #{isArchived}, visibility_scope = #{visibilityScope}, date_range_preset = #{dateRangePreset}, default_filter_json = #{defaultFilterJson}, layout_json = #{layoutJson}, updated_at = #{updatedAt}
+        WHERE layout_id = #{layoutId}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM ReportLayout WHERE layout_id = #{layoutId}
+    </delete>
+
+</mapper>

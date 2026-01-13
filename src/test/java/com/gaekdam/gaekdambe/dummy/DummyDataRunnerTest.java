@@ -1,12 +1,11 @@
 package com.gaekdam.gaekdambe.dummy;
 
-import com.gaekdam.gaekdambe.dummy.generate.iam_service.employee.EmployeeEncryptedRegistrationTest;
-import com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionMapping.DummyPermissionMappingDataTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 
+import com.gaekdam.gaekdambe.dummy.generate.analytics_service.report.dataset.ReportKpiDatasetGenerator;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.incident.DummyIncidentDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry.DummyInquiryDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.messaging.DummyMessageJourneyStageSetupTest;
@@ -19,7 +18,9 @@ import com.gaekdam.gaekdambe.dummy.generate.hotel_service.department.DummyDepart
 import com.gaekdam.gaekdambe.dummy.generate.hotel_service.hotel.hotel_group.DummyHotelGroupDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.hotel_service.hotel.property.DummyPropertyDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.hotel_service.position.DummyPositionDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.iam_service.employee.EmployeeEncryptedRegistrationTest;
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.permission.DummyPermissionDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionMapping.DummyPermissionMappingDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionType.DummyPermissionTypeDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.operation_service.facility.DummyFacilityDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.operation_service.facility.DummyFacilityUsageDataTest;
@@ -44,8 +45,7 @@ class DummyDataRunnerTest {
     @Autowired DummyPermissionTypeDataTest permissionTypeDataTest;
     @Autowired DummyPermissionDataTest permissionDataTest;
     @Autowired DummyPermissionMappingDataTest permissionMappingDataTest;
-    @Autowired
-    EmployeeEncryptedRegistrationTest employeeDataTest;
+    @Autowired EmployeeEncryptedRegistrationTest employeeDataTest;
 
     // 오퍼레이션 서비스
     @Autowired DummyFacilityDataTest facilityDataTest;
@@ -70,6 +70,9 @@ class DummyDataRunnerTest {
     @Autowired DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
     @Autowired DummyMessageRuleSetupTest messageRuleSetupTest;
     @Autowired DummyMessageTemplateSetupTest messageTemplateSetupTest;
+
+    // 분석 서비스
+    @Autowired ReportKpiDatasetGenerator reportKpiDatasetGenerator;
 
 
     @Test
@@ -110,6 +113,9 @@ class DummyDataRunnerTest {
         messageJourneyStageSetupTest.generate();
         messageRuleSetupTest.generate();
         messageTemplateSetupTest.generate();
+
+        // analytics_service (dashboard/report dummy data)
+        reportKpiDatasetGenerator.generate();        
 
     }
 }
