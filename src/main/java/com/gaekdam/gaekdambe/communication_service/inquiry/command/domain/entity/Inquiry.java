@@ -1,0 +1,100 @@
+package com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity;
+
+import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.InquiryStatus;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@Table(
+        name = "inquiry",
+        indexes = {
+                @Index(name = "IDX_inquiry_hotel_group", columnList = "hotel_group_code"),
+                @Index(name = "IDX_inquiry_property", columnList = "property_code"),
+                @Index(name = "IDX_inquiry_status", columnList = "inquiry_status"),
+                @Index(name = "IDX_inquiry_category", columnList = "inquiry_category_code")
+        }
+)
+public class Inquiry {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "inquiry_code", nullable = false)
+    private Long inquiryCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "inquiry_status", nullable = false, length = 30)
+    private InquiryStatus inquiryStatus;
+
+    @Column(name = "inquiry_title", nullable = false, length = 255)
+    private String inquiryTitle;
+
+    @Lob
+    @Column(name = "inquiry_content", nullable = false)
+    private String inquiryContent;
+
+    @Lob
+    @Column(name = "answer_content")
+    private String answerContent;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "customer_code", nullable = false)
+    private Long customerCode;
+
+    @Column(name = "user_code")
+    private Long userCode; // 담당자(직원) 코드 - nullable
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inquiry_category_code", nullable = false)
+    private InquiryCategory category;
+
+    @Column(name = "hotel_group_code", nullable = false)
+    private Long hotelGroupCode;
+
+    @Column(name = "property_code", nullable = false)
+    private Long propertyCode;
+
+    public static Inquiry create(
+            Long hotelGroupCode,
+            Long propertyCode,
+            Long customerCode,
+            InquiryCategory category,
+            String title,
+            String content
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+        return Inquiry.builder()
+                .hotelGroupCode(hotelGroupCode)
+                .propertyCode(propertyCode)
+                .customerCode(customerCode)
+                .category(category)
+                .inquiryTitle(title)
+                .inquiryContent(content)
+                .inquiryStatus(InquiryStatus.IN_PROGRESS)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+    }
+
+    public void assignManager(Long userCode) {
+        this.userCode = userCode;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void answer(String answerContent) {
+        this.answerContent = answerContent;
+        this.inquiryStatus = InquiryStatus.ANSWERED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+}
