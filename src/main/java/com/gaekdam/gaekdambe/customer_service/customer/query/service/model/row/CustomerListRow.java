@@ -19,6 +19,7 @@ public record CustomerListRow(
         String inflowChannel,
 
         ContractType contractType,
-        NationalityType nationalityType
+        NationalityType nationalityType,
+        byte[] dekEnc
 ) {
 }
