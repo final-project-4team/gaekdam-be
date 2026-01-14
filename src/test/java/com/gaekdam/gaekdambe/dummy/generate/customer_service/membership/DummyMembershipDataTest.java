@@ -33,7 +33,7 @@ public class DummyMembershipDataTest {
     private final Map<Long, List<MembershipGrade>> gradeCache = new HashMap<>();
     private static final double MEMBERSHIP_RATE = 0.70;
 
-    // ✅ 변경: 멤버십 산정 기준(임시 JSON)
+    //  변경: 멤버십 산정 기준(임시 JSON)
     private static final String STANDARD = "{\"windowMonths\":12}";
 
     private static final List<GradeSeed> GRADE_SEEDS = List.of(

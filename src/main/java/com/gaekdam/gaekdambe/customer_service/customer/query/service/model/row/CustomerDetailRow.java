@@ -7,8 +7,11 @@ import com.gaekdam.gaekdambe.customer_service.customer.command.domain.Nationalit
 import java.time.LocalDateTime;
 
 public record CustomerDetailRow(
+
         Long customerCode,
-        String customerName,
+
+        byte[] customerNameEnc,
+        byte[] dekEnc,
 
         CustomerStatus status,
         NationalityType nationalityType,
@@ -16,8 +19,8 @@ public record CustomerDetailRow(
 
         String inflowChannel,
 
-        String primaryPhone,
-        String primaryEmail,
+        byte[] primaryPhoneEnc,
+        byte[] primaryEmailEnc,
 
         // member
         Long memberCode,
