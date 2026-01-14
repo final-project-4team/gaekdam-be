@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.mapper.ReportLayoutQueryMapper">
+
+  <resultMap id="ReportLayoutResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.dto.ReportLayoutResponseDto">
+    <id column="layout_id" property="layoutId"/>
+    <result column="employee_code" property="employeeCode"/>
+    <result column="name" property="name"/>
+    <result column="description" property="description"/>
+    <result column="is_default" property="isDefault"/>
+    <result column="is_archived" property="isArchived"/>
+    <result column="visibility_scope" property="visibilityScope"/>
+    <result column="date_range_preset" property="dateRangePreset"/>
+    <result column="default_filter_json" property="defaultFilterJson"/>
+    <result column="layout_json" property="layoutJson"/>
+    <result column="created_at" property="createdAt"/>
+    <result column="updated_at" property="updatedAt"/>
+  </resultMap>
+
+  <select id="findById" parameterType="long" resultMap="ReportLayoutResult">
+    SELECT *
+    FROM ReportLayout
+    WHERE layout_id = #{layoutId}
+  </select>
+
+  <select id="findByQuery" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.dto.ReportLayoutListQueryDto" resultMap="ReportLayoutResult">
+    SELECT *
+    FROM ReportLayout
+    WHERE 1=1
+    <if test="employeeCode != null">
+      AND employee_code = #{employeeCode}
+    </if>
+    <if test="name != null and name != ''">
+      AND name LIKE CONCAT('%', #{name}, '%')
+    </if>
+    ORDER BY created_at DESC
+    <if test="limit != null and offset != null">
+      LIMIT #{offset}, #{limit}
+    </if>
+  </select>
+
+  <select id="countByQuery" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.dto.ReportLayoutListQueryDto" resultType="int">
+    SELECT COUNT(1)
+    FROM ReportLayout
+    WHERE 1=1
+    <if test="employeeCode != null">
+      AND employee_code = #{employeeCode}
+    </if>
+    <if test="name != null and name != ''">
+      AND name LIKE CONCAT('%', #{name}, '%')
+    </if>
+  </select>
+
+</mapper>
