@@ -63,4 +63,29 @@ public class MessageRule {
 
     @Column(name = "membership_grade_code", nullable = false)
     private Long membershipGradeCode;
+
+
+    public void update(
+            Long templateCode,
+            int offsetMinutes,
+            VisitorType visitorType,
+            MessageChannel channel,
+            boolean isEnabled,
+            int priority,
+            String description
+    ) {
+        this.templateCode = templateCode;
+        this.offsetMinutes = offsetMinutes;
+        this.visitorType = visitorType;
+        this.channel = channel;
+        this.isEnabled = isEnabled;
+        this.priority = priority;
+        this.description = description;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void disable() {
+        this.isEnabled = false;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

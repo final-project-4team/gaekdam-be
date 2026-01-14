@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageRuleQueryMapper">
+
+    <!-- =========================
+         메시지 룰 조회
+         ========================= -->
+    <select id="findRules"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageRuleResponse">
+
+        SELECT
+        r.rule_code              AS ruleCode,
+        r.stage_code             AS stageCode,
+        r.template_code          AS templateCode,
+        r.reference_entity_type  AS referenceEntityType,
+        r.channel,
+        r.is_enabled             AS isEnabled,
+        r.priority
+        FROM message_rule r
+        JOIN message_template t
+        ON r.template_code = t.template_code
+
+        <where>
+            <!-- 호텔 스코프 -->
+            AND t.property_code = #{search.propertyCode}
+
+            <if test="search.stageCode != null">
+                AND r.stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isEnabled != null">
+                AND r.is_enabled = #{search.isEnabled}
+            </if>
+        </where>
+
+        <!-- 발송 로직과 동일 -->
+        ORDER BY r.stage_code ASC, r.priority ASC
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         메시지 룰 개수
+         ========================= -->
+    <select id="countRules" resultType="long">
+        SELECT COUNT(*)
+        FROM message_rule r
+        JOIN message_template t
+        ON r.template_code = t.template_code
+        <where>
+            AND t.property_code = #{search.propertyCode}
+
+            <if test="search.stageCode != null">
+                AND r.stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isEnabled != null">
+                AND r.is_enabled = #{search.isEnabled}
+            </if>
+        </where>
+    </select>
+
+</mapper>

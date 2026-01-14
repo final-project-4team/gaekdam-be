@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageTemplateQueryMapper">
+
+    <!-- =========================
+         메시지 템플릿 조회
+         ========================= -->
+    <select id="findTemplates"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateResponse">
+
+        SELECT
+        template_code           AS templateCode,
+        stage_code              AS stageCode,
+        visitor_type            AS visitorType,
+        language_code           AS languageCode,
+        title,
+        is_active               AS isActive,
+        membership_grade_code   AS membershipGradeCode
+        FROM message_template
+
+        <where>
+            <!-- 호텔(지점) 스코프 -->
+            AND property_code = #{search.propertyCode}
+
+            <if test="search.stageCode != null">
+                AND stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isActive != null">
+                AND is_active = #{search.isActive}
+            </if>
+        </where>
+
+        <if test="sort != null and sort.sortBy != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         메시지 템플릿 개수
+         ========================= -->
+    <select id="countTemplates" resultType="long">
+        SELECT COUNT(*)
+        FROM message_template
+        <where>
+            AND property_code = #{search.propertyCode}
+
+            <if test="search.stageCode != null">
+                AND stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isActive != null">
+                AND is_active = #{search.isActive}
+            </if>
+        </where>
+    </select>
+
+</mapper>
