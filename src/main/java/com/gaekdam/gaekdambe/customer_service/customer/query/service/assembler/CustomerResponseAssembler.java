@@ -9,6 +9,8 @@ import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.C
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerMarketingConsentItem;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerStatusHistoryItem;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.*;
+import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.LocalKmsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,12 +20,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomerResponseAssembler {
 
+    private final DecryptionService decryptionService;
+    private final LocalKmsService localKmsService;
+
     private static final String MEMBERSHIP_NOT_JOINED = "미가입";
 
     public CustomerListItem toCustomerListItem(CustomerListRow row) {
-        // 현재: 고객 복호화 키 확정 전 → null로 내려서 조회
-        String customerName = null;
-        String primaryContact = null;
+        Long customerCode= row.customerCode();
+
+        byte [] dekEnc = row.dekEnc();
+        byte [] primaryContactEnc=row.primaryContactEnc();
+        byte [] customerNameEnc= row.customerNameEnc();
+
+
+        System.out.println("고객 코드"+row.customerCode());
+        String customerName=decryptionService.decrypt(customerCode,dekEnc,customerNameEnc);
+        String primaryContact=decryptionService.decrypt(customerCode,dekEnc,primaryContactEnc);
+
+
 
         return new CustomerListItem(
                 row.customerCode(),
@@ -38,6 +52,9 @@ public class CustomerResponseAssembler {
                 row.nationalityType()
         );
     }
+
+
+
 
     public CustomerDetailResponse toCustomerDetailResponse(CustomerDetailRow row, List<CustomerContactRow> contactRows) {
         CustomerDetailResponse.MemberInfo memberInfo = null;

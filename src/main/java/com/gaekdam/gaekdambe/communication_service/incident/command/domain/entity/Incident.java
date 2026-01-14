@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @Table(
         name = "incident",
         indexes = {
-                @Index(name = "IDX_incident_hotel_group", columnList = "hotel_group_code"),
                 @Index(name = "IDX_incident_property", columnList = "property_code"),
                 @Index(name = "IDX_incident_status", columnList = "incident_status"),
                 @Index(name = "IDX_incident_inquiry", columnList = "inquiry_code")
@@ -59,8 +58,8 @@ public class Incident {
     @Column(name = "incident_status", nullable = false, length = 30)
     private IncidentStatus incidentStatus;
 
-    @Column(name = "occured_at")
-    private LocalDateTime occuredAt;
+    @Column(name = "occurred_at")
+    private LocalDateTime occurredAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -68,14 +67,10 @@ public class Incident {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "hotel_group_code", nullable = false)
-    private Long hotelGroupCode;
-
     @Column(name = "property_code", nullable = false)
     private Long propertyCode;
 
     public static Incident create(
-            Long hotelGroupCode,
             Long propertyCode,
             Long employeeCode,
             String title,
@@ -83,13 +78,12 @@ public class Incident {
             String content,
             IncidentType type,
             IncidentSeverity severity,
-            LocalDateTime occuredAt,
+            LocalDateTime occurredAt,
             Inquiry inquiry
     ) {
         LocalDateTime now = LocalDateTime.now();
 
         return Incident.builder()
-                .hotelGroupCode(hotelGroupCode)
                 .propertyCode(propertyCode)
                 .employeeCode(employeeCode)
                 .incidentTitle(title)
@@ -98,7 +92,7 @@ public class Incident {
                 .incidentType(type)
                 .severity(severity == null ? IncidentSeverity.MEDIUM : severity)
                 .incidentStatus(IncidentStatus.IN_PROGRESS)
-                .occuredAt(occuredAt)
+                .occurredAt(occurredAt)
                 .inquiry(inquiry)
                 .createdAt(now)
                 .updatedAt(now)

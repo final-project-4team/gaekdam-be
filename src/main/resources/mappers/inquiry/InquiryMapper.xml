@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.inquiry.query.mapper.InquiryMapper">
+
+    <sql id="InquiryBaseFrom">
+        FROM inquiry i
+        JOIN inquiry_category c ON c.inquiry_category_code = i.inquiry_category_code
+        JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN incident inc ON inc.inquiry_code = i.inquiry_code
+    </sql>
+
+    <sql id="InquiryWhere">
+        <where>
+            <!-- SaaS 스코프 강제 -->
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND i.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.inquiryCategoryCode != null">
+                AND i.inquiry_category_code = #{search.inquiryCategoryCode}
+            </if>
+
+            <if test="search.status != null and search.status != ''">
+                AND i.inquiry_status = #{search.status}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                AND (
+                i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
+                OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
+                )
+            </if>
+
+            <if test="search.fromDate != null">
+                AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
+            </if>
+
+            <if test="search.toDate != null">
+                AND i.created_at &lt; DATE_ADD(CONCAT(#{search.toDate}, ' 00:00:00'), INTERVAL 1 DAY)
+            </if>
+        </where>
+    </sql>
+
+    <!-- LIST -->
+    <select id="findInquiries"
+            resultType="com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.response.InquiryListResponse">
+
+        SELECT
+        i.inquiry_code           AS inquiryCode,
+        i.created_at             AS createdAt,
+        i.inquiry_title          AS inquiryTitle,
+        i.inquiry_status         AS inquiryStatus,
+        i.customer_code          AS customerCode,
+        i.employee_code          AS employeeCode,
+        i.property_code          AS propertyCode,
+        c.inquiry_category_code  AS inquiryCategoryCode,
+        c.inquiry_category_name  AS inquiryCategoryName,
+        MAX(inc.incident_code)   AS linkedIncidentCode
+        <include refid="InquiryBaseFrom" />
+        <include refid="InquiryWhere" />
+
+        GROUP BY
+        i.inquiry_code,
+        i.created_at,
+        i.inquiry_title,
+        i.inquiry_status,
+        i.customer_code,
+        i.employee_code,
+        i.property_code,
+        c.inquiry_category_code,
+        c.inquiry_category_name
+
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy == 'created_at'"> i.created_at </when>
+            <when test="sort != null and sort.sortBy == 'updated_at'"> i.updated_at </when>
+            <when test="sort != null and sort.sortBy == 'inquiry_status'"> i.inquiry_status </when>
+            <otherwise> i.created_at </otherwise>
+        </choose>
+        <choose>
+            <when test="sort != null and sort.direction == 'ASC'"> ASC </when>
+            <otherwise> DESC </otherwise>
+        </choose>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countInquiries" resultType="long">
+        SELECT COUNT(DISTINCT i.inquiry_code)
+        FROM inquiry i
+        JOIN property p ON p.property_code = i.property_code
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+
+        <if test="search.propertyCode != null">
+            AND i.property_code = #{search.propertyCode}
+        </if>
+
+        <if test="search.inquiryCategoryCode != null">
+            AND i.inquiry_category_code = #{search.inquiryCategoryCode}
+        </if>
+
+        <if test="search.status != null and search.status != ''">
+            AND i.inquiry_status = #{search.status}
+        </if>
+
+        <if test="search.keyword != null and search.keyword != ''">
+            AND (
+            i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
+            OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
+            )
+        </if>
+
+        <if test="search.fromDate != null">
+            AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
+        </if>
+
+        <if test="search.toDate != null">
+            AND i.created_at &lt; DATE_ADD(CONCAT(#{search.toDate}, ' 00:00:00'), INTERVAL 1 DAY)
+        </if>
+    </select>
+
+    <!-- DETAIL -->
+    <select id="findInquiryDetail"
+            resultType="com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.response.InquiryDetailResponse">
+
+        SELECT
+        i.inquiry_code           AS inquiryCode,
+        i.inquiry_status         AS inquiryStatus,
+        i.inquiry_title          AS inquiryTitle,
+        i.inquiry_content        AS inquiryContent,
+        i.answer_content         AS answerContent,
+        i.created_at             AS createdAt,
+        i.updated_at             AS updatedAt,
+        i.customer_code          AS customerCode,
+        i.employee_code          AS employeeCode,
+        i.property_code          AS propertyCode,
+        c.inquiry_category_code  AS inquiryCategoryCode,
+        c.inquiry_category_name  AS inquiryCategoryName,
+        (
+        SELECT MAX(inc2.incident_code)
+        FROM incident inc2
+        WHERE inc2.inquiry_code = i.inquiry_code
+        ) AS linkedIncidentCode
+        FROM inquiry i
+        JOIN inquiry_category c ON c.inquiry_category_code = i.inquiry_category_code
+        JOIN property p ON p.property_code = i.property_code
+        WHERE i.inquiry_code = #{inquiryCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+</mapper>

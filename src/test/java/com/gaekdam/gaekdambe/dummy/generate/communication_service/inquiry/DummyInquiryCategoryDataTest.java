@@ -2,7 +2,7 @@ package com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry;
 
 import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity.InquiryCategory;
 
-import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.infrastructure.repository.InquiryCategoryRepository;
+import com.gaekdam.gaekdambe.communication_service.inquiry.command.infrastructure.repository.InquiryCategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

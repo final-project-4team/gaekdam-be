@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.incident.query.mapper.IncidentMapper">
+
+    <sql id="IncidentListSelectColumns">
+        i.incident_code     AS incidentCode,
+        i.created_at        AS createdAt,
+        i.incident_title    AS incidentTitle,
+        i.incident_status   AS incidentStatus,
+        i.severity          AS severity,
+        i.incident_type     AS incidentType,
+        i.property_code     AS propertyCode,
+        i.employee_code     AS employeeCode,
+        i.inquiry_code      AS inquiryCode
+    </sql>
+
+    <sql id="IncidentBaseFrom">
+        FROM incident i
+        JOIN property p ON p.property_code = i.property_code
+    </sql>
+
+    <sql id="IncidentWhere">
+        <where>
+            <!-- SaaS 스코프 강제 -->
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND i.property_code = #{search.propertyCode}
+            </if>
+            <if test="search.status != null and search.status != ''">
+                AND i.incident_status = #{search.status}
+            </if>
+            <if test="search.severity != null and search.severity != ''">
+                AND i.severity = #{search.severity}
+            </if>
+            <if test="search.type != null and search.type != ''">
+                AND i.incident_type = #{search.type}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                AND (
+                i.incident_title LIKE CONCAT('%', #{search.keyword}, '%')
+                OR i.incident_content LIKE CONCAT('%', #{search.keyword}, '%')
+                )
+            </if>
+
+            <if test="search.fromDate != null">
+                AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
+            </if>
+            <if test="search.toDate != null">
+                AND i.created_at &lt; DATE_ADD(CONCAT(#{search.toDate}, ' 00:00:00'), INTERVAL 1 DAY)
+            </if>
+        </where>
+    </sql>
+
+    <!-- 리스트 -->
+    <select id="findIncidents"
+            resultType="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentListResponse">
+        SELECT
+        <include refid="IncidentListSelectColumns" />
+        <include refid="IncidentBaseFrom" />
+        <include refid="IncidentWhere" />
+
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy == 'created_at'"> i.created_at </when>
+            <when test="sort != null and sort.sortBy == 'updated_at'"> i.updated_at </when>
+            <when test="sort != null and sort.sortBy == 'occured_at'"> i.occured_at </when>
+            <when test="sort != null and sort.sortBy == 'severity'"> i.severity </when>
+            <when test="sort != null and sort.sortBy == 'incident_status'"> i.incident_status </when>
+            <otherwise> i.created_at </otherwise>
+        </choose>
+        <choose>
+            <when test="sort != null and sort.direction == 'ASC'"> ASC </when>
+            <otherwise> DESC </otherwise>
+        </choose>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countIncidents" resultType="long">
+        SELECT COUNT(*)
+        <include refid="IncidentBaseFrom" />
+        <include refid="IncidentWhere" />
+    </select>
+
+    <!-- 상세 -->
+    <select id="findIncidentDetail"
+            resultType="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentDetailResponse">
+        SELECT
+        i.incident_code     AS incidentCode,
+        i.property_code     AS propertyCode,
+        i.employee_code     AS employeeCode,
+        i.incident_title    AS incidentTitle,
+        i.incident_summary  AS incidentSummary,
+        i.incident_content  AS incidentContent,
+        i.severity          AS severity,
+        i.incident_type     AS incidentType,
+        i.incident_status   AS incidentStatus,
+        i.occured_at        AS occuredAt,
+        i.created_at        AS createdAt,
+        i.updated_at        AS updatedAt,
+        i.inquiry_code      AS inquiryCode
+        FROM incident i
+        JOIN property p ON p.property_code = i.property_code
+        WHERE i.incident_code = #{incidentCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+</mapper>

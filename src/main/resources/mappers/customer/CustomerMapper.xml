@@ -31,6 +31,7 @@
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType"/>
             <arg column="nationalityType"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType"/>
+            <arg column="dekEnc" javaType="_byte[]"/>
         </constructor>
     </resultMap>
 
@@ -191,7 +192,8 @@
         rr.reservation_channel AS inflowChannel,
 
         c.contract_type        AS contractType,
-        c.nationality_type     AS nationalityType
+        c.nationality_type     AS nationalityType,
+        c.dek_enc              AS dekEnc
 
         <include refid="CustomerListBaseFrom"/>
         <include refid="CustomerListBaseWhere"/>
