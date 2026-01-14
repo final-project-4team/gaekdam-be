@@ -13,7 +13,6 @@ import com.gaekdam.gaekdambe.hotel_service.property.command.infrastructure.Prope
 import com.gaekdam.gaekdambe.hotel_service.position.command.domain.entity.HotelPosition;
 import com.gaekdam.gaekdambe.hotel_service.position.command.infrastructure.repository.HotelPositionRepository;
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.EmployeeSecureRegistrationRequest;
-import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
@@ -105,27 +104,6 @@ public class EmployeeSecureRegistrationService {
     Employee saved = employeeRepository.save(employee);
 
     return saved.getEmployeeCode();
-  }
-
-  @Transactional
-  public void loginFailed(Employee employee) {
-
-    employee.loginFailed();
-
-    // 증가된 횟수가 5회 이상이면 즉시 잠금 처리
-    if (employee.getFailedLoginCount() >= 5
-        && employee.getEmployeeStatus() == EmployeeStatus.ACTIVE) {
-      employee.employeeLocked();
-    }
-
-    // 변경 사항 저장
-    employeeRepository.save(employee);
-  }
-
-  @Transactional
-  public void loginSuccess(Employee employee) {
-    employee.loginSuccess();
-    employeeRepository.save(employee);
   }
 
 }
