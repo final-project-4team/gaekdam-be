@@ -20,8 +20,8 @@ public class MessageSendHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "send_id")
-    private Long sendId;
+    @Column(name = "send_code")
+    private Long sendCode;
 
     /** 고객여정단계 코드 */
     @Column(name = "stage_code", nullable = false)

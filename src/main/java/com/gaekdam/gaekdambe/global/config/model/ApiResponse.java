@@ -24,6 +24,15 @@ public class ApiResponse<T> {
         .build();
   }
 
+  // 반환데이터 없을 때 쓰는 메서드
+    public static ApiResponse<Void> success() {
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .data(null)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
   // 실패 응답 생성 정적 메소드
   public static<T> ApiResponse<T> failure(String errorCode, String message) {
     return ApiResponse.<T>builder()

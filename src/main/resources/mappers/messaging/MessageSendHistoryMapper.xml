@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageSendHistoryMapper">
+
+    <select id="findHistories"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryResponse">
+
+        SELECT
+        send_code AS sendCode,
+        stage_code AS stageCode,
+        reservation_code AS reservationCode,
+        stay_code AS stayCode,
+        rule_code AS ruleCode,
+        template_code AS templateCode,
+        scheduled_at AS scheduledAt,
+        sent_at AS sentAt,
+        status AS status,
+        fail_reason AS failReason,
+        external_message_id AS externalMessageId
+        FROM message_send_history
+
+        <where>
+            <if test="search != null">
+
+                <if test="search.stageCode != null">
+                    AND stage_code = #{search.stageCode}
+                </if>
+
+                <if test="search.reservationCode != null">
+                    AND reservation_code = #{search.reservationCode}
+                </if>
+
+                <if test="search.stayCode != null">
+                    AND stay_code = #{search.stayCode}
+                </if>
+
+                <if test="search.status != null">
+                    AND status = #{search.status}
+                </if>
+
+                <if test="search.fromDate != null">
+                    AND scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
+                </if>
+
+                <if test="search.toDate != null">
+                    AND scheduled_at <![CDATA[ <= ]]> #{search.toDate}
+                </if>
+
+            </if>
+        </where>
+
+        <if test="sort != null and sort.sortBy != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countHistories" resultType="long">
+        SELECT COUNT(*)
+        FROM message_send_history
+        <where>
+            <if test="search != null">
+
+                <if test="search.stageCode != null">
+                    AND stage_code = #{search.stageCode}
+                </if>
+
+                <if test="search.reservationCode != null">
+                    AND reservation_code = #{search.reservationCode}
+                </if>
+
+                <if test="search.stayCode != null">
+                    AND stay_code = #{search.stayCode}
+                </if>
+
+                <if test="search.status != null">
+                    AND status = #{search.status}
+                </if>
+
+                <if test="search.fromDate != null">
+                    AND scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
+                </if>
+
+                <if test="search.toDate != null">
+                    AND scheduled_at <![CDATA[ <= ]]> #{search.toDate}
+                </if>
+
+            </if>
+        </where>
+    </select>
+
+</mapper>

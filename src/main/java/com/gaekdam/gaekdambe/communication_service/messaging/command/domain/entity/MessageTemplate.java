@@ -55,4 +55,26 @@ public class MessageTemplate {
 
     @Column(name = "stage_code", nullable = false)
     private Long stageCode;
+
+
+    public void update(
+            String title,
+            String content,
+            LanguageCode languageCode,
+            boolean isActive,
+            String conditionExpr
+    ) {
+        this.title = title;
+        this.content = content;
+        this.languageCode = languageCode;
+        this.isActive = isActive;
+        this.conditionExpr = conditionExpr;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void disable() {
+        this.isActive = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }
