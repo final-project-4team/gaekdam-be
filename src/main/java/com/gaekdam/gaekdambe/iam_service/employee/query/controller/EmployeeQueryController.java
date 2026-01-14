@@ -19,7 +19,7 @@ public class EmployeeQueryController {
   private final EmployeeQueryService employeeQueryService;
 
 
-  @PreAuthorize("hasAuthority('CUSTOMER_LIST_READ')")
+  @PreAuthorize("hasAuthority('EMPLOYEE_LIST_READ')")
   @GetMapping("/detail/{employeeCode}")
   public ResponseEntity<ApiResponse<EmployeeDetailResponse>> getEmployee(@PathVariable Long employeeCode) {
     return ResponseEntity.ok(ApiResponse.success(employeeQueryService.getEmployeeDetail(employeeCode)));

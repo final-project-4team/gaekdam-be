@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-
   Optional<Employee> findByLoginId(String employeeId);
 
   boolean existsByLoginId(String loginId);
@@ -17,4 +16,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
   boolean existsByPhoneNumberHash(byte[] phoneNumberHash);
 
   List<Employee> findByEmployeeStatusAndLastLoginAtBefore(EmployeeStatus status, LocalDateTime targetDate);
+
+  @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+  @org.springframework.data.jpa.repository.Query("UPDATE Employee e SET e.permission.permissionCode = :newPermissionCode WHERE e.permission.permissionCode = :oldPermissionCode")
+  void bulkUpdatePermission(Long oldPermissionCode, Long newPermissionCode);
 }

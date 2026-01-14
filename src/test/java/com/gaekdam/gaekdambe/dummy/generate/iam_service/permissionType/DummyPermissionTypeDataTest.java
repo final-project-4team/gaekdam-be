@@ -33,20 +33,6 @@ public class DummyPermissionTypeDataTest {
       String resourceStr = (lastUnderscoreIndex != -1) ? keyName.substring(0, lastUnderscoreIndex) : keyName;
       String actionStr = (lastUnderscoreIndex != -1) ? keyName.substring(lastUnderscoreIndex + 1) : "";
 
-      // 특수 케이스 처리 (DETAIL_READ, LIST_READ 등)
-      if (keyName.endsWith("_DETAIL_READ")) {
-        resourceStr = keyName.substring(0, keyName.indexOf("_DETAIL_READ"));
-        actionStr = "DETAIL_READ";
-      } else if (keyName.endsWith("_LIST_READ")) {
-        resourceStr = keyName.substring(0, keyName.indexOf("_LIST_READ"));
-        actionStr = "LIST_READ";
-      } else if (keyName.endsWith("_DASHBOARD_CREATE")) {
-        resourceStr = keyName.substring(0, keyName.indexOf("_DASHBOARD_CREATE"));
-        actionStr = "DASHBOARD_CREATE";
-      } else if (keyName.endsWith("_DASHBOARD_UPDATE")) {
-        resourceStr = keyName.substring(0, keyName.indexOf("_DASHBOARD_UPDATE"));
-        actionStr = "DASHBOARD_UPDATE";
-      }
 
       String koreanResource = getKoreanResource(resourceStr);
       String koreanAction = getKoreanAction(actionStr);
@@ -66,23 +52,23 @@ public class DummyPermissionTypeDataTest {
   private String getKoreanResource(String resource) {
     return switch (resource) {
       case "REPORT" -> "리포트";
+      case "REPORT_DASHBOARD" -> "리포트 대시보드";
       case "MEMBER" -> "회원";
       case "EMPLOYEE" -> "직원";
       case "CUSTOMER" -> "고객";
       case "CUSTOMER_MEMO" -> "고객 메모";
       case "MEMBERSHIP_POLICY" -> "멤버십 정책";
-      case "MEMBERSHIP" -> "멤버십";
       case "LOYALTY_POLICY" -> "로열티 정책";
-      case "LOYALTY" -> "로열티";
-      case "CUSTOMER_ACTIVITY" -> "고객 활동";
       case "CUSTOMER_TIMELINE" -> "고객 타임라인";
+      case "RESERVATION" -> "예약";
+      case "RESERVATION_PACKAGE" -> "예약 패키지";
       case "CHECK_IN_OUT" -> "체크인/아웃";
-      case "CHECK_IN" -> "체크인";
-      case "CHECK_OUT" -> "체크아웃";
+      case "STAYS" -> "숙박";
       case "FACILITY_USAGE" -> "시설 이용";
       case "INQUIRY" -> "문의";
       case "ACCIDENT" -> "사건사고";
       case "MESSAGE" -> "메시지";
+      case "PERMISSION" -> "권한";
       default -> resource;
     };
   }
@@ -90,14 +76,10 @@ public class DummyPermissionTypeDataTest {
   private String getKoreanAction(String action) {
     return switch (action) {
       case "CREATE" -> "생성";
-      case "READ" -> "조회";
+      case "READ" -> "상세 조회";
+      case "LIST" -> "목록 조회";
       case "UPDATE" -> "수정";
       case "DELETE" -> "삭제";
-      case "DETAIL_READ" -> "상세 조회";
-      case "LIST_READ" -> "목록 조회";
-      case "DASHBOARD_CREATE" -> "대시보드 생성";
-      case "DASHBOARD_UPDATE" -> "대시보드 수정";
-      case "APPROVE" -> "승인";
       default -> action;
     };
   }

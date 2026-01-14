@@ -40,4 +40,6 @@ public class PermissionMapping {
   public static PermissionMapping createPermissionMapping(Permission permission, PermissionType permissionType) {
     return new PermissionMapping(permission, permissionType);
   }
+
+
 }

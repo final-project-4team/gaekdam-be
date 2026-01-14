@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.response;
+package com.gaekdam.gaekdambe.iam_service.auth.command.application.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

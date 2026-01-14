@@ -42,31 +42,12 @@ public class SecurityConfig {
         // 권한 설정
         .authorizeHttpRequests(auth -> auth
                 // 우선 개발초기랑 다 열어둠
-                       .requestMatchers("/**").permitAll()
+                       .requestMatchers("/**").permitAll()//주석 처리 후 preAuthorize확인
                 // 로그인/회원가입 공개
               //  .requestMatchers("api/v1/employee/add").permitAll()
-                .requestMatchers(
+  /*              .requestMatchers(
                     "/api/v1/auth/**"
-                ).permitAll()
-
-                .requestMatchers(
-                        "/api/v1/**",
-                        "/api/v1/stays/**",
-                    "/api/v1/access/**",
-                    "/api/v1/alarms/**",
-                    "/api/v1/room/**",
-                    "/api/v1/intout/**",
-                    "/api/v1/inquiry/**",
-                    "/api/v1/notice/**",
-                    "/tossApi/**",
-                    "/api/v1/payments/**",
-                    "/api/v1/paymentHistories/**",
-                    "/api/v1/reservations/**",
-                    "/api/v1/entry/**",
-                    "/api/v1/users/**"
-
-                ).permitAll()
-
+                ).permitAll()*/
                 // Swagger 공개
                 .requestMatchers(
                     "/swagger-ui.html",
@@ -76,9 +57,7 @@ public class SecurityConfig {
                     "/webjars/**"
                 ).permitAll()
 
-
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/user/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/api/v1/auth/**").permitAll()
 
                 // API 보호
 
