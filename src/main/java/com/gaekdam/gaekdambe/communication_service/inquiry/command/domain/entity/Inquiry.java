@@ -51,8 +51,8 @@ public class Inquiry {
     @Column(name = "customer_code", nullable = false)
     private Long customerCode;
 
-    @Column(name = "user_code")
-    private Long userCode; // 담당자(직원) 코드 - nullable
+    @Column(name = "employee_code")
+    private Long employeeCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inquiry_category_code", nullable = false)
@@ -86,8 +86,8 @@ public class Inquiry {
                 .build();
     }
 
-    public void assignManager(Long userCode) {
-        this.userCode = userCode;
+    public void assignManager(Long employeeCode) {
+        this.employeeCode = employeeCode;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -96,5 +96,4 @@ public class Inquiry {
         this.inquiryStatus = InquiryStatus.ANSWERED;
         this.updatedAt = LocalDateTime.now();
     }
-
 }

@@ -30,4 +30,6 @@ public class InquiryDetailResponse {
     private String inquiryCategoryName;
 
     private Long linkedIncidentCode;
+
+    private String customerName;
 }

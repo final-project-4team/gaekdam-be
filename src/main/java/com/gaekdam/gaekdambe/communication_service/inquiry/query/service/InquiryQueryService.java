@@ -4,37 +4,97 @@ import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.request.Inq
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.response.InquiryDetailResponse;
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.response.InquiryListResponse;
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.mapper.InquiryMapper;
+import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryDetailRow;
+import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryListRow;
+import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.exception.CustomException;
+import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class InquiryQueryService {
 
     private final InquiryMapper inquiryMapper;
+    private final DecryptionService decryptionService;
 
     public PageResponse<InquiryListResponse> getInquiries(
             PageRequest page,
             InquiryListSearchRequest search,
             SortRequest sort
     ) {
-        List<InquiryListResponse> list = inquiryMapper.findInquiries(page, search, sort);
+        List<InquiryListRow> rows = inquiryMapper.findInquiries(page, search, sort);
         long total = inquiryMapper.countInquiries(search);
 
-        return new PageResponse<>(
-                list,
-                page.getPage(),
-                page.getSize(),
-                total
-        );
+        List<InquiryListResponse> responses = rows.stream()
+                .map(this::toListResponse)
+                .toList();
+
+        return new PageResponse<>(responses, page.getPage(), page.getSize(), total);
     }
 
     public InquiryDetailResponse getInquiryDetail(Long hotelGroupCode, Long inquiryCode) {
-        return inquiryMapper.findInquiryDetail(hotelGroupCode, inquiryCode);
+        InquiryDetailRow detailRow = inquiryMapper.findInquiryDetail(hotelGroupCode, inquiryCode);
+        if (detailRow == null) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 문의입니다.");
+        }
+
+        String customerName = decryptCustomerName(
+                detailRow.customerCode(),
+                detailRow.dekEnc(),
+                detailRow.customerNameEnc()
+        );
+
+        return new InquiryDetailResponse(
+                detailRow.inquiryCode(),
+                detailRow.inquiryStatus(),
+                detailRow.inquiryTitle(),
+                detailRow.inquiryContent(),
+                detailRow.answerContent(),
+                detailRow.createdAt(),
+                detailRow.updatedAt(),
+                detailRow.customerCode(),
+                detailRow.employeeCode(),
+                detailRow.propertyCode(),
+                detailRow.inquiryCategoryCode(),
+                detailRow.inquiryCategoryName(),
+                detailRow.linkedIncidentCode(),
+                customerName
+        );
+    }
+
+    private InquiryListResponse toListResponse(InquiryListRow listRow) {
+        String customerName = decryptCustomerName(
+                listRow.customerCode(),
+                listRow.dekEnc(),
+                listRow.customerNameEnc()
+        );
+
+        return new InquiryListResponse(
+                listRow.inquiryCode(),
+                listRow.createdAt(),
+                listRow.inquiryTitle(),
+                listRow.inquiryStatus(),
+                listRow.customerCode(),
+                listRow.employeeCode(),
+                listRow.propertyCode(),
+                listRow.inquiryCategoryCode(),
+                listRow.inquiryCategoryName(),
+                listRow.linkedIncidentCode(),
+                customerName
+        );
+    }
+
+    private String decryptCustomerName(Long customerCode, byte[] dekEnc, byte[] customerNameEnc) {
+        // cacheCode = customerCode (Customer 테이블 DEK 캐시 키로 사용)
+        return decryptionService.decrypt(customerCode, dekEnc, customerNameEnc);
     }
 }

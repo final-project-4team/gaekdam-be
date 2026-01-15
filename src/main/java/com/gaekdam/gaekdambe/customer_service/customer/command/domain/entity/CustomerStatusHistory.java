@@ -29,10 +29,10 @@ public class CustomerStatusHistory {
     private CustomerStatus afterStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "change_source", length = 20)
+    @Column(name = "change_source", nullable = false, length = 20)
     private ChangeSource changeSource;
 
-    @Column(name = "employee_code")
+    @Column(name = "employee_code", nullable = false)
     private Long changedByEmployeeCode;
 
     @Column(name = "change_reason", length = 255)

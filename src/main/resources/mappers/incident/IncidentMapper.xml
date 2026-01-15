@@ -68,7 +68,7 @@
         <choose>
             <when test="sort != null and sort.sortBy == 'created_at'"> i.created_at </when>
             <when test="sort != null and sort.sortBy == 'updated_at'"> i.updated_at </when>
-            <when test="sort != null and sort.sortBy == 'occured_at'"> i.occured_at </when>
+            <when test="sort != null and sort.sortBy == 'occurred_at'"> i.occurred_at </when>
             <when test="sort != null and sort.sortBy == 'severity'"> i.severity </when>
             <when test="sort != null and sort.sortBy == 'incident_status'"> i.incident_status </when>
             <otherwise> i.created_at </otherwise>
@@ -100,7 +100,7 @@
         i.severity          AS severity,
         i.incident_type     AS incidentType,
         i.incident_status   AS incidentStatus,
-        i.occured_at        AS occuredAt,
+        i.occurred_at        AS occurredAt,
         i.created_at        AS createdAt,
         i.updated_at        AS updatedAt,
         i.inquiry_code      AS inquiryCode

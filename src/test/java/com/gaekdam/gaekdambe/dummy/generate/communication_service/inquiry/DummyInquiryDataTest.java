@@ -25,7 +25,7 @@ public class DummyInquiryDataTest {
     public void generate() {
         if (inquiryRepository.count() > 0) return;
 
-        //  property_code + hotel_group_code 세트로 가져오기 (조인/조회 안전)
+        // property_code + hotel_group_code
         List<PropertyPair> props = jdbcTemplate.query("""
             SELECT property_code, hotel_group_code
             FROM property
@@ -33,7 +33,7 @@ public class DummyInquiryDataTest {
 
         if (props.isEmpty()) return;
 
-        //  실제 category PK 가져오기 (FK 안전)
+        // category PK
         List<Long> categoryIds = jdbcTemplate.query("""
             SELECT inquiry_category_code
             FROM inquiry_category
@@ -42,6 +42,15 @@ public class DummyInquiryDataTest {
 
         if (categoryIds.isEmpty()) return;
 
+        // ✅ 실제 customer PK 뽑아서 사용 (조인 누락 방지)
+        List<Long> customerCodes = jdbcTemplate.query("""
+            SELECT customer_code
+            FROM customer
+        """, (rs, rowNum) -> rs.getLong(1));
+
+        if (customerCodes.isEmpty()) return;
+
+        // ✅ user_code -> employee_code 로 변경
         String insertSql = """
             INSERT INTO inquiry (
                 inquiry_status,
@@ -51,7 +60,7 @@ public class DummyInquiryDataTest {
                 created_at,
                 updated_at,
                 customer_code,
-                user_code,
+                employee_code,
                 inquiry_category_code,
                 hotel_group_code,
                 property_code
@@ -68,15 +77,16 @@ public class DummyInquiryDataTest {
 
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
-            long customerCode = 1000L + rnd.nextInt(200);
-            Long userCode = (rnd.nextInt(10) < 3) ? (100L + rnd.nextInt(20)) : null;
+            // ✅ 존재하는 customer_code만 넣기
+            Long customerCode = customerCodes.get(rnd.nextInt(customerCodes.size()));
 
-            //  property -> hotelGroup 같이 매칭
+            // 직원(담당자) nullable
+            Long employeeCode = (rnd.nextInt(10) < 3) ? (100L + rnd.nextInt(20)) : null;
+
             PropertyPair pickedProp = props.get(rnd.nextInt(props.size()));
             long propertyCode = pickedProp.propertyCode();
             long hotelGroupCode = pickedProp.hotelGroupCode();
 
-            //  category PK 실존값
             long inquiryCategoryCode = categoryIds.get(rnd.nextInt(categoryIds.size()));
 
             jdbcTemplate.update(
@@ -88,7 +98,7 @@ public class DummyInquiryDataTest {
                     now,
                     now,
                     customerCode,
-                    userCode,
+                    employeeCode,
                     inquiryCategoryCode,
                     hotelGroupCode,
                     propertyCode

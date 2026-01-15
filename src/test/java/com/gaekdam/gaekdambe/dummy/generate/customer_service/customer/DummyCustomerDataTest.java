@@ -38,8 +38,8 @@ public class DummyCustomerDataTest {
     @PersistenceContext
     private EntityManager em;
 
+    private static final Long DUMMY_EMPLOYEE_CODE = 1L;
 
-    // 기본 5000명 생성
     @Transactional
     public void generate() {
         List<Long> hotelGroupCodes = hotelGroupRepository.findAll().stream()
@@ -48,17 +48,13 @@ public class DummyCustomerDataTest {
         if (hotelGroupCodes.isEmpty()) return;
 
         long existing = customerRepository.count();
-
-        // 기본 5000, -Ddummy.customer.count=5000 같은 JVM 옵션으로 변경 가능
         int target = Integer.getInteger("dummy.customer.count", 5000);
-
         if (existing >= target) return;
 
         LocalDateTime now = LocalDateTime.now();
 
-        // seq는 phone/email 유니크용이라 existing+1부터 이어가야 안전
         for (long seq = existing + 1; seq <= target; seq++) {
-            Long hotelGroupCode = hotelGroupCodes.get((int)((seq - 1) % hotelGroupCodes.size()));
+            Long hotelGroupCode = hotelGroupCodes.get((int) ((seq - 1) % hotelGroupCodes.size()));
             LocalDateTime createdAt = now.minusDays(randomInt(0, 365));
 
             createFullCustomerData((int) seq, hotelGroupCode, createdAt);
@@ -71,19 +67,14 @@ public class DummyCustomerDataTest {
     }
 
     private void createFullCustomerData(int seq, Long hotelGroupCode, LocalDateTime createdAt) {
-        // 1) KMS DEK 생성 (Envelope Encryption)
         DataKey dek = kmsService.generateDataKey();
         byte[] plaintextDek = dek.plaintext();
         byte[] dekEnc = dek.encrypted();
 
-
         String kmsKeyId = "kms-key-dev-001";
 
-        // 2) 고객명 AES 암호화
         String customerName = "고객" + seq;
         byte[] customerNameEnc = AesCryptoUtils.encrypt(customerName, plaintextDek);
-
-        // 3) 검색용 해시(HMAC-SHA256) → DB 컬럼이 String이면 HEX로 저장
         String customerNameHashHex = toHex(searchHashService.nameHash(customerName));
 
         NationalityType nationalityType = pickNationalityType();
@@ -102,21 +93,21 @@ public class DummyCustomerDataTest {
 
         customerRepository.save(customer);
 
-        // 4) 상태 변경 + 이력
-        CustomerStatus before = customer.getCustomerStatus();
-        CustomerStatus after = pickCustomerStatus();
-        if (after != before) {
+        CustomerStatus beforeStatus = customer.getCustomerStatus();
+        CustomerStatus afterStatus = pickCustomerStatus();
+
+        if (afterStatus != beforeStatus) {
             LocalDateTime changedAt = createdAt.plusDays(randomInt(1, 30));
-            customer.changeCustomerStatus(after, changedAt);
+            customer.changeCustomerStatus(afterStatus, changedAt);
 
             if (customerStatusHistoryRepository != null) {
                 customerStatusHistoryRepository.save(
                         CustomerStatusHistory.recordCustomerStatusChange(
                                 customer.getCustomerCode(),
-                                before,
-                                after,
+                                beforeStatus,
+                                afterStatus,
                                 ChangeSource.SYSTEM,
-                                null,
+                                DUMMY_EMPLOYEE_CODE,
                                 "더미 상태 변경",
                                 changedAt
                         )
@@ -124,10 +115,8 @@ public class DummyCustomerDataTest {
             }
         }
 
-        // 5) 연락처 AES + 해시
         createContacts(customer.getCustomerCode(), seq, plaintextDek, createdAt);
 
-        // 6) member / memo (기존 로직 유지)
         if (chance(0.60)) {
             memberRepository.save(Member.registerMember(customer.getCustomerCode(), createdAt));
         }
@@ -138,7 +127,7 @@ public class DummyCustomerDataTest {
                 customerMemoRepository.save(
                         CustomerMemo.registerCustomerMemo(
                                 customer.getCustomerCode(),
-                                1L,
+                                DUMMY_EMPLOYEE_CODE,
                                 "더미 메모 " + (m + 1) + " - " + customerName,
                                 createdAt.plusMinutes(m)
                         )
@@ -148,12 +137,11 @@ public class DummyCustomerDataTest {
     }
 
     private void createContacts(Long customerCode, int seq, byte[] plaintextDek, LocalDateTime createdAt) {
-        // PHONE
         String phone = "010" + String.format("%08d", seq);
         byte[] phoneEnc = AesCryptoUtils.encrypt(phone, plaintextDek);
         String phoneHashHex = toHex(searchHashService.phoneHash(phone));
 
-        Boolean phoneOptIn = chance(0.50);
+        boolean phoneOptIn = chance(0.50);
         LocalDateTime phoneConsentAt = phoneOptIn ? createdAt : null;
 
         customerContactRepository.save(
@@ -169,12 +157,11 @@ public class DummyCustomerDataTest {
                 )
         );
 
-        // EMAIL
         String email = "dummy" + seq + "@gaekdam.test";
         byte[] emailEnc = AesCryptoUtils.encrypt(email, plaintextDek);
         String emailHashHex = toHex(searchHashService.emailHash(email));
 
-        Boolean emailOptIn = chance(0.50);
+        boolean emailOptIn = chance(0.50);
         LocalDateTime emailConsentAt = emailOptIn ? createdAt : null;
 
         customerContactRepository.save(
@@ -190,8 +177,6 @@ public class DummyCustomerDataTest {
                 )
         );
     }
-
-    // ===== helpers =====
 
     private boolean chance(double probability) {
         return ThreadLocalRandom.current().nextDouble() < probability;
