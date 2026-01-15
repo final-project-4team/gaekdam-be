@@ -37,7 +37,6 @@
             <arg column="nationalityType"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType"/>
 
-            <!-- ✅ FIX -->
             <arg column="dekEnc"
                  javaType="[B"
                  jdbcType="VARBINARY"
@@ -48,7 +47,6 @@
     <sql id="CustomerListBaseFrom">
         FROM customer c
 
-        <!-- 대표 연락처 1개 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -67,7 +65,6 @@
         WHERE t.rn = 1
         ) pc ON pc.customer_code = c.customer_code
 
-        <!-- 목록: ACTIVE 멤버십 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -88,7 +85,6 @@
         ON mg.membership_grade_code = m.membership_grade_code
         AND mg.hotel_group_code = c.hotel_group_code
 
-        <!-- 목록: ACTIVE 로열티 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -109,7 +105,6 @@
         ON lg.loyalty_grade_code = l.loyalty_grade_code
         AND lg.hotel_group_code = c.hotel_group_code
 
-        <!-- 최근 예약 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -227,7 +222,6 @@
         <include refid="CustomerListBaseWhere"/>
     </select>
 
-
     <!-- =========================
          Customer Detail
        ========================= -->
@@ -313,7 +307,6 @@
 
         FROM customer c
 
-        <!-- 최근 예약 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -334,7 +327,6 @@
         ) rr ON rr.customer_code = c.customer_code
         AND rr.hotel_group_code = c.hotel_group_code
 
-        <!-- primary PHONE 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -350,7 +342,6 @@
         WHERE t.rn = 1
         ) pp ON pp.customer_code = c.customer_code
 
-        <!-- primary EMAIL 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -366,7 +357,6 @@
         WHERE t.rn = 1
         ) pe ON pe.customer_code = c.customer_code
 
-        <!-- 최근 member 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -381,7 +371,6 @@
         WHERE t.rn = 1
         ) mb ON mb.customer_code = c.customer_code
 
-        <!-- 최근 membership 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -401,7 +390,6 @@
         ON mg2.membership_grade_code = m2.membership_grade_code
         AND mg2.hotel_group_code = c.hotel_group_code
 
-        <!-- 최근 loyalty 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -425,9 +413,8 @@
         AND c.customer_code = #{customerCode}
     </select>
 
-
     <!-- =========================
-         Contacts (record 매핑 고정)
+         Contacts
        ========================= -->
 
     <resultMap id="CustomerContactRowMap"
@@ -471,35 +458,63 @@
         cc.contact_code DESC
     </select>
 
-    <select id="findCustomerStatus"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusRow">
+    <!-- =========================
+         Customer Status
+       ========================= -->
+
+    <resultMap id="CustomerStatusRowMap"
+               type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusRow">
+        <constructor>
+            <idArg column="customerCode" javaType="java.lang.Long"/>
+            <arg column="status"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+            <arg column="cautionAt" javaType="java.time.LocalDateTime"/>
+            <arg column="inactiveAt" javaType="java.time.LocalDateTime"/>
+            <arg column="updatedAt" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCustomerStatus" resultMap="CustomerStatusRowMap">
         SELECT
-        c.customer_code    AS customerCode,
-        c.hotel_group_code AS hotelGroupCode,
-        c.customer_status  AS status,
-        c.caution_at       AS cautionAt,
-        c.inactive_at      AS inactiveAt,
-        c.updated_at       AS updatedAt
+        c.customer_code   AS customerCode,
+        c.customer_status AS status,
+        c.caution_at      AS cautionAt,
+        c.inactive_at     AS inactiveAt,
+        c.updated_at      AS updatedAt
         FROM customer c
         WHERE c.hotel_group_code = #{hotelGroupCode}
         AND c.customer_code = #{customerCode}
     </select>
 
-
     <!-- =========================
          Status Histories
        ========================= -->
 
-    <select id="findCustomerStatusHistories"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusHistoryRow">
+    <resultMap id="CustomerStatusHistoryRowMap"
+               type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusHistoryRow">
+        <constructor>
+            <idArg column="customerStatusHistoryCode" javaType="java.lang.Long"/>
+            <arg column="beforeStatus"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+            <arg column="afterStatus"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+            <arg column="changeSource"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource"/>
+            <arg column="changeReason" javaType="java.lang.String"/>
+            <arg column="changedAt" javaType="java.time.LocalDateTime"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCustomerStatusHistories" resultMap="CustomerStatusHistoryRowMap">
         SELECT
         h.customer_status_history_code  AS customerStatusHistoryCode,
         h.before_status                 AS beforeStatus,
         h.after_status                  AS afterStatus,
         h.change_source                 AS changeSource,
-        h.changed_by_user_id            AS changedByUserId,
         h.change_reason                 AS changeReason,
-        h.changed_at                    AS changedAt
+        h.changed_at                    AS changedAt,
+        h.employee_code                 AS employeeCode
         FROM customer_status_history h
         JOIN customer c
         ON c.customer_code = h.customer_code
@@ -530,7 +545,6 @@
         AND c.hotel_group_code = #{hotelGroupCode}
         WHERE h.customer_code = #{customerCode}
     </select>
-
 
     <!-- =========================
          Marketing Consents
