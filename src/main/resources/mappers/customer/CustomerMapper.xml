@@ -4,11 +4,15 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerMapper">
 
-    <!--  record(CustomerListRow) 생성자 매핑 고정 -->
+    <!-- =========================
+         Customer List
+       ========================= -->
+
     <resultMap id="CustomerListRowMap"
                type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerListRow">
         <constructor>
             <idArg column="customerCode" javaType="java.lang.Long"/>
+
             <arg column="customerNameEnc"
                  javaType="[B"
                  jdbcType="VARBINARY"
@@ -18,6 +22,7 @@
                  javaType="[B"
                  jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
             <arg column="status"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
 
@@ -31,7 +36,12 @@
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType"/>
             <arg column="nationalityType"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType"/>
-            <arg column="dekEnc" javaType="_byte[]"/>
+
+            <!-- ✅ FIX -->
+            <arg column="dekEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
         </constructor>
     </resultMap>
 
@@ -95,12 +105,11 @@
         ) l ON l.customer_code = c.customer_code
         AND l.hotel_group_code = c.hotel_group_code
 
-        <!-- ✅ 로열티 등급명 -->
         LEFT JOIN loyalty_grade lg
         ON lg.loyalty_grade_code = l.loyalty_grade_code
         AND lg.hotel_group_code = c.hotel_group_code
 
-        <!-- ✅ 최근 예약 1건: reservation에는 hotel_group_code가 없어서 property로 호텔그룹 매핑 -->
+        <!-- 최근 예약 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -174,10 +183,6 @@
         </if>
     </sql>
 
-    <!-- =========================
-         Customer List
-       ========================= -->
-
     <select id="findCustomers" resultMap="CustomerListRowMap">
         SELECT
         c.customer_code        AS customerCode,
@@ -227,37 +232,141 @@
          Customer Detail
        ========================= -->
 
-    <select id="findCustomerDetail"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerDetailRow">
+    <resultMap id="CustomerDetailRowMap"
+               type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerDetailRow">
+        <constructor>
+            <idArg column="customerCode" javaType="java.lang.Long"/>
+
+            <arg column="customerNameEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="dekEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="status"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+            <arg column="nationalityType"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType"/>
+            <arg column="contractType"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType"/>
+
+            <arg column="inflowChannel" javaType="java.lang.String"/>
+
+            <arg column="primaryPhoneEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="primaryEmailEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="memberCode" javaType="java.lang.Long"/>
+            <arg column="memberCreatedAt" javaType="java.time.LocalDateTime"/>
+
+            <arg column="membershipGradeName" javaType="java.lang.String"/>
+            <arg column="membershipStatus" javaType="java.lang.String"/>
+            <arg column="membershipJoinedAt" javaType="java.time.LocalDateTime"/>
+            <arg column="membershipCalculatedAt" javaType="java.time.LocalDateTime"/>
+            <arg column="membershipExpiredAt" javaType="java.time.LocalDateTime"/>
+
+            <arg column="loyaltyGradeName" javaType="java.lang.String"/>
+            <arg column="loyaltyStatus" javaType="java.lang.String"/>
+            <arg column="loyaltyJoinedAt" javaType="java.time.LocalDateTime"/>
+            <arg column="loyaltyCalculatedAt" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCustomerDetail" resultMap="CustomerDetailRowMap">
         SELECT
         c.customer_code        AS customerCode,
-        c.hotel_group_code     AS hotelGroupCode,
         c.customer_name_enc    AS customerNameEnc,
+        c.dek_enc              AS dekEnc,
 
+        c.customer_status      AS status,
         c.nationality_type     AS nationalityType,
         c.contract_type        AS contractType,
-        c.customer_status      AS status,
 
-        c.caution_at           AS cautionAt,
-        c.inactive_at          AS inactiveAt,
-        c.created_at           AS createdAt,
-        c.updated_at           AS updatedAt,
+        rr.reservation_channel AS inflowChannel,
+
+        pp.contact_value_enc   AS primaryPhoneEnc,
+        pe.contact_value_enc   AS primaryEmailEnc,
 
         mb.member_code         AS memberCode,
+        mb.created_at          AS memberCreatedAt,
 
-        m2.membership_status        AS membershipStatus,
-        m2.membership_grade_code    AS membershipGradeCode,
-        mg2.grade_name              AS membershipGradeName,
-        m2.joined_at                AS membershipJoinedAt,
-        m2.expired_at               AS membershipExpiredAt,
+        mg2.grade_name         AS membershipGradeName,
+        m2.membership_status   AS membershipStatus,
+        m2.joined_at           AS membershipJoinedAt,
+        m2.calculated_at       AS membershipCalculatedAt,
+        m2.expired_at          AS membershipExpiredAt,
 
-        l2.loyalty_status           AS loyaltyStatus,
-        l2.loyalty_grade_code       AS loyaltyGradeCode,
-        l2.joined_at                AS loyaltyJoinedAt,
-        l2.calculated_at            AS loyaltyCalculatedAt
+        lg2.grade_name         AS loyaltyGradeName,
+        l2.loyalty_status      AS loyaltyStatus,
+        l2.joined_at           AS loyaltyJoinedAt,
+        l2.calculated_at       AS loyaltyCalculatedAt
 
         FROM customer c
 
+        <!-- 최근 예약 1건 -->
+        LEFT JOIN (
+        SELECT *
+        FROM (
+        SELECT
+        r.customer_code,
+        p.hotel_group_code,
+        r.reservation_channel,
+        r.reserved_at,
+        ROW_NUMBER() OVER (
+        PARTITION BY p.hotel_group_code, r.customer_code
+        ORDER BY r.reserved_at DESC, r.reservation_code DESC
+        ) AS rn
+        FROM reservation r
+        JOIN property p
+        ON p.property_code = r.property_code
+        ) t
+        WHERE t.rn = 1
+        ) rr ON rr.customer_code = c.customer_code
+        AND rr.hotel_group_code = c.hotel_group_code
+
+        <!-- primary PHONE 1건 -->
+        LEFT JOIN (
+        SELECT *
+        FROM (
+        SELECT
+        cc.*,
+        ROW_NUMBER() OVER (
+        PARTITION BY cc.customer_code
+        ORDER BY cc.is_primary DESC, cc.updated_at DESC, cc.contact_code DESC
+        ) AS rn
+        FROM customer_contact cc
+        WHERE cc.contact_type = 'PHONE'
+        ) t
+        WHERE t.rn = 1
+        ) pp ON pp.customer_code = c.customer_code
+
+        <!-- primary EMAIL 1건 -->
+        LEFT JOIN (
+        SELECT *
+        FROM (
+        SELECT
+        cc.*,
+        ROW_NUMBER() OVER (
+        PARTITION BY cc.customer_code
+        ORDER BY cc.is_primary DESC, cc.updated_at DESC, cc.contact_code DESC
+        ) AS rn
+        FROM customer_contact cc
+        WHERE cc.contact_type = 'EMAIL'
+        ) t
+        WHERE t.rn = 1
+        ) pe ON pe.customer_code = c.customer_code
+
+        <!-- 최근 member 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -272,6 +381,7 @@
         WHERE t.rn = 1
         ) mb ON mb.customer_code = c.customer_code
 
+        <!-- 최근 membership 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -291,6 +401,7 @@
         ON mg2.membership_grade_code = m2.membership_grade_code
         AND mg2.hotel_group_code = c.hotel_group_code
 
+        <!-- 최근 loyalty 1건 -->
         LEFT JOIN (
         SELECT *
         FROM (
@@ -306,12 +417,42 @@
         ) l2 ON l2.customer_code = c.customer_code
         AND l2.hotel_group_code = c.hotel_group_code
 
+        LEFT JOIN loyalty_grade lg2
+        ON lg2.loyalty_grade_code = l2.loyalty_grade_code
+        AND lg2.hotel_group_code = c.hotel_group_code
+
         WHERE c.hotel_group_code = #{hotelGroupCode}
         AND c.customer_code = #{customerCode}
     </select>
 
-    <select id="findCustomerContacts"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerContactRow">
+
+    <!-- =========================
+         Contacts (record 매핑 고정)
+       ========================= -->
+
+    <resultMap id="CustomerContactRowMap"
+               type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerContactRow">
+        <constructor>
+            <idArg column="contactCode" javaType="java.lang.Long"/>
+
+            <arg column="contactType"
+                 javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContactType"
+                 jdbcType="VARCHAR"/>
+
+            <arg column="contactValueEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="isPrimary" javaType="java.lang.Boolean"/>
+            <arg column="marketingOptIn" javaType="java.lang.Boolean"/>
+            <arg column="consentAt" javaType="java.time.LocalDateTime"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="updatedAt" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCustomerContacts" resultMap="CustomerContactRowMap">
         SELECT
         cc.contact_code        AS contactCode,
         cc.contact_type        AS contactType,
@@ -343,6 +484,7 @@
         WHERE c.hotel_group_code = #{hotelGroupCode}
         AND c.customer_code = #{customerCode}
     </select>
+
 
     <!-- =========================
          Status Histories
@@ -389,12 +531,12 @@
         WHERE h.customer_code = #{customerCode}
     </select>
 
+
     <!-- =========================
          Marketing Consents
        ========================= -->
 
-    <select id="findCustomerMarketingConsents"
-            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerContactRow">
+    <select id="findCustomerMarketingConsents" resultMap="CustomerContactRowMap">
         SELECT
         cc.contact_code        AS contactCode,
         cc.contact_type        AS contactType,

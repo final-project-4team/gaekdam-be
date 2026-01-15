@@ -13,8 +13,6 @@ public class CustomerMarketingConsentItem {
 
     private Long contactCode;
     private String contactType;   // PHONE / EMAIL
-    private String contactValue;
-
     private Boolean isPrimary;
     private Boolean marketingOptIn;
     private LocalDateTime consentAt;

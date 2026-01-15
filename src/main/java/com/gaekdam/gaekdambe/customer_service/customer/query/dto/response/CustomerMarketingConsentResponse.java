@@ -13,5 +13,5 @@ import java.util.List;
 public class CustomerMarketingConsentResponse {
 
     private Long customerCode;
-    private List<CustomerMarketingConsentItem> items;
+    private List<CustomerMarketingConsentItem> consents;
 }
