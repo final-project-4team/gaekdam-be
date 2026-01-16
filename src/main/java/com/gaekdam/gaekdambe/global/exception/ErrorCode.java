@@ -1,10 +1,11 @@
 package com.gaekdam.gaekdambe.global.exception;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
@@ -24,6 +25,16 @@ public enum ErrorCode {
   HOTEL_GROUP_NOT_FOUND("1011", "호텔 그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   PERMISSION_TYPE_NOT_FOUND("1012", "존재하지 않는 권한 타입이 포함되어 있습니다.", HttpStatus.BAD_REQUEST),
   PERMISSION_NOT_FOUND("1013", "권한을 찾을 수 없거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
+
+  // 2000번대: Report / Dashboard 도메인 오류
+  // 레이아웃
+  
+  // 2000s: 레이아웃 - 생성
+  REPORT_LAYOUT_CREATE_ERROR("2001", "레이아웃 생성 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
+  // 2100s: 레이아웃 - 수정
+  REPORT_LAYOUT_UPDATE_ERROR("2101", "레이아웃 수정 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
+  // 2200s: 레이아웃 - 삭제
+  REPORT_LAYOUT_DELETE_ERROR("2201", "레이아웃 삭제 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
 
   UNAUTHORIZED("401", "만료된 토큰", HttpStatus.UNAUTHORIZED),
 

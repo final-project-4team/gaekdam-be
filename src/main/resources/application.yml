@@ -47,3 +47,9 @@ crypto:
     pepper-b64: ${CRYPTO_HMAC_PEPPER_B64:og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=}
   local-kek:
     key-b64: ${CRYPTO_LOCAL_KEK_B64:P32UXwOxycfN2L772hcLLC+jPcaaOzAzWiL2jdjPm+o=}
+
+logging:
+  level:
+    org.apache.coyote.http11: DEBUG
+    org.apache.tomcat.util.http.parser: DEBUG
+    org.apache.tomcat.util.net: INFO

@@ -2,8 +2,12 @@ package com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.
 
 import java.time.LocalDateTime;
 
+import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.VisibilityScope;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -36,8 +40,9 @@ public class ReportLayout {
     @Column(name = "is_archived", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
     private Boolean isArchived;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "visibility_scope", nullable = false, length = 10)
-    private String visibilityScope;
+    private VisibilityScope visibilityScope;
 
     @Column(name = "date_range_preset", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'MONTH'")
     private String dateRangePreset;
@@ -45,13 +50,10 @@ public class ReportLayout {
     @Column(name = "default_filter_json", columnDefinition = "JSON")
     private String defaultFilterJson;
 
-    @Column(name = "layout_json", columnDefinition = "JSON")
-    private String layoutJson;
-
     @Column(name = "created_at", nullable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
 
     @PrePersist
@@ -61,6 +63,7 @@ public class ReportLayout {
         this.updatedAt = now;
         if (this.isDefault == null) this.isDefault = Boolean.FALSE;
         if (this.isArchived == null) this.isArchived = Boolean.FALSE;
+        if (this.visibilityScope == null) this.visibilityScope = VisibilityScope.PRIVATE;
         if (this.dateRangePreset == null) this.dateRangePreset = "MONTH";
     }
 

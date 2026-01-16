@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.dto;
+package com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto;
 
 import lombok.Builder;
 import lombok.Data;
