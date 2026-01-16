@@ -91,10 +91,40 @@
         JOIN property p ON r.property_code = p.property_code
 
         <where>
+            <!-- SaaS 호텔 스코프 -->
             AND p.hotel_group_code = #{search.hotelGroupCode}
 
             <if test="search.status != null">
                 AND r.reservation_status = #{search.status}
+            </if>
+
+            <if test="search.reservationChannel != null">
+                AND r.reservation_channel = #{search.reservationChannel}
+            </if>
+
+            <if test="search.guestType != null">
+                AND r.guest_type = #{search.guestType}
+            </if>
+
+            <if test="search.propertyCode != null">
+                AND r.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.roomCode != null">
+                AND r.room_code = #{search.roomCode}
+            </if>
+
+            <if test="search.customerCode != null">
+                AND r.customer_code = #{search.customerCode}
+            </if>
+
+            <if test="search.hasPackage != null">
+                <if test="search.hasPackage">
+                    AND r.package_code IS NOT NULL
+                </if>
+                <if test="!search.hasPackage">
+                    AND r.package_code IS NULL
+                </if>
             </if>
 
             <if test="search.fromDate != null">
