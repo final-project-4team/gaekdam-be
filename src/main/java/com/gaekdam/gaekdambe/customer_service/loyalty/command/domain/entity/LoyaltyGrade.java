@@ -16,17 +16,17 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-    name = "loyalty_grade",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "UQ_loyalty_grade_hotel_group_name",
-            columnNames = {"hotel_group_code", "grade_name"}
-        )
-    },
-    indexes = {
-        @Index(name = "IDX_loyalty_grade_hotel_group", columnList = "hotel_group_code"),
-        @Index(name = "IDX_loyalty_grade_tier", columnList = "hotel_group_code,tier_level")
-    }
+        name = "loyalty_grade",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "UQ_loyalty_grade_hotel_group_name",
+                        columnNames = {"hotel_group_code", "loyalty_grade_name"} //
+                )
+        },
+        indexes = {
+                @Index(name = "IDX_loyalty_grade_hotel_group", columnList = "hotel_group_code"),
+                @Index(name = "IDX_loyalty_grade_tier", columnList = "hotel_group_code,loyalty_tier_level") //
+        }
 )
 @EntityListeners(AuditingEntityListener.class)
 public class LoyaltyGrade {
@@ -36,8 +36,7 @@ public class LoyaltyGrade {
   @Column(name = "loyalty_grade_code", nullable = false)
   private Long loyaltyGradeCode;
 
-  /*    @Column(name = "hotel_group_code", nullable = false)
-      private Long hotelGroupCode;*/
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "hotel_group_code", nullable = false)
   private HotelGroup hotelGroup;
@@ -91,11 +90,11 @@ public class LoyaltyGrade {
       throw new IllegalArgumentException("tierComment must not be blank");
     }
     if (loyaltyCalculationTermMonth == null
-        || loyaltyCalculationTermMonth <= 0 | loyaltyCalculationTermMonth > 12) { // ✅ 변경
+        || loyaltyCalculationTermMonth <= 0 | loyaltyCalculationTermMonth > 12) { //  변경
       throw new IllegalArgumentException("calculationTermMonth는 1개월에서 12개월 사이여야 합니다");
     }
     if (loyaltyCalculationRenewalDay == null || loyaltyCalculationRenewalDay <= 0
-        || loyaltyCalculationRenewalDay > 31) { // ✅ 변경
+        || loyaltyCalculationRenewalDay > 31) { // 변경
       throw new IllegalArgumentException("calculationRenewalDay는 1일에서 31일 사이여야 합니다");
     }
 

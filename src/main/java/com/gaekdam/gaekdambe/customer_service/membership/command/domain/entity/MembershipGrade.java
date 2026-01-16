@@ -34,10 +34,7 @@ public class MembershipGrade {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "hotel_group_code", nullable = false)
   private HotelGroup hotelGroup;
-  /*
-   * @Column(name = "hotel_group_code", nullable = false)
-   * private Long hotelGroupCode;
-   */
+
   @Column(name = "grade_name", nullable = false, length = 50)
   private String gradeName;
 
