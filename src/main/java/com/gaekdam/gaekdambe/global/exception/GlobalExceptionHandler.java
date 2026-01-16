@@ -1,11 +1,12 @@
 package com.gaekdam.gaekdambe.global.exception;
 
 
-import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

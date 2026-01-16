@@ -1,4 +1,4 @@
-package com.gaekdam.gaekdambe.analytics_service.report.dataset.command.mapper;
+package com.gaekdam.gaekdambe.analytics_service.report.dataset.query.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 
