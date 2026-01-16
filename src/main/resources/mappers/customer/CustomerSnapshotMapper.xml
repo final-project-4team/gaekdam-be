@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerSnapshotMapper">
+
+    <select id="findCustomerSnapshot"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerSnapshotRow">
+        SELECT
+            c.customer_code AS customerCode,
+
+            /* 총 이용횟수: stay_status = COMPLETED */
+            (
+                SELECT COUNT(*)
+                FROM stay s
+                WHERE s.customer_code = c.customer_code
+                  AND s.stay_status = 'COMPLETED'
+            ) AS totalStayCount,
+
+            /* LTV: reservation.total_price 합 (취소 제외) */
+            (
+                SELECT COALESCE(SUM(r.total_price), 0)
+                FROM reservation r
+                WHERE r.customer_code = c.customer_code
+                  AND r.canceled_at IS NULL
+            ) AS ltvAmount,
+
+            /* 최근 이용일: checkout > checkin > created */
+            (
+                SELECT COALESCE(
+                               MAX(s2.actual_checkout_at),
+                               MAX(s2.actual_checkin_at),
+                               MAX(s2.created_at)
+                       )
+                FROM stay s2
+                WHERE s2.customer_code = c.customer_code
+            ) AS lastUsedAt,
+
+            /* 미해결 이슈: inquiry_status = IN_PROGRESS */
+            (
+                SELECT COUNT(*)
+                FROM inquiry i
+                WHERE i.customer_code = c.customer_code
+                  AND i.hotel_group_code = c.hotel_group_code
+                  AND i.inquiry_status = 'IN_PROGRESS'
+            ) AS unresolvedInquiryCount
+
+        FROM customer c
+        WHERE c.customer_code = #{customerCode}
+          AND c.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+</mapper>

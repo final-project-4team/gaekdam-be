@@ -186,7 +186,7 @@
         c.customer_status      AS status,
 
         mg.grade_name          AS membershipGrade,
-        lg.grade_name          AS loyaltyGrade,
+        lg.loyalty_grade_name  AS loyaltyGrade,
 
         DATE(c.updated_at)     AS lastUsedDate,
         rr.reservation_channel AS inflowChannel,
@@ -300,7 +300,7 @@
         m2.calculated_at       AS membershipCalculatedAt,
         m2.expired_at          AS membershipExpiredAt,
 
-        lg2.grade_name         AS loyaltyGradeName,
+        lg2.loyalty_grade_name AS loyaltyGradeName,
         l2.loyalty_status      AS loyaltyStatus,
         l2.joined_at           AS loyaltyJoinedAt,
         l2.calculated_at       AS loyaltyCalculatedAt
