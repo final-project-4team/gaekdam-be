@@ -88,10 +88,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
     ApiResponse<?> api = ApiResponse.failure(errorCode.name(), customMessage);
 
-    ObjectMapper om = new ObjectMapper();
-    om.registerModule(new JavaTimeModule());
-    om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    ObjectMapper om = new ObjectMapper();//JAVA객체 -> JSON 혹은 JSON ->JAVA 객체(직렬화/역직렬화)
+    om.registerModule(new JavaTimeModule()); //java.time 타입 처리할 수있게 등록
+    om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);//날짜를 배열 대신 문자열로 반환
 
-    response.getWriter().write(om.writeValueAsString(api));
+    response.getWriter().write(om.writeValueAsString(api));//api객체 JSON으로 직렬화 후 문자열을 http응답 바디에 작성
   }
 }

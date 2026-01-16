@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+  namespace="com.gaekdam.gaekdambe.customer_service.loyalty.query.mapper.LoyaltyGradeMapper">
+
+  <select id="findLoyaltyGradeList"
+    resultType="com.gaekdam.gaekdambe.customer_service.loyalty.query.dto.response.LoyaltyGradeListQueryResponse">
+    SELECT
+    lg.loyalty_grade_code AS loyaltyGradeCode,
+    lg.loyalty_grade_name AS loyaltyGradeName,
+    lg.loyalty_tier_level AS loyaltyTierLevel,
+    lg.loyalty_calculation_amount AS loyaltyCalculationAmount,
+    lg.loyalty_calculation_count AS loyaltyCalculationCount,
+    lg.loyalty_calculation_term_month AS loyaltyCalculationTermMonth,
+    lg.loyalty_calculation_renewal_day AS loyaltyCalculationRenewalDay
+
+    FROM loyalty_grade lg
+    WHERE lg.hotel_group_code = #{hotelGroupCode}
+
+    <choose>
+      <when test="status != null and status == 'INACTIVE'">
+        AND lg.loyalty_grade_status = #{status}
+      </when>
+      <when test="status != null and status == 'ALL'">
+      </when>
+    <otherwise>AND lg.loyalty_grade_status = 'ACTIVE'</otherwise>
+    </choose>
+    ORDER BY
+    <choose>
+      <when test="sort != null and sort.sortBy == 'loyaltyGradeName'">lg.loyalty_grade_name</when>
+      <when test="sort != null and sort.sortBy == 'loyaltyCalculationAmount'">
+        lg.loyalty_calculation_amount
+      </when>
+      <when test="sort != null and sort.sortBy == 'loyaltyCalculationCount'">
+        lg.loyalty_calculation_count
+      </when>
+      <when test="sort != null and sort.sortBy == 'loyaltyCalculationTermMonth'">
+        lg.loyalty_calculation_term_month
+      </when>
+      <when test="sort != null and sort.sortBy == 'loyaltyCalculationRenewalDay'">
+        lg.loyalty_calculation_renewal_day
+      </when>
+      <otherwise>lg.loyalty_tier_level</otherwise>
+    </choose>
+
+    <choose>
+      <when test="sort != null and sort.direction == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>
+
+  </select>
+
+  <select id="findLoyaltyGradeDetail"
+    resultType="com.gaekdam.gaekdambe.customer_service.loyalty.query.dto.response.LoyaltyGradeDetailQueryResponse">
+    SELECT lg.loyalty_grade_code              AS loyaltyGradeCode,
+           lg.loyalty_grade_name              AS loyaltyGradeName,
+           lg.loyalty_tier_level              AS loyaltyTierLevel,
+           lg.loyalty_tier_comment            AS loyaltyTierComment,
+           lg.loyalty_calculation_amount      AS loyaltyCalculationAmount,
+           lg.loyalty_calculation_count       AS loyaltyCalculationCount,
+           lg.loyalty_calculation_term_month  AS loyaltyCalculationTermMonth,
+           lg.loyalty_calculation_renewal_day AS loyaltyCalculationRenewalDay,
+           lg.loyalty_grade_status            AS loyaltyGradeStatus,
+           lg.updated_at                      AS updatedAt
+
+    FROM loyalty_grade lg
+    WHERE lg.loyalty_grade_code = #{loyaltyGradeCode}
+      AND lg.hotel_group_code = #{hotelGroupCode}
+  </select>
+</mapper>

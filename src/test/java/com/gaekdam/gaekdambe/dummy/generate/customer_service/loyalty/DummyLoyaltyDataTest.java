@@ -38,8 +38,9 @@ public class DummyLoyaltyDataTest {
 
     private static final String STANDARD = "{\"windowMonths\":12}";
     private static final List<GradeSeed> GRADE_SEEDS = List.of(
-            new GradeSeed("GENERAL", 1L),
-            new GradeSeed("EXCELLENT", 2L)
+            new GradeSeed("GENERAL", 1L,"일반"),
+            new GradeSeed("EXCELLENT", 2L,"우수")
+
     );
 
     @Transactional
@@ -69,8 +70,8 @@ public class DummyLoyaltyDataTest {
 
         Map<Long, Map<String, LoyaltyGrade>> byHg = new HashMap<>();
         for (LoyaltyGrade g : all) {
-            byHg.computeIfAbsent(g.getHotelGroupCode(), k -> new HashMap<>())
-                    .putIfAbsent(g.getGradeName(), g);
+            byHg.computeIfAbsent(g.getHotelGroup().getHotelGroupCode(), k -> new HashMap<>())
+                    .putIfAbsent(g.getLoyaltyGradeName(), g);
         }
 
         for (Long hg : hotelGroupCodes) {
@@ -78,22 +79,25 @@ public class DummyLoyaltyDataTest {
 
             for (GradeSeed seed : GRADE_SEEDS) {
                 if (!existing.containsKey(seed.gradeName())) {
+                  HotelGroup hotelGroup =hotelGroupRepository.findById(hg).orElseThrow();
                     LoyaltyGrade saved = loyaltyGradeRepository.save(
                             LoyaltyGrade.registerLoyaltyGrade(
-                                    hg,
-                                    seed.gradeName(),
-                                    seed.tierLevel(),
-                                    STANDARD,
-                                    true,
-                                    now
+                                hotelGroup,
+                                seed.gradeName(),
+                                seed.tierLevel(),
+                                seed.tierComment(),
+                                1000000L,
+                                3,
+                                12,
+                                1
                             )
                     );
-                    existing.put(saved.getGradeName(), saved);
+                    existing.put(saved.getLoyaltyGradeName(), saved);
                 }
             }
 
             List<LoyaltyGrade> grades = new ArrayList<>(existing.values());
-            grades.sort(Comparator.comparing(LoyaltyGrade::getTierLevel));
+            grades.sort(Comparator.comparing(LoyaltyGrade::getLoyaltyTierLevel));
             gradeCache.put(hg, grades);
         }
     }
@@ -169,13 +173,13 @@ public class DummyLoyaltyDataTest {
     }
 
     private LoyaltyGrade pickOtherGrade(List<LoyaltyGrade> grades, LoyaltyGrade current) {
-        String target = "GENERAL".equals(current.getGradeName()) ? "EXCELLENT" : "GENERAL";
+        String target = "GENERAL".equals(current.getLoyaltyGradeName()) ? "EXCELLENT" : "GENERAL";
         return findGrade(grades, target);
     }
 
     private LoyaltyGrade findGrade(List<LoyaltyGrade> grades, String name) {
         return grades.stream()
-                .filter(g -> name.equals(g.getGradeName()))
+                .filter(g -> name.equals(g.getLoyaltyGradeName()))
                 .findFirst()
                 .orElseGet(() -> grades.get(ThreadLocalRandom.current().nextInt(grades.size())));
     }
@@ -188,5 +192,5 @@ public class DummyLoyaltyDataTest {
         return ThreadLocalRandom.current().nextInt(minInclusive, maxExclusive);
     }
 
-    private record GradeSeed(String gradeName, Long tierLevel) {}
+    private record GradeSeed(String gradeName, Long tierLevel,String tierComment) {}
 }
