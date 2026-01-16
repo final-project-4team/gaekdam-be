@@ -12,6 +12,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 
 @Configuration
@@ -29,7 +31,7 @@ public class SecurityConfig {
 
     http
         // CORS
-       // .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+      .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
         // JWT 구조 = 세션 비활성화 + CSRF 비활성화
         .csrf(csrf -> csrf.disable())
@@ -76,7 +78,7 @@ public class SecurityConfig {
   }
 
   // CORS 기본 구성
-/*  @Bean
+ @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     var c = new CorsConfiguration();
     // VSCode Live Server / 로컬 프론트들
@@ -96,7 +98,7 @@ public class SecurityConfig {
     var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", c);
     return source;
-  }*/
+  }
 
   @Bean
   public PasswordEncoder passwordEncoder() {

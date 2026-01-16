@@ -64,6 +64,7 @@ public class AuthController {
 
     if ( !passwordEncoder.matches(password, employee.getPasswordHash())) {
         loginAuthService.loginFailed(employee);
+
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .body(ApiResponse.failure(
               ErrorCode.INVALID_USER_ID.getCode(),
