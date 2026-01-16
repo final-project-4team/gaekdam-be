@@ -71,7 +71,7 @@ public class DummyMembershipDataTest {
 
         Map<Long, Map<String, MembershipGrade>> byHg = new HashMap<>();
         for (MembershipGrade g : all) {
-            byHg.computeIfAbsent(g.getHotelGroupCode(), k -> new HashMap<>())
+            byHg.computeIfAbsent(g.getHotelGroup().getHotelGroupCode(), k -> new HashMap<>())
                     .putIfAbsent(g.getGradeName(), g);
         }
 
@@ -80,15 +80,17 @@ public class DummyMembershipDataTest {
 
             for (GradeSeed seed : GRADE_SEEDS) {
                 if (!existing.containsKey(seed.gradeName())) {
+                    HotelGroup hotelGroup =hotelGroupRepository.findById(hg).orElseThrow();
                     MembershipGrade saved = membershipGradeRepository.save(
                             MembershipGrade.registerMembershipGrade(
-                                    hg,
+                                    hotelGroup,
                                     seed.gradeName(),
                                     seed.tierLevel(),
                                     seed.tierComment(),
-                                    STANDARD, // ✅ 변경: 산정 기준 추가
-                                    true,
-                                    now
+                                    1000000L,
+                                    3,
+                                    12,
+                                    1
                             )
                     );
                     existing.put(saved.getGradeName(), saved);
