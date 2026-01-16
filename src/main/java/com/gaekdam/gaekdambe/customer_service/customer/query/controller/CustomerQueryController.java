@@ -2,12 +2,11 @@ package com.gaekdam.gaekdambe.customer_service.customer.query.controller;
 
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerListSearchRequest;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerStatusHistoryRequest;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerDetailResponse;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerMarketingConsentResponse;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusHistoryResponse;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusResponse;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.*;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerListItem;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerQueryService;
+import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerSnapshotQueryService;
+import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerTimelineQueryService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerQueryController {
 
     private final CustomerQueryService customerQueryService;
+    private final CustomerSnapshotQueryService snapshotQueryService;
+    private final CustomerTimelineQueryService timelineQueryService;
 
     /**
      * 고객 목록 조회
@@ -79,5 +80,29 @@ public class CustomerQueryController {
             @RequestParam Long hotelGroupCode
     ) {
         return ApiResponse.success(customerQueryService.getCustomerMarketingConsents(hotelGroupCode, customerCode));
+    }
+    /**
+     * 고객 스냅샷 조회
+     * GET /api/v1/customers/{customerCode}/snapshot?hotelGroupCode=1
+     */
+    @GetMapping("/{customerCode}/snapshot")
+    public ApiResponse<CustomerSnapshotResponse> getCustomerSnapshot(
+            @PathVariable Long customerCode,
+            @RequestParam Long hotelGroupCode
+    ) {
+        return ApiResponse.success(snapshotQueryService.getSnapshot(hotelGroupCode, customerCode));
+    }
+
+    /**
+     * 고객 타임라인 조회 (통합 이벤트 리스트)
+     * GET /api/v1/customers/{customerCode}/timeline?hotelGroupCode=1&limit=50
+     */
+    @GetMapping("/{customerCode}/timeline")
+    public ApiResponse<CustomerTimelineResponse> getCustomerTimeline(
+            @PathVariable Long customerCode,
+            @RequestParam Long hotelGroupCode,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        return ApiResponse.success(timelineQueryService.getTimeline(hotelGroupCode, customerCode, limit));
     }
 }
