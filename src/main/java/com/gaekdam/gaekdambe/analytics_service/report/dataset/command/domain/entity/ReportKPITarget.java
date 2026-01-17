@@ -4,12 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
 import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,26 +19,21 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class ReportKPITarget {
-    @Id
-    @Column(name = "target_id", length = 255)
-    private String targetId;
 
-    @Column(name = "hotel_group_code", nullable = false)
-    private Long hotelGroupCode;
+    @EmbeddedId
+    private ReportKPITargetId id;
 
-    @Column(name = "kpi_code", nullable = false, length = 50)
-    private String kpiCode;
+    @Column(name = "kpi_code", length = 50, nullable = false)
+    private String kpiCode; // FK: ReportKPICodeDim.kpi_code (DB FK는 별도 추가 가능)
 
-    @Column(name = "period_type", nullable = false, length = 5)
-    private String periodType;
+    @Column(name = "period_type", length = 5, nullable = false)
+    private String periodType; // MONTH / YEAR
 
-    @Column(name = "period_value", nullable = false, length = 7)
-    private String periodValue;
+    @Column(name = "period_value", length = 7, nullable = false)
+    private String periodValue; // YYYY or YYYY-MM
 
-    @Column(name = "target_value", nullable = false, precision = 15, scale = 4)
+    @Column(name = "target_value", precision = 15, scale = 4, nullable = false)
     private BigDecimal targetValue;
 
     @Column(name = "warning_threshold", precision = 15, scale = 4)
@@ -61,4 +56,16 @@ public class ReportKPITarget {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

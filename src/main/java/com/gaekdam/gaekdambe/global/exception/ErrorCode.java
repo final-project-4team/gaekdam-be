@@ -27,14 +27,18 @@ public enum ErrorCode {
   PERMISSION_NOT_FOUND("1013", "권한을 찾을 수 없거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
 
   // 2000번대: Report / Dashboard 도메인 오류
-  // 레이아웃
-  
-  // 2000s: 레이아웃 - 생성
+
   REPORT_LAYOUT_CREATE_ERROR("2001", "레이아웃 생성 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
-  // 2100s: 레이아웃 - 수정
   REPORT_LAYOUT_UPDATE_ERROR("2101", "레이아웃 수정 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
-  // 2200s: 레이아웃 - 삭제
   REPORT_LAYOUT_DELETE_ERROR("2201", "레이아웃 삭제 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
+
+  REPORT_KPI_CODE_NOT_FOUND("2301", "존재하지 않는 KPI 코드입니다.", HttpStatus.NOT_FOUND),
+  REPORT_KPI_TARGET_CREATE_ERROR("2311", "KPI 목표 생성에 실패했습니다.", HttpStatus.BAD_REQUEST),
+  REPORT_KPI_TARGET_ALREADY_EXISTS("2312", "이미 존재하는 KPI 목표입니다.", HttpStatus.CONFLICT),
+  REPORT_KPI_TARGET_INVALID_PERIOD("2313", "기간 정보가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
+  REPORT_KPI_TARGET_NOT_FOUND("2321", "KPI 목표를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  REPORT_KPI_TARGET_UPDATE_ERROR("2331", "KPI 목표 수정에 실패했습니다.", HttpStatus.BAD_REQUEST),
+  REPORT_KPI_TARGET_DELETE_ERROR("2341", "KPI 목표 삭제에 실패했습니다.", HttpStatus.BAD_REQUEST),
 
   UNAUTHORIZED("401", "만료된 토큰", HttpStatus.UNAUTHORIZED),
 
