@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.OperationBoardMapper">
+
+    <!-- ================================================= -->
+    <!-- 운영 통합 조회 (LIST) -->
+    <!-- ================================================= -->
+    <select id="findOperationBoard"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow">
+
+        SELECT
+        t.reservationCode,
+        t.customerCode,
+        t.customerNameEnc,
+        t.dekEnc,
+        t.roomType,
+        t.propertyName,
+        t.plannedCheckinDate,
+        t.plannedCheckoutDate,
+        t.operationStatus
+        FROM (
+        SELECT
+        r.reservation_code AS reservationCode,
+        c.customer_code AS customerCode,
+        c.customer_name_enc AS customerNameEnc,
+        c.customer_name_hash AS customerNameHash,
+        c.dek_enc AS dekEnc,
+        rt.type_name AS roomType,
+        p.property_name AS propertyName,
+        r.checkin_date AS plannedCheckinDate,
+        r.checkout_date AS plannedCheckoutDate,
+        r.property_code AS propertyCode,
+        CASE
+        WHEN s.stay_code IS NULL THEN 'RESERVED'
+        WHEN s.actual_checkin_at IS NULL THEN 'CHECKIN_PLANNED'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        AND r.checkout_date = CURRENT_DATE THEN 'CHECKOUT_PLANNED'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL THEN 'STAYING'
+        WHEN s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
+        END AS operationStatus
+        FROM reservation r
+        INNER JOIN property p ON r.property_code = p.property_code
+        LEFT JOIN stay s ON r.reservation_code = s.reservation_code
+        INNER JOIN customer c ON r.customer_code = c.customer_code
+        LEFT JOIN room ro ON r.room_code = ro.room_code
+        LEFT JOIN room_type rt ON ro.room_type_code = rt.room_type_code
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+        ) t
+        WHERE 1 = 1
+
+        <if test="search.propertyCode != null">
+            AND t.propertyCode = #{search.propertyCode}
+        </if>
+
+        <if test="search.reservationCode != null">
+            AND t.reservationCode = #{search.reservationCode}
+        </if>
+
+        <if test="search.customerName != null and search.customerName != ''">
+            AND t.customerNameHash LIKE CONCAT('%', #{search.customerName}, '%')
+        </if>
+
+        <if test="search.status != null and search.status != ''">
+            AND t.operationStatus = #{search.status}
+        </if>
+
+        <!-- 전체 검색 (OR) -->
+        <if test="search.keyword != null and search.keyword != ''">
+            AND (
+            CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.keyword}, '%')
+            OR t.customerNameHash LIKE CONCAT('%', #{search.keyword}, '%')
+            OR t.roomType LIKE CONCAT('%', #{search.keyword}, '%')
+            OR t.propertyName LIKE CONCAT('%', #{search.keyword}, '%')
+            )
+        </if>
+
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy != null">
+                ${sort.sortBy} ${sort.direction}
+            </when>
+            <otherwise>
+                t.plannedCheckinDate DESC
+            </otherwise>
+        </choose>
+
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
+    </select>
+
+    <!-- ================================================= -->
+    <!-- 운영 통합 조회 (COUNT) -->
+    <!-- ================================================= -->
+    <select id="countOperationBoard" resultType="long">
+        SELECT COUNT(*)
+        FROM (
+        SELECT
+        r.reservation_code AS reservationCode,
+        r.property_code AS propertyCode,
+        c.customer_name_hash AS customerNameHash,
+        CASE
+        WHEN s.stay_code IS NULL THEN 'RESERVED'
+        WHEN s.actual_checkin_at IS NULL THEN 'CHECKIN_PLANNED'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        AND r.checkout_date = CURRENT_DATE THEN 'CHECKOUT_PLANNED'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL THEN 'STAYING'
+        WHEN s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
+        END AS operationStatus
+        FROM reservation r
+        INNER JOIN property p ON r.property_code = p.property_code
+        LEFT JOIN stay s ON r.reservation_code = s.reservation_code
+        INNER JOIN customer c ON r.customer_code = c.customer_code
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+        ) t
+        WHERE 1 = 1
+
+        <if test="search.propertyCode != null">
+            AND t.propertyCode = #{search.propertyCode}
+        </if>
+
+        <if test="search.reservationCode != null">
+            AND t.reservationCode = #{search.reservationCode}
+        </if>
+
+        <if test="search.customerName != null and search.customerName != ''">
+            AND t.customerNameHash LIKE CONCAT('%', #{search.customerName}, '%')
+        </if>
+
+        <if test="search.status != null and search.status != ''">
+            AND t.operationStatus = #{search.status}
+        </if>
+
+        <!-- 전체 검색 (OR) -->
+        <if test="search.keyword != null and search.keyword != ''">
+            AND (
+            CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.keyword}, '%')
+            OR t.customerNameHash LIKE CONCAT('%', #{search.keyword}, '%')
+            OR t.roomType LIKE CONCAT('%', #{search.keyword}, '%')
+            OR t.propertyName LIKE CONCAT('%', #{search.keyword}, '%')
+            )
+        </if>
+    </select>
+
+
+</mapper>

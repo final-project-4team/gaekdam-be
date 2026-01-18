@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 
-import com.gaekdam.gaekdambe.dummy.generate.analytics_service.report.dataset.ReportKpiDatasetGenerator;
+//import com.gaekdam.gaekdambe.dummy.generate.analytics_service.report.dataset.ReportKpiDatasetGenerator;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.incident.DummyIncidentDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry.DummyInquiryCategoryDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry.DummyInquiryDataTest;
@@ -102,7 +102,7 @@ class DummyDataRunnerTest {
     DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
 
     // 분석 서비스
-    @Autowired ReportKpiDatasetGenerator reportKpiDatasetGenerator;
+//    @Autowired ReportKpiDatasetGenerator reportKpiDatasetGenerator;
 
 
 
@@ -148,7 +148,7 @@ class DummyDataRunnerTest {
         messageSendHistoryDataTest.generate();
 
         // analytics_service (dashboard/report dummy data)
-        reportKpiDatasetGenerator.generate();     
+//        reportKpiDatasetGenerator.generate();
 
     }
 }
