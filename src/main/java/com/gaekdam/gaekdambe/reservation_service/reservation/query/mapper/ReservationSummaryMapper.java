@@ -27,6 +27,7 @@ public interface ReservationSummaryMapper {
 
     long countStayingRooms(
             @Param("hotelGroupCode") Long hotelGroupCode,
-            @Param("propertyCode") Long propertyCode
+            @Param("propertyCode") Long propertyCode,
+            @Param("today") LocalDate today
     );
 }

@@ -4,13 +4,16 @@ import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.ReservationStatus;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.request.OperationBoardSearchRequest;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.OperationBoardMapper;
+import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.enums.StayStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -25,6 +28,10 @@ public class OperationBoardQueryService {
             OperationBoardSearchRequest search,
             SortRequest sort
     ) {
+
+        if (search.getSummaryType() != null) {
+            applySummaryFilter(search);
+        }
 
         List<OperationBoardResponse> list =
                 mapper.findOperationBoard(page, search, sort)
@@ -61,5 +68,28 @@ public class OperationBoardQueryService {
                 page.getSize(),
                 total
         );
+    }
+
+
+    private void applySummaryFilter(OperationBoardSearchRequest search) {
+        LocalDate today = LocalDate.now();
+
+        switch (search.getSummaryType()) {
+            case ALL_TODAY -> {
+                search.setFromDate(today);
+                search.setToDate(today);
+            }
+            case TODAY_CHECKIN -> {
+                search.setCheckinDate(today);
+                search.setReservationStatus(ReservationStatus.RESERVED);
+            }
+            case TODAY_CHECKOUT -> {
+                search.setCheckoutDate(today);
+                search.setReservationStatus(ReservationStatus.RESERVED);
+            }
+            case STAYING -> {
+                search.setStayStatus(StayStatus.STAYING);
+            }
+        }
     }
 }

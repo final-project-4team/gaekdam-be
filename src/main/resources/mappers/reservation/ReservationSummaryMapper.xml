@@ -65,11 +65,12 @@
         JOIN reservation r ON s.reservation_code = r.reservation_code
         JOIN property p ON r.property_code = p.property_code
         WHERE s.stay_status = 'STAYING'
+        AND r.checkin_date <![CDATA[ <= ]]> #{today}
+        AND r.checkout_date <![CDATA[ >= ]]> #{today}
         AND p.hotel_group_code = #{hotelGroupCode}
 
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
     </select>
-
 </mapper>

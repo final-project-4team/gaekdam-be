@@ -53,6 +53,37 @@
         ) t
         WHERE 1 = 1
 
+        <!-- ========================= -->
+        <!-- SummaryType 필터 (오늘 기준) -->
+        <!-- ========================= -->
+        <choose>
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'ALL_TODAY'">
+                AND t.plannedCheckinDate <![CDATA[ <= ]]> CURRENT_DATE
+                AND t.plannedCheckoutDate <![CDATA[ >= ]]> CURRENT_DATE
+            </when>
+
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'TODAY_CHECKIN'">
+                AND t.plannedCheckinDate = CURRENT_DATE
+            </when>
+
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'TODAY_CHECKOUT'">
+                AND t.plannedCheckoutDate = CURRENT_DATE
+            </when>
+
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'STAYING'">
+                AND t.operationStatus = 'STAYING'
+                AND t.plannedCheckinDate <![CDATA[ <= ]]> CURRENT_DATE
+                AND t.plannedCheckoutDate <![CDATA[ >= ]]> CURRENT_DATE
+            </when>
+        </choose>
+
+        <!-- ========================= -->
+        <!-- 추가 필터 -->
+        <!-- ========================= -->
         <if test="search.propertyCode != null">
             AND t.propertyCode = #{search.propertyCode}
         </if>
@@ -69,7 +100,7 @@
             AND t.operationStatus = #{search.status}
         </if>
 
-        <!-- 전체 검색 (OR) -->
+        <!-- 전체 검색 -->
         <if test="search.keyword != null and search.keyword != ''">
             AND (
             CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.keyword}, '%')
@@ -97,12 +128,15 @@
     <!-- 운영 통합 조회 (COUNT) -->
     <!-- ================================================= -->
     <select id="countOperationBoard" resultType="long">
+
         SELECT COUNT(*)
         FROM (
         SELECT
         r.reservation_code AS reservationCode,
         r.property_code AS propertyCode,
         c.customer_name_hash AS customerNameHash,
+        r.checkin_date AS plannedCheckinDate,
+        r.checkout_date AS plannedCheckoutDate,
         CASE
         WHEN s.stay_code IS NULL THEN 'RESERVED'
         WHEN s.actual_checkin_at IS NULL THEN 'CHECKIN_PLANNED'
@@ -121,6 +155,35 @@
         ) t
         WHERE 1 = 1
 
+        <!-- SummaryType 동일 적용 -->
+        <!-- ========================= -->
+        <!-- SummaryType 필터 (오늘 기준) -->
+        <!-- ========================= -->
+        <choose>
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'ALL_TODAY'">
+                AND t.plannedCheckinDate <![CDATA[ <= ]]> CURRENT_DATE
+                AND t.plannedCheckoutDate <![CDATA[ >= ]]> CURRENT_DATE
+            </when>
+
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'TODAY_CHECKIN'">
+                AND t.plannedCheckinDate = CURRENT_DATE
+            </when>
+
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'TODAY_CHECKOUT'">
+                AND t.plannedCheckoutDate = CURRENT_DATE
+            </when>
+
+            <when test="search.summaryType != null
+                and search.summaryType.name() == 'STAYING'">
+                AND t.operationStatus = 'STAYING'
+                AND t.plannedCheckinDate <![CDATA[ <= ]]> CURRENT_DATE
+                AND t.plannedCheckoutDate <![CDATA[ >= ]]> CURRENT_DATE
+            </when>
+        </choose>
+
         <if test="search.propertyCode != null">
             AND t.propertyCode = #{search.propertyCode}
         </if>
@@ -137,7 +200,6 @@
             AND t.operationStatus = #{search.status}
         </if>
 
-        <!-- 전체 검색 (OR) -->
         <if test="search.keyword != null and search.keyword != ''">
             AND (
             CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.keyword}, '%')
@@ -147,6 +209,5 @@
             )
         </if>
     </select>
-
 
 </mapper>
