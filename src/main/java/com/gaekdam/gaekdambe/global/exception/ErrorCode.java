@@ -40,11 +40,19 @@ public enum ErrorCode {
   REPORT_KPI_TARGET_UPDATE_ERROR("2331", "KPI 목표 수정에 실패했습니다.", HttpStatus.BAD_REQUEST),
   REPORT_KPI_TARGET_DELETE_ERROR("2341", "KPI 목표 삭제에 실패했습니다.", HttpStatus.BAD_REQUEST),
 
+  // 3000번대 : Customer
+  CUSTOMER_NOT_FOUND("3001", "고객을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  CUSTOMER_MEMO_NOT_FOUND("3002", "고객 메모를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+
+
   UNAUTHORIZED("401", "만료된 토큰", HttpStatus.UNAUTHORIZED),
 
   RESERVATION_CONFLICT("4001", "선택하신 기간에 예약이 이미 존재합니다.", HttpStatus.BAD_REQUEST);
 
-  private final String code;
+
+
+    private final String code;
   private final String message;
   private final HttpStatusCode httpStatusCode;
 
