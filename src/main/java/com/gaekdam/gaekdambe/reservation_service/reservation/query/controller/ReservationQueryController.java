@@ -78,7 +78,7 @@ public class ReservationQueryController {
         // 기본 정렬
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
-            sort.setSortBy("t.plannedCheckinDate");
+            sort.setSortBy("t.reservationCode");
             sort.setDirection("DESC");
         }
 
