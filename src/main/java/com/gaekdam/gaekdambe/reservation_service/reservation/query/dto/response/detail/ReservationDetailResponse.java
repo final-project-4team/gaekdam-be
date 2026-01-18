@@ -15,4 +15,5 @@ public class ReservationDetailResponse {
     private StayInfo stay;
     private CheckInOutInfo checkInOut;
     private List<FacilityUsageInfo> facilityUsages;
+    private PackageInfo packageInfo;
 }
