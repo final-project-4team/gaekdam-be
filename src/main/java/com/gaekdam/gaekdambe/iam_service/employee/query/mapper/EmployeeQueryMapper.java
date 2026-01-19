@@ -15,6 +15,7 @@ public interface EmployeeQueryMapper {
 
         // 통합된 동적 검색 메서드 (페이징 지원)
         List<EmployeeQueryListEncResponse> searchEmployees(
+                        @Param("hotelGroupCode") Long hotelGroupCode,
                         @Param("nameHash") byte[] nameHash,
                         @Param("phoneHash") byte[] phoneHash,
                         @Param("emailHash") byte[] emailHash,
