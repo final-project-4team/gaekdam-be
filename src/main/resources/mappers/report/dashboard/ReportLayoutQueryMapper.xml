@@ -85,9 +85,7 @@
   </select>
 
   <!-- 위젯 조회: template_id 기준 -->
-  <select id="selectWidgetByTemplateId" 
-          parameterType="long" 
-          resultType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportTemplateWidgetItemDto">
+  <select id="selectWidgetByTemplateId" parameterType="long" resultType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportTemplateWidgetItemDto">
     SELECT
       template_widget_id,
       template_id,
