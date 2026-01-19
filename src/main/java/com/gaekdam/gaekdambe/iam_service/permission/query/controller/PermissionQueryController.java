@@ -20,7 +20,7 @@ public class PermissionQueryController {
   private final PermissionQueryService permissionQueryService;
 
   @GetMapping("")
-  @PreAuthorize("hasAuthority('PERMISSION_READ')")
+  @PreAuthorize("hasAuthority('PERMISSION_LIST')")
   public ApiResponse<PageResponse<PermissionListResponse>> getPermissionList(
       PermissionQueryRequest query,
       @AuthenticationPrincipal CustomUser employee

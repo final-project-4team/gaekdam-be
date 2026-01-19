@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/hotels")
+@RequestMapping("/api/v1/hotel-group")
 public class HotelGroupQueryController {
 
     private final HotelGroupQueryService hotelGroupQueryService;

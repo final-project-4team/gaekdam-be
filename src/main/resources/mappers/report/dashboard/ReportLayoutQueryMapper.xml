@@ -84,4 +84,25 @@
     LIMIT 1
   </select>
 
+  <!-- 위젯 조회: template_id 기준 -->
+  <select id="selectWidgetByTemplateId" parameterType="long" resultType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportTemplateWidgetItemDto">
+    SELECT
+      template_widget_id,
+      template_id,
+      widget_type,
+      title,
+      dataset_type,
+      metric_key,
+      dimension_key,
+      default_period,
+      default_sort_order,
+      options_json,
+      default_filter_json,
+      created_at,
+      updated_at
+    FROM report_template_widget
+    WHERE template_id = #{templateId}
+    ORDER BY default_sort_order ASC, template_widget_id ASC
+  </select>
+  
 </mapper>

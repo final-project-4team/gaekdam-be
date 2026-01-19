@@ -17,7 +17,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "ReportLayout")
+@Table(name = "report_layout")
 @Data
 public class ReportLayout {
     @Id
