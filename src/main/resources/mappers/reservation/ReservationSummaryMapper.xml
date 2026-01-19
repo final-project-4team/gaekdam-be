@@ -13,13 +13,13 @@
         FROM reservation r
         JOIN property p ON r.property_code = p.property_code
         WHERE p.hotel_group_code = #{hotelGroupCode}
+        AND r.canceled_at IS NULL
+        AND r.checkin_date <![CDATA[ <= ]]> #{today}
+        AND r.checkout_date <![CDATA[ >= ]]> #{today}
 
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
-
-        AND r.checkin_date <![CDATA[ <= ]]> #{today}
-        AND r.checkout_date <![CDATA[ >= ]]> #{today}
     </select>
 
     <!-- =========================
@@ -29,14 +29,15 @@
         SELECT COUNT(*)
         FROM reservation r
         JOIN property p ON r.property_code = p.property_code
+        LEFT JOIN stay s ON r.reservation_code = s.reservation_code
         WHERE p.hotel_group_code = #{hotelGroupCode}
+        AND r.canceled_at IS NULL
+        AND r.checkin_date = #{today}
+        AND s.stay_code IS NULL
 
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
-
-        AND r.checkin_date = #{today}
-        AND r.reservation_status = 'RESERVED'
     </select>
 
     <!-- =========================
@@ -46,14 +47,15 @@
         SELECT COUNT(*)
         FROM reservation r
         JOIN property p ON r.property_code = p.property_code
+        JOIN stay s ON r.reservation_code = s.reservation_code
         WHERE p.hotel_group_code = #{hotelGroupCode}
+        AND r.canceled_at IS NULL
+        AND r.checkout_date = #{today}
+        AND s.actual_checkout_at IS NULL
 
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
-
-        AND r.checkout_date = #{today}
-        AND r.reservation_status = 'RESERVED'
     </select>
 
     <!-- =========================
@@ -64,7 +66,8 @@
         FROM stay s
         JOIN reservation r ON s.reservation_code = r.reservation_code
         JOIN property p ON r.property_code = p.property_code
-        WHERE s.stay_status = 'STAYING'
+        WHERE r.canceled_at IS NULL
+        AND s.actual_checkout_at IS NULL
         AND r.checkin_date <![CDATA[ <= ]]> #{today}
         AND r.checkout_date <![CDATA[ >= ]]> #{today}
         AND p.hotel_group_code = #{hotelGroupCode}
