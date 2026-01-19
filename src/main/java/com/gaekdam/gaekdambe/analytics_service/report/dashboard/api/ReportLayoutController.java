@@ -19,7 +19,6 @@ import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.applicat
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.service.ReportLayoutCommandService;
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutListQueryDto;
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutResponseDto;
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutTemplateListResponseDto;
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.service.ReportLayoutQueryService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 
@@ -76,13 +75,14 @@ public class ReportLayoutController {
     List<ReportLayoutResponseDto> data = queryService.list(q);
     return ResponseEntity.ok(ApiResponse.success(data));
   }
-  
+  /*
   // 레이아웃 템플릿 조회
   @GetMapping("/{id}/templates")
   public ResponseEntity<ApiResponse<ReportLayoutTemplateListResponseDto>> getTemplates(@PathVariable("id") Long layoutId) {
     ReportLayoutTemplateListResponseDto data = queryService.getTemplatesByLayoutId(layoutId);
     return ResponseEntity.ok(ApiResponse.success(data));
     }
+  */
 
 
 }

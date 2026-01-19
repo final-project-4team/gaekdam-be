@@ -9,11 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReportLayoutTemplateItemDto {
-  private Long layoutTemplateId;
-  private Long templateId;
-  private String templateName;
-  private String templateDesc;
-  private Integer sortOrder;
-  private Boolean isActive;
+public class ReportTemplateListItemDto {
+    private Long templateId;
+    private String templateType;
+    private String templateName;
+    private String templateDesc;
+    private Boolean isActive;
 }
