@@ -29,6 +29,7 @@ public enum ErrorCode {
   // 2000번대: Report / Dashboard 도메인 오류
 
   REPORT_LAYOUT_CREATE_ERROR("2001", "레이아웃 생성 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
+  REPORT_LAYOUT_NOT_FOUND("2002", "레이아웃을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   REPORT_LAYOUT_UPDATE_ERROR("2101", "레이아웃 수정 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
   REPORT_LAYOUT_DELETE_ERROR("2201", "레이아웃 삭제 에러가 발생하였습니다.", HttpStatus.BAD_REQUEST),
 
@@ -40,6 +41,9 @@ public enum ErrorCode {
   REPORT_KPI_TARGET_UPDATE_ERROR("2331", "KPI 목표 수정에 실패했습니다.", HttpStatus.BAD_REQUEST),
   REPORT_KPI_TARGET_DELETE_ERROR("2341", "KPI 목표 삭제에 실패했습니다.", HttpStatus.BAD_REQUEST),
 
+  REPORT_TEMPLATE_NOT_FOUND("2401", "존재하지 않는 템플릿입니다.", HttpStatus.BAD_REQUEST),
+  REPORT_LAYOUT_TEMPLATE_DUPLICATE("2402", "이미 해당 레이아웃에 등록된 템플릿입니다.", HttpStatus.CONFLICT),
+  REPORT_LAYOUT_TEMPLATE_NOT_FOUND("2403", "레이아웃에 등록된 템플릿을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   UNAUTHORIZED("401", "만료된 토큰", HttpStatus.UNAUTHORIZED),
 
   RESERVATION_CONFLICT("4001", "선택하신 기간에 예약이 이미 존재합니다.", HttpStatus.BAD_REQUEST);
