@@ -18,4 +18,7 @@ public class CustomerInfo {
 
     // 화면용 (Service에서 채움)
     private String customerName;
+
+    private Boolean isMember;        // 멤버 여부
+    private String phoneNumber;
 }

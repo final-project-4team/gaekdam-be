@@ -147,7 +147,7 @@ class DummyDataRunnerTest {
         messageRuleSetupTest.generate();
         messageSendHistoryDataTest.generate();
 
-//         analytics_service (dashboard/report dummy data)
+        // analytics_service (dashboard/report dummy data)
 //        reportKpiDatasetGenerator.generate();
 
     }

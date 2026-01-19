@@ -1,7 +1,13 @@
 package com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation;
 
+import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.Room;
+import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.RoomType;
+import com.gaekdam.gaekdambe.operation_service.room.command.infrastructure.repository.RoomRepository;
+import com.gaekdam.gaekdambe.operation_service.room.command.infrastructure.repository.RoomTypeRepository;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.ReservationPackage;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.*;
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationPackageRepository;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,13 +15,25 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Component
 public class DummyReservationDataTest {
 
     @Autowired
     private ReservationRepository reservationRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private RoomTypeRepository roomTypeRepository;
+
+    @Autowired
+    private ReservationPackageRepository reservationPackageRepository;
 
     @Transactional
     public void generate() {
@@ -25,10 +43,24 @@ public class DummyReservationDataTest {
         }
 
         Random random = new Random();
+
+        // 실제 존재 데이터 로딩
+        List<Room> rooms = roomRepository.findAll();
+        List<RoomType> roomTypes = roomTypeRepository.findAll();
+        List<ReservationPackage> packages = reservationPackageRepository.findAll();
+
+        Map<Long, RoomType> roomTypeMap =
+                roomTypes.stream()
+                        .collect(Collectors.toMap(
+                                RoomType::getRoomTypeCode,
+                                rt -> rt
+                        ));
+
         int totalCount = 10_000;
 
         for (int i = 1; i <= totalCount; i++) {
 
+            // ===== 예약 상태 =====
             ReservationStatus reservationStatus;
             if (i <= 1_200) {
                 reservationStatus = ReservationStatus.NO_SHOW;
@@ -38,46 +70,63 @@ public class DummyReservationDataTest {
                 reservationStatus = ReservationStatus.RESERVED;
             }
 
-            long propertyCode = (i % 20) + 1;
-            long roomCode = random.nextInt(500) + 1;
-            long customerCode = random.nextInt(5_000) + 1;
+            // ===== Room 선택 =====
+            Room room = rooms.get(random.nextInt(rooms.size()));
+            RoomType roomType = roomTypeMap.get(room.getRoomTypeCode());
 
+            BigDecimal roomPrice = roomType.getBasePrice();
+
+            // ===== Package 선택 =====
             boolean hasPackage = random.nextBoolean();
 
-            BigDecimal roomPrice =
-                    BigDecimal.valueOf(100_000 + random.nextInt(200_000));
+            ReservationPackage reservationPackage = null;
+            BigDecimal packagePrice = BigDecimal.ZERO;
 
-            BigDecimal packagePrice =
-                    hasPackage ? BigDecimal.valueOf(30_000 + random.nextInt(70_000)) : null;
+            if (hasPackage && !packages.isEmpty()) {
+                reservationPackage =
+                        packages.get(random.nextInt(packages.size()));
+                packagePrice = reservationPackage.getPackagePrice();
+            }
 
-            Long packageCode =
-                    hasPackage ? (long) (random.nextInt(50) + 1) : null;
+            // ===== 날짜 =====
+            LocalDate checkin =
+                    LocalDate.now().minusDays(random.nextInt(60));
+            LocalDate checkout =
+                    checkin.plusDays(1 + random.nextInt(3));
 
-            LocalDate checkin = LocalDate.now().minusDays(random.nextInt(60));
-            LocalDate checkout = checkin.plusDays(1 + random.nextInt(3));
-
+            // ===== 기타 =====
             GuestType guestType =
-                    random.nextBoolean() ? GuestType.INDIVIDUAL : GuestType.FAMILY;
+                    random.nextBoolean()
+                            ? GuestType.INDIVIDUAL
+                            : GuestType.FAMILY;
 
             ReservationChannel channel =
-                    random.nextBoolean() ? ReservationChannel.WEB : ReservationChannel.OTA;
+                    random.nextBoolean()
+                            ? ReservationChannel.WEB
+                            : ReservationChannel.OTA;
 
+            long customerCode = random.nextInt(5_000) + 1;
+            long propertyCode = roomType.getPropertyCode();
+
+            // ===== 생성 =====
             Reservation reservation = Reservation.createReservation(
                     checkin,
                     checkout,
-                    1 + random.nextInt(4),
+                    1 + random.nextInt(roomType.getMaxCapacity()),
                     guestType,
                     channel,
                     roomPrice,
                     packagePrice,
                     propertyCode,
-                    roomCode,
+                    room.getRoomCode(),
                     customerCode,
-                    packageCode,
+                    reservationPackage != null
+                            ? reservationPackage.getPackageCode()
+                            : null,
                     reservationStatus
             );
 
-            // 취소 예약이면 취소 시각 세팅
+            // ===== 취소 예약 보정 =====
             if (reservationStatus == ReservationStatus.CANCELED) {
                 reservation = Reservation.builder()
                         .reservationCode(reservation.getReservationCode())

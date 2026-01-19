@@ -23,7 +23,7 @@ public class ReservationSummaryService {
                 summaryMapper.countAllToday(hotelGroupCode, propertyCode, today),
                 summaryMapper.countTodayCheckIn(hotelGroupCode, propertyCode, today),
                 summaryMapper.countTodayCheckOut(hotelGroupCode, propertyCode, today),
-                summaryMapper.countStayingRooms(hotelGroupCode, propertyCode)
+                summaryMapper.countStayingRooms(hotelGroupCode, propertyCode, today)
         );
     }
 }

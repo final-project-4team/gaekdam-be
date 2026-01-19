@@ -19,4 +19,12 @@ public interface ReservationDetailMapper {
     CheckInOutInfo findCheckInOutInfo(Long reservationCode);
 
     List<FacilityUsageInfo> findFacilityUsageSummary(Long reservationCode);
+
+    PackageInfo findPackageInfo(Long reservationCode);
+
+    List<PackageFacilityInfo> findPackageFacilities(Long reservationCode);
+
+    boolean existsMember(Long customerCode);
+
+    CustomerContactCryptoRow findPrimaryPhone(Long customerCode);
 }
