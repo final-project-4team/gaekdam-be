@@ -33,7 +33,7 @@ public class Employee {
   @Column(name = "employee_code")
   private Long employeeCode;
 
-  @Column(name = "employee_number", nullable = false, unique = true)
+  @Column(name = "employee_number", nullable = false)
   private Long employeeNumber;
 
   @Column(name = "login_id", nullable = false, unique = true)

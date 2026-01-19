@@ -9,7 +9,7 @@
 
     <select id="findByEmployeeCode" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse">
       SELECT
-      e.employee_code      AS employeeCode,
+        e.employee_code      AS employeeCode,
         e.employee_number    AS employeeNumber,
         e.login_id           AS loginId,
         e.employee_name_enc  AS employeeNameEnc,
@@ -46,42 +46,46 @@
     </select>
 
     <select id="searchEmployees" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryListEncResponse">
-        SELECT
-            e.employee_code      AS employeeCode,
-            d.department_name    AS departmentName,
-            p.hotel_position_name AS hotelPositionName,
-            e.employee_name_enc  AS employeeNameEnc,
-            e.phone_number_enc   AS phoneNumberEnc,
-            e.email_enc          AS emailEnc,
-            e.login_id           AS loginId,
-            e.employee_status    AS employeeStatus,
-            perm.permission_name AS permissionName,
-            e.dek_enc            AS dekEnc
-        FROM employee e
-        LEFT JOIN department d ON e.department_code = d.department_code
-        LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
-        LEFT JOIN permission perm ON e.permission_code = perm.permission_code
-        <where>
-            <if test="nameHash != null">
-                AND e.employee_name_hash = #{nameHash}
-            </if>
-            <if test="phoneHash != null">
-                AND e.phone_number_hash = #{phoneHash}
-            </if>
-            <if test="emailHash != null">
-                AND e.email_hash = #{emailHash}
-            </if>
-            <if test="departmentName != null and departmentName != ''">
-                AND d.department_name = #{departmentName}
-            </if>
-            <if test="hotelPositionName != null and hotelPositionName != ''">
-                AND p.hotel_position_name = #{hotelPositionName}
-            </if>
-            <if test="employeeStatus != null">
-                AND e.employee_status = #{employeeStatus}
-            </if>
-        </where>
-        LIMIT #{limit} OFFSET #{offset}
+      SELECT
+      e.employee_code AS employeeCode,
+      e.employee_number AS employeeNumber,
+      d.department_name AS departmentName,
+      p.hotel_position_name AS hotelPositionName,
+      e.employee_name_enc AS employeeNameEnc,
+      e.phone_number_enc AS phoneNumberEnc,
+      e.email_enc AS emailEnc,
+      e.login_id AS loginId,
+      e.employee_status AS employeeStatus,
+      perm.permission_name AS permissionName,
+      e.dek_enc AS dekEnc
+      FROM employee e
+      LEFT JOIN department d ON e.department_code = d.department_code
+      LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
+      LEFT JOIN permission perm ON e.permission_code = perm.permission_code
+
+
+      <where>
+        e.hotel_group_code = #{hotelGroupCode}
+        <if test="nameHash != null">
+          AND e.employee_name_hash = #{nameHash}
+        </if>
+        <if test="phoneHash != null">
+          AND e.phone_number_hash = #{phoneHash}
+        </if>
+        <if test="emailHash != null">
+          AND e.email_hash = #{emailHash}
+        </if>
+        <if test="departmentName != null and departmentName != ''">
+          AND d.department_name = #{departmentName}
+        </if>
+        <if test="hotelPositionName != null and hotelPositionName != ''">
+          AND p.hotel_position_name = #{hotelPositionName}
+        </if>
+        <if test="employeeStatus != null">
+          AND e.employee_status = #{employeeStatus}
+        </if>
+      </where>
+      LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <select id="countSearchEmployees" resultType="long">
