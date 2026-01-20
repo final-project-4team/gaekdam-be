@@ -11,32 +11,24 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Random;
-
 @Component
 public class DummyCheckInOutDataTest {
 
     @Autowired
-    private StayRepository stayRepository;
-
+    StayRepository stayRepository;
     @Autowired
-    private CheckInOutRepository checkInOutRepository;
+    CheckInOutRepository checkInOutRepository;
 
     @Transactional
     public void generate() {
 
-        // 이미 데이터 있으면 스킵
-        if (checkInOutRepository.count() > 0) {
-            return;
-        }
+        if (checkInOutRepository.count() > 0) return;
 
         Random random = new Random();
         CheckInOutChannel[] channels = CheckInOutChannel.values();
 
-        List<Stay> stays = stayRepository.findAll();
-
-        for (Stay stay : stays) {
+        for (Stay stay : stayRepository.findAll()) {
 
             // CHECK_IN
             checkInOutRepository.save(
@@ -50,8 +42,8 @@ public class DummyCheckInOutDataTest {
                     )
             );
 
-            // CHECK_OUT (완료된 투숙만)
-            if ("COMPLETED".equals(stay.getStayStatus())) {
+            // CHECK_OUT
+            if (stay.getActualCheckoutAt() != null) {
                 checkInOutRepository.save(
                         CheckInOut.createCheckInOut(
                                 CheckInOutRecordType.CHECK_OUT,
