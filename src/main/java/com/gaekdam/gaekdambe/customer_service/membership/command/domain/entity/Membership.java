@@ -78,4 +78,18 @@ public class Membership {
         this.membershipStatus = afterStatus;
         this.updatedAt = now;
     }
+    // 맴버십 수정
+    public void changeMembership(
+            Long afterMembershipGradeCode,
+            MembershipStatus afterStatus,
+            LocalDateTime afterExpiredAt,
+            LocalDateTime now
+    ) {
+        this.membershipGradeCode = afterMembershipGradeCode;
+        this.membershipStatus = afterStatus;
+        this.expiredAt = afterExpiredAt;     // null 허용
+        this.calculatedAt = now;             // 수동 변경도 "반영시각" 업데이트
+        this.updatedAt = now;
+    }
+
 }

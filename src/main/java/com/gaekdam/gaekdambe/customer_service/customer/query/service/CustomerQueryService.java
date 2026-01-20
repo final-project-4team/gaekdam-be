@@ -46,8 +46,6 @@ public class CustomerQueryService {
 
     private final CustomerMapper customerMapper;
     private final CustomerResponseAssembler assembler;
-
-    // ✅ 더미 적재와 동일한 해시 생성기(HMAC) 주입
     private final SearchHashService searchHashService;
 
     public PageResponse<CustomerListItem> getCustomerList(CustomerListSearchRequest request) {

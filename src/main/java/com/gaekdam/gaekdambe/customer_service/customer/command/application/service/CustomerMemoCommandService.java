@@ -23,8 +23,6 @@ public class CustomerMemoCommandService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMemoRepository customerMemoRepository;
-
-    // ✅ 추가: 로그인ID(username)로 employeeCode 뽑기
     private final EmployeeRepository employeeRepository;
 
     @Transactional

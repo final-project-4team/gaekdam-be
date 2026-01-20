@@ -41,11 +41,12 @@ public enum ErrorCode {
   REPORT_KPI_TARGET_UPDATE_ERROR("2331", "KPI 목표 수정에 실패했습니다.", HttpStatus.BAD_REQUEST),
   REPORT_KPI_TARGET_DELETE_ERROR("2341", "KPI 목표 삭제에 실패했습니다.", HttpStatus.BAD_REQUEST),
 
-  // 3000번대 : Customer
+  // 3000번대 : Customer, MemberShip,Loyalty
   CUSTOMER_NOT_FOUND("3001", "고객을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   CUSTOMER_MEMO_NOT_FOUND("3002", "고객 메모를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-
-
+  MEMBERSHIP_GRADE_NOT_FOUND( "3003","멤버십 등급을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  MEMBERSHIP_GRADE_INACTIVE("3004","비활성화된 멤버십 등급입니다.", HttpStatus.BAD_REQUEST),
+  MEMBERSHIP_MANUAL_REASON_REQUIRED("3005","수동 변경 사유는 필수입니다.", HttpStatus.BAD_REQUEST),
 
   REPORT_TEMPLATE_NOT_FOUND("2401", "존재하지 않는 템플릿입니다.", HttpStatus.BAD_REQUEST),
   REPORT_LAYOUT_TEMPLATE_DUPLICATE("2402", "이미 해당 레이아웃에 등록된 템플릿입니다.", HttpStatus.CONFLICT),

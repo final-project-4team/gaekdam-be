@@ -20,6 +20,14 @@
         AND m.customer_code = #{search.customerCode}
         AND c.hotel_group_code = #{search.hotelGroupCode}
 
+        <!--  기간 필터 (created_at 기준) -->
+        <if test="search.fromDate != null">
+            AND m.created_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        <if test="search.toDate != null">
+            AND m.created_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+
         <if test="sort != null and sort.sortBy != null">
             ORDER BY
             <choose>
@@ -45,6 +53,14 @@
         m.deleted_at IS NULL
         AND m.customer_code = #{search.customerCode}
         AND c.hotel_group_code = #{search.hotelGroupCode}
+
+        <!-- 기간 필터 (created_at 기준) -->
+        <if test="search.fromDate != null">
+            AND m.created_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        <if test="search.toDate != null">
+            AND m.created_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
     </select>
 
     <select id="findCustomerMemoDetail"

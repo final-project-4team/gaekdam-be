@@ -26,12 +26,11 @@ public class MembershipHistory {
     @Column(name = "membership_code", nullable = false)
     private Long membershipCode;
 
-    // ✅ ERD 컬럼명 기준: change_source
+
     @Enumerated(EnumType.STRING)
     @Column(name = "change_source", nullable = false, length = 20)
     private ChangeSource changeSource;
 
-    // ✅ ERD 변경: 변경자 FK = employee_code
     @Column(name = "employee_code")
     private Long changedByEmployeeCode;
 
@@ -125,4 +124,5 @@ public class MembershipHistory {
                 membershipGradeCode
         );
     }
+
 }
