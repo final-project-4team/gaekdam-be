@@ -36,6 +36,7 @@ public class ReportLayoutTemplateController {
         return ResponseEntity.ok(ApiResponse.success(queryService.getTemplatesByLayoutId(layoutId)));
     }
 
+    // 특정 레이아웃에 템플릿 추가 하기
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> add(
             @PathVariable Long layoutId,
@@ -46,6 +47,7 @@ public class ReportLayoutTemplateController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(id));
     }
 
+    // 특정 레이아웃에 템플릿 수정 하기
     @PatchMapping("/{layoutTemplateId}")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable Long layoutId,
@@ -56,12 +58,13 @@ public class ReportLayoutTemplateController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
-    @DeleteMapping("/{layoutTemplateId}")
+    // 특정 레이아웃에 템플릿 삭제 하기
+    @DeleteMapping("/{templateId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long layoutId,
-            @PathVariable Long layoutTemplateId) {
+            @PathVariable Long templateId) {
 
-        commandService.delete(layoutId, layoutTemplateId);
+        commandService.delete(layoutId, templateId);
         return ResponseEntity.ok(ApiResponse.success());
     }
 }
