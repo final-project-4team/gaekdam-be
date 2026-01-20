@@ -34,15 +34,35 @@
         r.checkout_date AS plannedCheckoutDate,
         r.property_code AS propertyCode,
         CASE
-        WHEN s.stay_code IS NULL THEN 'RESERVED'
-        WHEN s.actual_checkin_at IS NULL THEN 'CHECKIN_PLANNED'
+        -- 예약 취소 (최우선)
+        WHEN r.canceled_at IS NOT NULL
+        THEN 'CANCELED'
+
+        -- 체크인 예정
+        WHEN s.stay_code IS NULL
+        AND r.checkin_date = CURRENT_DATE
+        THEN 'CHECKIN_PLANNED'
+
+        -- 예약중
+        WHEN s.stay_code IS NULL
+        THEN 'RESERVED'
+
+        -- 체크아웃 예정
         WHEN s.actual_checkin_at IS NOT NULL
         AND s.actual_checkout_at IS NULL
-        AND r.checkout_date = CURRENT_DATE THEN 'CHECKOUT_PLANNED'
+        AND r.checkout_date = CURRENT_DATE
+        THEN 'CHECKOUT_PLANNED'
+
+        -- 투숙중
         WHEN s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NULL THEN 'STAYING'
-        WHEN s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
+        AND s.actual_checkout_at IS NULL
+        THEN 'STAYING'
+
+        -- 투숙 완료
+        WHEN s.actual_checkout_at IS NOT NULL
+        THEN 'COMPLETED'
         END AS operationStatus
+
         FROM reservation r
         INNER JOIN property p ON r.property_code = p.property_code
         LEFT JOIN stay s ON r.reservation_code = s.reservation_code
@@ -138,15 +158,35 @@
         r.checkin_date AS plannedCheckinDate,
         r.checkout_date AS plannedCheckoutDate,
         CASE
-        WHEN s.stay_code IS NULL THEN 'RESERVED'
-        WHEN s.actual_checkin_at IS NULL THEN 'CHECKIN_PLANNED'
+        -- 예약 취소 (최우선)
+        WHEN r.canceled_at IS NOT NULL
+        THEN 'CANCELED'
+
+        -- 체크인 예정
+        WHEN s.stay_code IS NULL
+        AND r.checkin_date = CURRENT_DATE
+        THEN 'CHECKIN_PLANNED'
+
+        -- 예약중
+        WHEN s.stay_code IS NULL
+        THEN 'RESERVED'
+
+        -- 체크아웃 예정
         WHEN s.actual_checkin_at IS NOT NULL
         AND s.actual_checkout_at IS NULL
-        AND r.checkout_date = CURRENT_DATE THEN 'CHECKOUT_PLANNED'
+        AND r.checkout_date = CURRENT_DATE
+        THEN 'CHECKOUT_PLANNED'
+
+        -- 투숙중
         WHEN s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NULL THEN 'STAYING'
-        WHEN s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
+        AND s.actual_checkout_at IS NULL
+        THEN 'STAYING'
+
+        -- 투숙 완료
+        WHEN s.actual_checkout_at IS NOT NULL
+        THEN 'COMPLETED'
         END AS operationStatus
+
         FROM reservation r
         INNER JOIN property p ON r.property_code = p.property_code
         LEFT JOIN stay s ON r.reservation_code = s.reservation_code
