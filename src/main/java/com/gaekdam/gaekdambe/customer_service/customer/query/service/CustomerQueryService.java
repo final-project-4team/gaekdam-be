@@ -15,26 +15,27 @@ import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.C
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerListRow;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusHistoryRow;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusRow;
+import com.gaekdam.gaekdambe.global.crypto.Normalizer;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CustomerQueryService {
 
-    // MyBatis ORDER BY에서 ${}를 쓸 가능성이 있으니, 허용 컬럼만 통과시키기 위한 whitelist
     private static final Set<String> CUSTOMER_LIST_SORT_WHITELIST = Set.of(
             "created_at", "customer_code", "customer_name", "last_used_date"
     );
@@ -45,13 +46,8 @@ public class CustomerQueryService {
 
     private final CustomerMapper customerMapper;
     private final CustomerResponseAssembler assembler;
+    private final SearchHashService searchHashService;
 
-    /**
-     * 고객 목록 조회
-     * - page/size: 페이징
-     * - sortBy/direction: 드롭다운 정렬
-     * - keyword + 상세검색: 서비스에서 keyword를 name/phone/email/customerCode로 분배 후 hash 생성
-     */
     public PageResponse<CustomerListItem> getCustomerList(CustomerListSearchRequest request) {
         PageRequest page = buildPageRequest(request.getPage(), request.getSize());
 
@@ -71,37 +67,23 @@ public class CustomerQueryService {
                 .map(assembler::toCustomerListItem)
                 .toList();
 
-        // page/size는 "보정된 값"으로 내려주는 게 화면/페이징 상태 유지에 더 안전함
         return new PageResponse<>(items, page.getPage(), page.getSize(), total);
     }
 
-    /**
-     * 고객 상세 조회
-     */
     public CustomerDetailResponse getCustomerDetail(Long hotelGroupCode, Long customerCode) {
         CustomerDetailRow detailRow = customerMapper.findCustomerDetail(hotelGroupCode, customerCode);
-        if (detailRow == null) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
-        }
+        if (detailRow == null) throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
 
         List<CustomerContactRow> contactRows = customerMapper.findCustomerContacts(hotelGroupCode, customerCode);
         return assembler.toCustomerDetailResponse(detailRow, contactRows);
     }
 
-    /**
-     * 고객 상태 조회
-     */
     public CustomerStatusResponse getCustomerStatus(Long hotelGroupCode, Long customerCode) {
         CustomerStatusRow row = customerMapper.findCustomerStatus(hotelGroupCode, customerCode);
-        if (row == null) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
-        }
+        if (row == null) throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
         return assembler.toCustomerStatusResponse(row);
     }
 
-    /**
-     * 고객 상태 변경 이력 조회 (paging)
-     */
     public CustomerStatusHistoryResponse getCustomerStatusHistories(
             Long hotelGroupCode,
             Long customerCode,
@@ -120,19 +102,17 @@ public class CustomerQueryService {
                 customerMapper.findCustomerStatusHistories(hotelGroupCode, customerCode, page, sort);
 
         long total = customerMapper.countCustomerStatusHistories(hotelGroupCode, customerCode);
-
         return assembler.toCustomerStatusHistoryResponse(rows, page.getPage(), page.getSize(), total);
     }
 
-    /**
-     * 연락처별 마케팅 수신 동의 조회
-     */
     public CustomerMarketingConsentResponse getCustomerMarketingConsents(Long hotelGroupCode, Long customerCode) {
         List<CustomerContactRow> rows = customerMapper.findCustomerMarketingConsents(hotelGroupCode, customerCode);
         return assembler.toCustomerMarketingConsentResponse(customerCode, rows);
     }
 
+    // =========================
     // Page / Sort builders
+    // =========================
 
     private PageRequest buildPageRequest(int page, int size) {
         PageRequest pageRequest = new PageRequest();
@@ -152,44 +132,40 @@ public class CustomerQueryService {
         return sort;
     }
 
-    // SearchParam Builder
+    // =========================
+    // SearchParam Builder (정리)
+    // =========================
 
     private CustomerListSearchParam buildCustomerListSearchParam(CustomerListSearchRequest request) {
-        Long customerCode = request.getCustomerCode();
-        String customerName = request.getCustomerName();
-        String phoneNumber = request.getPhoneNumber();
-        String email = request.getEmail();
+        KeywordParts parts = new KeywordParts(
+                request.getCustomerCode(),
+                request.getCustomerName(),
+                request.getPhoneNumber(),
+                request.getEmail()
+        );
 
-        // keyword 우선 적용(상세검색 값이 비어있을 때만)
-        if (isBlank(customerName) && isBlank(phoneNumber) && isBlank(email)
-                && customerCode == null && !isBlank(request.getKeyword())) {
+        // ✅ CHANGED: keyword를 분해하는 로직을 별도 메서드로 분리
+        applyKeywordIfNeeded(request.getKeyword(), parts);
 
-            String keyword = request.getKeyword().trim();
+        // ✅ normalize
+        String normalizedName = Normalizer.name(parts.customerName);
+        String normalizedPhone = Normalizer.phone(parts.phoneNumber);
+        String normalizedEmail = Normalizer.email(parts.email);
 
-            if (keyword.matches("^\\d+$")) {
-                try {
-                    customerCode = Long.parseLong(keyword);
-                } catch (NumberFormatException ignore) {
-                }
-            } else if (keyword.contains("@")) {
-                email = keyword;
-            } else if (keyword.replaceAll("[^0-9]", "").length() >= 8) {
-                phoneNumber = keyword;
-            } else {
-                customerName = keyword;
-            }
-        }
+        // ✅ CHANGED: 해시 생성 로직 분리
+        Hashes hashes = buildHashes(normalizedName, normalizedPhone, normalizedEmail);
 
-        String customerNameHash = toSha256Hex(normalizeName(customerName));
-        String phoneHash = toSha256Hex(normalizePhone(phoneNumber));
-        String emailHash = toSha256Hex(normalizeEmail(email));
+        log.info("[CustomerList] parts: customerCode={}, name='{}', phone='{}', email='{}'",
+                parts.customerCode, normalizedName, normalizedPhone, normalizedEmail);
+        log.info("[CustomerList] hashes: nameHash={}, phoneHash={}, emailHash={}",
+                hashes.nameHash, hashes.phoneHash, hashes.emailHash);
 
         return new CustomerListSearchParam(
                 request.getHotelGroupCode(),
-                customerCode,
-                customerNameHash,
-                phoneHash,
-                emailHash,
+                parts.customerCode,
+                hashes.nameHash,
+                hashes.phoneHash,
+                hashes.emailHash,
                 request.getStatus(),
                 request.getContractType(),
                 request.getNationalityType(),
@@ -199,6 +175,70 @@ public class CustomerQueryService {
         );
     }
 
+    /**
+     * ✅ CHANGED: keyword 적용을 별도 함수로 분리
+     * - 상세검색 값이 비어있을 때만 keyword를 분해해서 세팅
+     */
+    private void applyKeywordIfNeeded(String keywordRaw, KeywordParts parts) {
+        if (hasAnyDetailCondition(parts)) return;
+        if (isBlank(keywordRaw)) return;
+
+        KeywordResolved resolved = resolveKeyword(keywordRaw.trim());
+
+        switch (resolved.type) {
+            case CUSTOMER_CODE -> parts.customerCode = resolved.customerCode;
+            case EMAIL -> parts.email = resolved.value;
+            case PHONE -> parts.phoneNumber = resolved.value;
+            case NAME -> parts.customerName = resolved.value;
+        }
+    }
+
+    private boolean hasAnyDetailCondition(KeywordParts parts) {
+        return parts.customerCode != null
+                || !isBlank(parts.customerName)
+                || !isBlank(parts.phoneNumber)
+                || !isBlank(parts.email);
+    }
+
+    /**
+     * ✅ CHANGED(핵심): 전체검색 판별 로직만 담당
+     * - 이메일 우선
+     * - 전화(숫자 8자리 이상) 우선
+     * - 그 다음 고객코드(숫자만)
+     * - 나머지 이름
+     */
+    private KeywordResolved resolveKeyword(String keyword) {
+        if (keyword.contains("@")) {
+            return KeywordResolved.email(keyword);
+        }
+
+        String digits = keyword.replaceAll("[^0-9]", "");
+        if (!digits.isBlank() && digits.length() >= 8) {
+            return KeywordResolved.phone(keyword); // 원본을 넣고, Normalizer.phone에서 digits로 정리됨
+        }
+
+        if (keyword.matches("^\\d+$")) {
+            try {
+                return KeywordResolved.customerCode(Long.parseLong(keyword));
+            } catch (NumberFormatException ignore) {
+                // fallthrough
+            }
+        }
+
+        return KeywordResolved.name(keyword);
+    }
+
+    private Hashes buildHashes(String normalizedName, String normalizedPhone, String normalizedEmail) {
+        return new Hashes(
+                toHex(searchHashService.nameHash(normalizedName)),
+                toHex(searchHashService.phoneHash(normalizedPhone)),
+                toHex(searchHashService.emailHash(normalizedEmail))
+        );
+    }
+
+    // =========================
+    // Utils
+    // =========================
 
     private String normalizeSortBy(String sortBy, Set<String> whitelist, String defaultSort) {
         if (isBlank(sortBy)) return defaultSort;
@@ -216,33 +256,39 @@ public class CustomerQueryService {
         return v == null || v.isBlank();
     }
 
-    private String normalizePhone(String phone) {
-        if (isBlank(phone)) return null;
-        String digits = phone.replaceAll("[^0-9]", "");
-        return digits.isBlank() ? null : digits;
+    private String toHex(byte[] bytes) {
+        if (bytes == null) return null;
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) sb.append(String.format("%02x", b));
+        return sb.toString();
     }
 
-    private String normalizeEmail(String email) {
-        if (isBlank(email)) return null;
-        return email.trim().toLowerCase();
-    }
+    // =========================
+    // 내부 DTO(가독성용)
+    // =========================
 
-    private String normalizeName(String name) {
-        if (isBlank(name)) return null;
-        return name.trim();
-    }
+    private static class KeywordParts {
+        private Long customerCode;
+        private String customerName;
+        private String phoneNumber;
+        private String email;
 
-    private String toSha256Hex(String raw) {
-        if (raw == null) return null;
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(raw.getBytes(StandardCharsets.UTF_8));
-
-            StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (byte b : digest) sb.append(String.format("%02x", b));
-            return sb.toString();
-        } catch (Exception e) {
-            throw new IllegalStateException("해시 생성 실패");
+        private KeywordParts(Long customerCode, String customerName, String phoneNumber, String email) {
+            this.customerCode = customerCode;
+            this.customerName = customerName;
+            this.phoneNumber = phoneNumber;
+            this.email = email;
         }
+    }
+
+    private record Hashes(String nameHash, String phoneHash, String emailHash) {}
+
+    private enum KeywordType { CUSTOMER_CODE, EMAIL, PHONE, NAME }
+
+    private record KeywordResolved(KeywordType type, String value, Long customerCode) {
+        static KeywordResolved customerCode(Long code) { return new KeywordResolved(KeywordType.CUSTOMER_CODE, null, code); }
+        static KeywordResolved email(String v) { return new KeywordResolved(KeywordType.EMAIL, v, null); }
+        static KeywordResolved phone(String v) { return new KeywordResolved(KeywordType.PHONE, v, null); }
+        static KeywordResolved name(String v) { return new KeywordResolved(KeywordType.NAME, v, null); }
     }
 }

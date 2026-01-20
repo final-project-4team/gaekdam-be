@@ -31,19 +31,38 @@ public class CustomerMemo {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    private CustomerMemo(Long customerCode, Long employeeCode, String customerMemoContent, LocalDateTime now) {
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by_employee_code")
+    private Long deletedByEmployeeCode;
+
+    private CustomerMemo(Long customerCode, Long employeeCode, String content, LocalDateTime now) {
         this.customerCode = customerCode;
         this.employeeCode = employeeCode;
-        this.customerMemoContent = customerMemoContent;
+        this.customerMemoContent = content;
         this.createdAt = now;
     }
 
-    public static CustomerMemo registerCustomerMemo(
-            Long customerCode,
-            Long employeeCode,
-            String customerMemoContent,
-            LocalDateTime now
-    ) {
-        return new CustomerMemo(customerCode, employeeCode, customerMemoContent, now);
+    public static CustomerMemo registerCustomerMemo(Long customerCode, Long employeeCode, String content, LocalDateTime now) {
+        return new CustomerMemo(customerCode, employeeCode, content, now);
+    }
+
+    public void changeContent(String newContent, LocalDateTime now) {
+        this.customerMemoContent = newContent;
+        this.updatedAt = now;
+    }
+
+    public void delete(Long deletedByEmployeeCode, LocalDateTime now) {
+        this.deletedAt = now;
+        this.deletedByEmployeeCode = deletedByEmployeeCode;
+        this.updatedAt = now;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }

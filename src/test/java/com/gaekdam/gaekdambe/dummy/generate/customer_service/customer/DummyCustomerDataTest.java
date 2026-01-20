@@ -191,7 +191,7 @@ public class DummyCustomerDataTest {
     }
 
     private ContractType pickContractType() {
-        return chance(0.80) ? ContractType.PERSONAL : ContractType.CORPORATE;
+        return chance(0.80) ? ContractType.INDIVIDUAL : ContractType.CORPORATE;
     }
 
     private CustomerStatus pickCustomerStatus() {

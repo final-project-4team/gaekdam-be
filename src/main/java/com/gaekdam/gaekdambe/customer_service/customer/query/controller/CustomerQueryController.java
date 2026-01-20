@@ -7,9 +7,12 @@ import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.C
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerQueryService;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerSnapshotQueryService;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerTimelineQueryService;
+
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
+import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,11 +30,10 @@ public class CustomerQueryController {
      */
     @GetMapping
     public ApiResponse<PageResponse<CustomerListItem>> getCustomerList(
+            @AuthenticationPrincipal CustomUser user,
             @ModelAttribute CustomerListSearchRequest request
     ) {
-        System.out.println("request.hotelGroupCode=" + request.getHotelGroupCode());
-        System.out.println("request.page=" + request.getPage() + ", size=" + request.getSize());
-        System.out.println("request.keyword=" + request.getKeyword());
+        request.setHotelGroupCode(user.getHotelGroupCode());
         return ApiResponse.success(customerQueryService.getCustomerList(request));
     }
 
@@ -40,10 +42,12 @@ public class CustomerQueryController {
      */
     @GetMapping("/{customerCode}")
     public ApiResponse<CustomerDetailResponse> getCustomerDetail(
-            @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable Long customerCode
     ) {
-        return ApiResponse.success(customerQueryService.getCustomerDetail(hotelGroupCode, customerCode));
+        return ApiResponse.success(
+                customerQueryService.getCustomerDetail(user.getHotelGroupCode(), customerCode)
+        );
     }
 
     /**
@@ -51,10 +55,12 @@ public class CustomerQueryController {
      */
     @GetMapping("/{customerCode}/status")
     public ApiResponse<CustomerStatusResponse> getCustomerStatus(
-            @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable Long customerCode
     ) {
-        return ApiResponse.success(customerQueryService.getCustomerStatus(hotelGroupCode, customerCode));
+        return ApiResponse.success(
+                customerQueryService.getCustomerStatus(user.getHotelGroupCode(), customerCode)
+        );
     }
 
     /**
@@ -62,12 +68,12 @@ public class CustomerQueryController {
      */
     @GetMapping("/{customerCode}/status-histories")
     public ApiResponse<CustomerStatusHistoryResponse> getCustomerStatusHistories(
+            @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode,
             @ModelAttribute CustomerStatusHistoryRequest request
     ) {
         return ApiResponse.success(
-                customerQueryService.getCustomerStatusHistories(hotelGroupCode, customerCode, request)
+                customerQueryService.getCustomerStatusHistories(user.getHotelGroupCode(), customerCode, request)
         );
     }
 
@@ -76,33 +82,40 @@ public class CustomerQueryController {
      */
     @GetMapping("/{customerCode}/marketing-consents")
     public ApiResponse<CustomerMarketingConsentResponse> getCustomerMarketingConsents(
-            @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable Long customerCode
     ) {
-        return ApiResponse.success(customerQueryService.getCustomerMarketingConsents(hotelGroupCode, customerCode));
+        return ApiResponse.success(
+                customerQueryService.getCustomerMarketingConsents(user.getHotelGroupCode(), customerCode)
+        );
     }
+
     /**
      * 고객 스냅샷 조회
-     * GET /api/v1/customers/{customerCode}/snapshot?hotelGroupCode=1
+     * GET /api/v1/customers/{customerCode}/snapshot
      */
     @GetMapping("/{customerCode}/snapshot")
     public ApiResponse<CustomerSnapshotResponse> getCustomerSnapshot(
-            @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable Long customerCode
     ) {
-        return ApiResponse.success(snapshotQueryService.getSnapshot(hotelGroupCode, customerCode));
+        return ApiResponse.success(
+                snapshotQueryService.getSnapshot(user.getHotelGroupCode(), customerCode)
+        );
     }
 
     /**
      * 고객 타임라인 조회 (통합 이벤트 리스트)
-     * GET /api/v1/customers/{customerCode}/timeline?hotelGroupCode=1&limit=50
+     * GET /api/v1/customers/{customerCode}/timeline?limit=50
      */
     @GetMapping("/{customerCode}/timeline")
     public ApiResponse<CustomerTimelineResponse> getCustomerTimeline(
+            @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,
-            @RequestParam Long hotelGroupCode,
             @RequestParam(defaultValue = "50") int limit
     ) {
-        return ApiResponse.success(timelineQueryService.getTimeline(hotelGroupCode, customerCode, limit));
+        return ApiResponse.success(
+                timelineQueryService.getTimeline(user.getHotelGroupCode(), customerCode, limit)
+        );
     }
 }
