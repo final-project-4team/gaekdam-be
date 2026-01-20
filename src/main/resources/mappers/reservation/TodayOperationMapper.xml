@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.TodayOperationMapper">
+
+    <!-- ================================================= -->
+    <!-- 오늘 운영 대상 LIST -->
+    <!-- ================================================= -->
+    <select id="findTodayOperations"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow">
+
+        SELECT
+        t.reservationCode,
+        t.customerCode,
+        t.customerNameEnc,
+        t.customerNameHash,
+        t.dekEnc,
+        t.roomType,
+        t.propertyName,
+        t.plannedCheckinDate,
+        t.plannedCheckoutDate,
+        t.operationStatus
+        FROM (
+        SELECT
+        r.reservation_code AS reservationCode,
+        c.customer_code AS customerCode,
+        c.customer_name_enc AS customerNameEnc,
+        c.customer_name_hash AS customerNameHash,
+        c.dek_enc AS dekEnc,
+        rt.type_name AS roomType,
+        p.property_name AS propertyName,
+        r.checkin_date AS plannedCheckinDate,
+        r.checkout_date AS plannedCheckoutDate,
+
+        CASE
+        -- 오늘 체크아웃 완료 (최우선)
+        WHEN r.reservation_status = 'RESERVED'
+        AND r.checkout_date = #{today}
+        AND s.actual_checkout_at IS NOT NULL
+        THEN 'COMPLETED'
+
+        -- 체크아웃 예정
+        WHEN r.reservation_status = 'RESERVED'
+        AND r.checkout_date = #{today}
+        AND s.actual_checkout_at IS NULL
+        THEN 'CHECKOUT_PLANNED'
+
+        -- 체크인 예정
+        WHEN r.reservation_status = 'RESERVED'
+        AND r.checkin_date = #{today}
+        AND s.actual_checkin_at IS NULL
+        THEN 'CHECKIN_PLANNED'
+
+        -- 투숙중
+        WHEN r.reservation_status = 'RESERVED'
+        AND s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+        THEN 'STAYING'
+        END AS operationStatus
+
+        FROM reservation r
+        INNER JOIN property p ON r.property_code = p.property_code
+        INNER JOIN customer c ON r.customer_code = c.customer_code
+        LEFT JOIN stay s ON r.reservation_code = s.reservation_code
+        LEFT JOIN room ro ON r.room_code = ro.room_code
+        LEFT JOIN room_type rt ON ro.room_type_code = rt.room_type_code
+        WHERE p.hotel_group_code = #{hotelGroupCode}
+        AND r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+        ) t
+        WHERE t.operationStatus IS NOT NULL
+
+        <!-- =========================
+             Summary 카드 필터
+             ========================= -->
+        <choose>
+            <when test="summaryType == 'CHECKIN_PLANNED'">
+                AND t.operationStatus = 'CHECKIN_PLANNED'
+            </when>
+
+            <when test="summaryType == 'CHECKOUT_PLANNED'">
+                AND t.operationStatus = 'CHECKOUT_PLANNED'
+            </when>
+
+            <when test="summaryType == 'STAYING'">
+                AND t.operationStatus = 'STAYING'
+            </when>
+
+            <when test="summaryType == 'COMPLETED'">
+                AND t.operationStatus = 'COMPLETED'
+            </when>
+        </choose>
+
+        ORDER BY
+        t.plannedCheckoutDate DESC,
+        t.reservationCode DESC
+
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
+    </select>
+
+
+    <select id="countTodayOperationsByStatus" resultType="map">
+        SELECT operationStatus, COUNT(*) cnt
+        FROM (SELECT CASE
+                         WHEN r.reservation_status = 'RESERVED'
+                             AND r.checkout_date = #{today}
+                             AND s.actual_checkout_at IS NOT NULL
+                             THEN 'COMPLETED'
+
+                         WHEN r.reservation_status = 'RESERVED'
+                             AND r.checkout_date = #{today}
+                             AND s.actual_checkout_at IS NULL
+                             THEN 'CHECKOUT_PLANNED'
+
+                         WHEN r.reservation_status = 'RESERVED'
+                             AND r.checkin_date = #{today}
+                             AND s.actual_checkin_at IS NULL
+                             THEN 'CHECKIN_PLANNED'
+
+                         WHEN r.reservation_status = 'RESERVED'
+                             AND s.actual_checkin_at IS NOT NULL
+                             AND s.actual_checkout_at IS NULL
+                             AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+                             THEN 'STAYING'
+                         END AS operationStatus
+              FROM reservation r
+                       INNER JOIN property p ON r.property_code = p.property_code
+                       LEFT JOIN stay s ON r.reservation_code = s.reservation_code
+              WHERE p.hotel_group_code = #{hotelGroupCode}
+                AND r.reservation_status = 'RESERVED'
+                AND r.canceled_at IS NULL) t
+        WHERE t.operationStatus IS NOT NULL
+        GROUP BY operationStatus
+    </select>
+</mapper>
