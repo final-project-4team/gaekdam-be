@@ -12,7 +12,7 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.TodayReservationSummaryResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.OperationBoardQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
-import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationSummaryService;
+import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.TodayOperationQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -25,20 +25,17 @@ import java.util.List;
 public class ReservationQueryController {
 
     private final ReservationQueryService reservationQueryService;
-    private final ReservationSummaryService reservationSummaryService;
     private final OperationBoardQueryService operationBoardQueryService;
+    private final TodayOperationQueryService todayOperationQueryService;
 
-    @GetMapping()
+    @GetMapping
     public ApiResponse<PageResponse<ReservationResponse>> getReservations(
             @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,
             ReservationSearchRequest search,
             SortRequest sort
     ) {
-
-        Long hotelGroupCode = customUser.getHotelGroupCode();
-        // SaaS 호텔 스코프 강제
-        search.setHotelGroupCode(hotelGroupCode);
+        search.setHotelGroupCode(customUser.getHotelGroupCode());
 
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
@@ -51,20 +48,6 @@ public class ReservationQueryController {
         );
     }
 
-
-
-
-    @GetMapping("/today/summary")
-    public ApiResponse<TodayReservationSummaryResponse> getTodayReservationSummary(
-            @AuthenticationPrincipal CustomUser customUser,
-            @RequestParam(required = false) Long propertyCode
-    ) {
-        return ApiResponse.success(
-                reservationSummaryService.getTodaySummary(customUser.getHotelGroupCode(), propertyCode)
-        );
-    }
-
-
     @GetMapping("/operations")
     public ApiResponse<PageResponse<OperationBoardResponse>> getOperationBoard(
             @AuthenticationPrincipal CustomUser customUser,
@@ -72,10 +55,8 @@ public class ReservationQueryController {
             OperationBoardSearchRequest search,
             SortRequest sort
     ) {
-        // SaaS 호텔 그룹 스코프 강제
         search.setHotelGroupCode(customUser.getHotelGroupCode());
 
-        // 기본 정렬
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
             sort.setSortBy("t.reservationCode");
@@ -86,5 +67,33 @@ public class ReservationQueryController {
                 operationBoardQueryService.findOperationBoard(page, search, sort)
         );
     }
+
+    @GetMapping("/today/operations")
+    public ApiResponse<PageResponse<OperationBoardResponse>> getTodayOperations(
+            @AuthenticationPrincipal CustomUser customUser,
+            PageRequest page,
+            @RequestParam(required = false) String summaryType
+    ) {
+        return ApiResponse.success(
+                todayOperationQueryService.findTodayOperations(
+                        page,
+                        customUser.getHotelGroupCode(),
+                        summaryType
+                )
+        );
+    }
+
+
+    @GetMapping("/today/operations/summary")
+    public ApiResponse<java.util.Map<String, Long>> getTodayOperationSummary(
+            @AuthenticationPrincipal CustomUser customUser
+    ) {
+        return ApiResponse.success(
+                todayOperationQueryService.getTodayOperationSummary(
+                        customUser.getHotelGroupCode()
+                )
+        );
+    }
+
 
 }
