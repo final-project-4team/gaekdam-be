@@ -40,7 +40,11 @@ public class ReportLayoutTemplateCommandService {
         e.setTemplateId(dto.getTemplateId());
         e.setCreatedBy(createdBy);
         e.setDisplayName(dto.getDisplayName());
-        e.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
+        int so = 0;
+        if (dto.getSortOrder() != null) {
+            so = dto.getSortOrder().intValue();
+        }
+        e.setSortOrder(so);
         e.setIsActive(true);
 
         return repo.save(e).getLayoutTemplateId();
@@ -62,20 +66,13 @@ public class ReportLayoutTemplateCommandService {
         repo.save(e);
     }
 
-    public void delete(Long layoutId, Long layoutTemplateId) {
-        ReportLayoutTemplate e = repo.findById(layoutTemplateId)
+    public void delete(Long layoutId, Long templateId) {
+        // Find by composite (layoutId + templateId) because caller may pass library templateId
+        ReportLayoutTemplate e = repo.findByLayoutIdAndTemplateId(layoutId, templateId)
             .orElseThrow(() -> new CustomException(ErrorCode.REPORT_LAYOUT_TEMPLATE_NOT_FOUND));
 
-        if (!e.getLayoutId().equals(layoutId)) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
-        }
-
-        // 소프트 삭제 추천
-        e.setIsActive(false);
-        repo.save(e);
-
-        // 물리삭제로 하고 싶으면:
-        // repo.delete(e);
+        // 물리 삭제
+        repo.delete(e);
     }
 }
 
