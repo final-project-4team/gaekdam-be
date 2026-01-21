@@ -12,5 +12,5 @@ public record EmployeeSecureRegistrationRequest (
   Long positionCode,
   Long propertyCode,
   Long hotelGroupCode,
-  Long roleCode ){
+  Long permissionCode ){
 }

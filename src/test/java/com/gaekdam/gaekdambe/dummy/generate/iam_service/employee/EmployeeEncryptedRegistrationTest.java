@@ -31,18 +31,19 @@ public class EmployeeEncryptedRegistrationTest {
             return;
         }
 
-        for (long employeeCount = 0; employeeCount < 100; employeeCount++) {
+        for (long employeeCount = 0; employeeCount < 1000; employeeCount++) {
             long employeeNumber = 10001L + employeeCount; // 사번
             String loginId = "hong" + employeeCount; // 로그인ID
             String originalEmail = "hong" + employeeCount + ".gildong@company.com"; // 이메일
             String originalPhone = String.format("010-1234-%04d", employeeCount); // 전화번호
             String originalName = "홍길동" + employeeCount;
             long count = (long) (Math.random() * 8) + 1;
+            long random=(long) (Math.random() * 2) ;
 
             EmployeeSecureRegistrationRequest command = new EmployeeSecureRegistrationRequest(
                     employeeNumber, loginId, "password123",
                     originalEmail, originalPhone, originalName,
-                    count, 2L, 1L, 1L, 1L);
+                    count, count+random, 1L, 1L, count+random);
 
             Long savedEmployeeCode = employeeSecureRegistrationService.registerEmployee(command);
             Employee savedEmployee = employeeRepository.findById(savedEmployeeCode).orElseThrow();

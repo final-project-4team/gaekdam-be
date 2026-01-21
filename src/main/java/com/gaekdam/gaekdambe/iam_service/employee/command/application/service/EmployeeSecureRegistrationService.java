@@ -80,8 +80,8 @@ public class EmployeeSecureRegistrationService {
     HotelGroup hotelGroup = hotelGroupRepository.findById(command.hotelGroupCode())
         .orElseThrow(() -> new IllegalArgumentException(
             "HotelGroup not found: " + command.hotelGroupCode()));
-    Permission role = permissionRepository.findById(command.roleCode())
-        .orElseThrow(() -> new IllegalArgumentException("Role not found: " + command.roleCode()));
+    Permission role = permissionRepository.findById(command.permissionCode())
+        .orElseThrow(() -> new IllegalArgumentException("Role not found: " + command.permissionCode()));
 
     Employee employee = Employee.createEmployee(
         command.employeeNumber(),

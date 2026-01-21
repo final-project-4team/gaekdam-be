@@ -48,6 +48,8 @@ public class EmployeeCommandController {
   }
 
   //직원 본인 비밀번호 변경
+
+
   @PatchMapping("/password")
   public ResponseEntity<ApiResponse<String>> changePassword(
       @AuthenticationPrincipal CustomUser customUser,
@@ -55,6 +57,16 @@ public class EmployeeCommandController {
     Employee employee =employeeRepository.findByLoginId(customUser.getUsername()).orElseThrow();
     employeeUpdateService.changePassword(employee, request);
     return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 변경 되었습니다." ));
+  }
+  //직원 잠금 헤제
+  @PatchMapping("/unlock/{employeeCode}")
+  public ResponseEntity<ApiResponse<String>> unlockEmployee(
+      @AuthenticationPrincipal CustomUser customUser,
+      @PathVariable Long employeeCode
+     ) {
+    Employee employee =employeeRepository.findByLoginId(customUser.getUsername()).orElseThrow();
+    employeeUpdateService.unlockEmployee(employeeCode);
+    return ResponseEntity.ok(ApiResponse.success("잠금 상태가 해제 되었습니다" ));
   }
 
   //직원 비밀번호 초기화

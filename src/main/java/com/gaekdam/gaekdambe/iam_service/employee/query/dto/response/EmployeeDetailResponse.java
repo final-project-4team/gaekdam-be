@@ -6,8 +6,8 @@ public record EmployeeDetailResponse(
                 Long employeeCode,
                 Long employeeNumber,
                 String loginId,
-                String name,
-                String phone,
+                String employeeName,
+                String phoneNumber,
                 String email,
 
                 // JOIN 필드 추가
