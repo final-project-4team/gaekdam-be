@@ -2,17 +2,18 @@ package com.gaekdam.gaekdambe.iam_service.employee.query.service;
 
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
+import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
+import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.employee.query.dto.request.EmployeeQuerySearchRequest;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeDetailResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryListEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.mapper.EmployeeQueryMapper;
-import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,30 +34,22 @@ public class EmployeeQueryService {
     return toDetailDto(response);
   }
 
-  public PageResponse<EmployeeListResponse> searchEmployees(Long hotelGroupCode, String name,
-      String phone, String email,
-      String departmentName, String hotelPositionName,
-      EmployeeStatus employeeStatus,
-      Pageable pageable) {
-    byte[] nameHash = (name != null) ? searchHashService.nameHash(name) : null;
-    byte[] phoneHash = (phone != null) ? searchHashService.phoneHash(phone) : null;
-    byte[] emailHash = (email != null) ? searchHashService.emailHash(email) : null;
+  public PageResponse<EmployeeListResponse> searchEmployees(Long hotelGroupCode,
+      EmployeeQuerySearchRequest request, PageRequest page, SortRequest sort) {
+    byte[] nameHash = (request.name() != null) ? searchHashService.nameHash(request.name()) : null;
+    byte[] phoneHash = (request.phone() != null) ? searchHashService.phoneHash(request.phone()) : null;
+    byte[] emailHash = (request.email() != null) ? searchHashService.emailHash(request.email()) : null;
 
-    long totalElements = employeeQueryMapper.countSearchEmployees(nameHash, phoneHash, emailHash,
-        departmentName,
-        hotelPositionName, employeeStatus);
+    long totalElements = employeeQueryMapper.countSearchEmployees(hotelGroupCode,nameHash, phoneHash, emailHash,request);
     List<EmployeeQueryListEncResponse> employees = employeeQueryMapper.searchEmployees(
         hotelGroupCode,
-        nameHash, phoneHash, emailHash, departmentName, hotelPositionName, employeeStatus,
-        pageable.getOffset(),
-        pageable.getPageSize());
+        nameHash, phoneHash, emailHash,request,page,sort);
 
     List<EmployeeListResponse> content = employees.stream()
         .map(this::toListDto)
         .collect(Collectors.toList());
 
-    return new PageResponse<>(content, pageable.getPageNumber(), pageable.getPageSize(),
-        totalElements);
+    return new PageResponse<>(content, page.getPage(), page.getSize(), totalElements);
   }
 
   // 목록용 DTO 변환 (마스킹 적용)
