@@ -118,4 +118,23 @@ public class CustomerQueryController {
                 timelineQueryService.getTimeline(user.getHotelGroupCode(), customerCode, limit)
         );
     }
+
+
+
+    // 고객 기본 정보 조회 (고객활동 부분)
+    @GetMapping("/{customerCode}/basic")
+    public ApiResponse<CustomerBasicResponse> getCustomerBasic(
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable Long customerCode
+    ) {
+        return ApiResponse.success(
+                customerQueryService.getCustomerBasic(
+                        user.getHotelGroupCode(),
+                        customerCode
+                )
+        );
+    }
+
+
+
 }

@@ -569,4 +569,22 @@
         cc.contact_code DESC
     </select>
 
+
+<!--고객 활동쪽에서 추가함-->
+    <select id="findCustomerBasic"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerBasicRow">
+        SELECT
+        c.customer_code        AS customerCode,
+        c.customer_name_enc    AS customerNameEnc,
+        cc.contact_value_enc   AS phoneEnc,
+        c.dek_enc              AS dekEnc
+        FROM customer c
+        LEFT JOIN customer_contact cc
+        ON c.customer_code = cc.customer_code
+        AND cc.contact_type = 'PHONE'
+        AND cc.is_primary = TRUE
+        WHERE c.hotel_group_code = #{hotelGroupCode}
+        AND c.customer_code = #{customerCode}
+    </select>
+
 </mapper>

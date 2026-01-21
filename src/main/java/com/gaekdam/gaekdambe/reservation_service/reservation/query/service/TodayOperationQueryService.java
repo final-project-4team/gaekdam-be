@@ -3,6 +3,7 @@ package com.gaekdam.gaekdambe.reservation_service.reservation.query.service;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
+import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.TodayOperationMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,14 +24,23 @@ public class TodayOperationQueryService {
     public PageResponse<OperationBoardResponse> findTodayOperations(
             PageRequest page,
             Long hotelGroupCode,
-            String summaryType
+            Long propertyCode,
+            String summaryType,
+            SortRequest sort
     ) {
 
         LocalDate today = LocalDate.now();
 
         // LIST
         List<OperationBoardResponse> list =
-                mapper.findTodayOperations(hotelGroupCode, summaryType, page, today)
+                mapper.findTodayOperations(
+                                hotelGroupCode,
+                                propertyCode,
+                                summaryType,
+                                page,
+                                today,
+                                sort
+                        )
                         .stream()
                         .map(row -> {
 
@@ -45,6 +55,8 @@ public class TodayOperationQueryService {
 
                             return OperationBoardResponse.builder()
                                     .reservationCode(row.getReservationCode())
+                                    .customerCode(row.getCustomerCode())
+                                    .stayCode(row.getStayCode())
                                     .customerName(customerName)
                                     .roomType(row.getRoomType())
                                     .propertyName(row.getPropertyName())
@@ -57,7 +69,11 @@ public class TodayOperationQueryService {
 
         // COUNT (LIST와 동일 CASE 기준)
         long total = calculateTotalBySummaryType(
-                mapper.countTodayOperationsByStatus(hotelGroupCode, today),
+                mapper.countTodayOperationsByStatus(
+                        hotelGroupCode,
+                        propertyCode,
+                        today
+                ),
                 summaryType
         );
 
@@ -70,54 +86,57 @@ public class TodayOperationQueryService {
     }
 
     private long calculateTotalBySummaryType(
-            List<java.util.Map<String, Object>> rows,
+            List<Map<String, Object>> rows,
             String summaryType
     ) {
+        Map<String, Long> map = new HashMap<>();
+
+        for (Map<String, Object> r : rows) {
+            map.put(
+                    (String) r.get("operationStatus"),
+                    ((Number) r.get("cnt")).longValue()
+            );
+        }
+
+        // ALL_TODAY = 체크인 예정 + 투숙중
         if (summaryType == null || summaryType.equals("ALL_TODAY")) {
-            return rows.stream()
-                    .mapToLong(r -> ((Number) r.get("cnt")).longValue())
-                    .sum();
+            return map.getOrDefault("CHECKIN_PLANNED", 0L)
+                    + map.getOrDefault("STAYING", 0L);
         }
 
-        if (summaryType.equals("CHECKOUT_PLANNED")) {
-            return rows.stream()
-                    .filter(r ->
-                            r.get("operationStatus").equals("CHECKOUT_PLANNED")
-                                    || r.get("operationStatus").equals("COMPLETED")
-                    )
-                    .mapToLong(r -> ((Number) r.get("cnt")).longValue())
-                    .sum();
-        }
-
-        return rows.stream()
-                .filter(r -> r.get("operationStatus").equals(summaryType))
-                .mapToLong(r -> ((Number) r.get("cnt")).longValue())
-                .sum();
+        // 일반 카드
+        return map.getOrDefault(summaryType, 0L);
     }
 
 
-
-
-    public Map<String, Long> getTodayOperationSummary(Long hotelGroupCode) {
+    public Map<String, Long> getTodayOperationSummary(
+            Long hotelGroupCode,
+            Long propertyCode
+    ) {
         LocalDate today = LocalDate.now();
 
         List<Map<String, Object>> rows =
-                mapper.countTodayOperationsByStatus(hotelGroupCode, today);
+                mapper.countTodayOperationsByStatus(
+                        hotelGroupCode,
+                        propertyCode,
+                        today
+                );
 
         Map<String, Long> result = new HashMap<>();
 
-        long total = 0;
-
         for (Map<String, Object> row : rows) {
-            String status = (String) row.get("operationStatus");
-            long cnt = ((Number) row.get("cnt")).longValue();
-
-            result.put(status, cnt);
-            total += cnt;
+            result.put(
+                    (String) row.get("operationStatus"),
+                    ((Number) row.get("cnt")).longValue()
+            );
         }
 
-        // 프론트 편의를 위해 ALL_TODAY 계산해서 내려줌
-        result.put("ALL_TODAY", total);
+        // ALL_TODAY = CHECKIN_PLANNED + STAYING
+        long allToday =
+                result.getOrDefault("CHECKIN_PLANNED", 0L)
+                        + result.getOrDefault("STAYING", 0L);
+
+        result.put("ALL_TODAY", allToday);
 
         return result;
     }

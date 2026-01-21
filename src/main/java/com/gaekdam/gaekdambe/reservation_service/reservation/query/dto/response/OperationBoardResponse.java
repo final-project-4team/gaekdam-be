@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class OperationBoardResponse {
 
     private Long reservationCode;
+    private Long stayCode;
 
 //    // DB 조회용 (내부)
 //    private byte[] customerNameEnc;
@@ -19,6 +20,7 @@ public class OperationBoardResponse {
 
     // API 응답용
     private String customerName;
+    private Long customerCode;
 
     private String propertyName;
     private String roomType;
