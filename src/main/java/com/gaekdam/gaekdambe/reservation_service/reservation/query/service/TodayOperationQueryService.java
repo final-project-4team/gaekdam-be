@@ -55,6 +55,7 @@ public class TodayOperationQueryService {
 
                             return OperationBoardResponse.builder()
                                     .reservationCode(row.getReservationCode())
+                                    .customerCode(row.getCustomerCode())
                                     .stayCode(row.getStayCode())
                                     .customerName(customerName)
                                     .roomType(row.getRoomType())
@@ -85,19 +86,26 @@ public class TodayOperationQueryService {
     }
 
     private long calculateTotalBySummaryType(
-            List<java.util.Map<String, Object>> rows,
+            List<Map<String, Object>> rows,
             String summaryType
     ) {
-        if (summaryType == null || summaryType.equals("ALL_TODAY")) {
-            return rows.stream()
-                    .mapToLong(r -> ((Number) r.get("cnt")).longValue())
-                    .sum();
+        Map<String, Long> map = new HashMap<>();
+
+        for (Map<String, Object> r : rows) {
+            map.put(
+                    (String) r.get("operationStatus"),
+                    ((Number) r.get("cnt")).longValue()
+            );
         }
 
-        return rows.stream()
-                .filter(r -> r.get("operationStatus").equals(summaryType))
-                .mapToLong(r -> ((Number) r.get("cnt")).longValue())
-                .sum();
+        // ALL_TODAY = 체크인 예정 + 투숙중
+        if (summaryType == null || summaryType.equals("ALL_TODAY")) {
+            return map.getOrDefault("CHECKIN_PLANNED", 0L)
+                    + map.getOrDefault("STAYING", 0L);
+        }
+
+        // 일반 카드
+        return map.getOrDefault(summaryType, 0L);
     }
 
 
@@ -116,18 +124,19 @@ public class TodayOperationQueryService {
 
         Map<String, Long> result = new HashMap<>();
 
-        long total = 0;
-
         for (Map<String, Object> row : rows) {
-            String status = (String) row.get("operationStatus");
-            long cnt = ((Number) row.get("cnt")).longValue();
-
-            result.put(status, cnt);
-            total += cnt;
+            result.put(
+                    (String) row.get("operationStatus"),
+                    ((Number) row.get("cnt")).longValue()
+            );
         }
 
-        // 프론트 편의를 위해 ALL_TODAY 계산해서 내려줌
-        result.put("ALL_TODAY", total);
+        // ALL_TODAY = CHECKIN_PLANNED + STAYING
+        long allToday =
+                result.getOrDefault("CHECKIN_PLANNED", 0L)
+                        + result.getOrDefault("STAYING", 0L);
+
+        result.put("ALL_TODAY", allToday);
 
         return result;
     }

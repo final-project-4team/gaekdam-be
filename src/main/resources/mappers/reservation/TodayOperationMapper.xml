@@ -25,19 +25,19 @@
         t.operationStatus
         FROM (
         SELECT
-        r.reservation_code AS reservationCode,
-        c.customer_code AS customerCode,
-        s.stay_code        AS stayCode,
-        c.customer_name_enc AS customerNameEnc,
-        c.customer_name_hash AS customerNameHash,
-        c.dek_enc AS dekEnc,
-        rt.type_name AS roomType,
-        p.property_name AS propertyName,
-        r.checkin_date AS plannedCheckinDate,
-        r.checkout_date AS plannedCheckoutDate,
+        r.reservation_code       AS reservationCode,
+        c.customer_code          AS customerCode,
+        s.stay_code              AS stayCode,
+        c.customer_name_enc      AS customerNameEnc,
+        c.customer_name_hash     AS customerNameHash,
+        c.dek_enc                AS dekEnc,
+        rt.type_name             AS roomType,
+        p.property_name          AS propertyName,
+        r.checkin_date           AS plannedCheckinDate,
+        r.checkout_date          AS plannedCheckoutDate,
 
         CASE
-        -- 체크아웃 예정 (아직 안 나간 경우만)
+        -- 체크아웃 예정
         WHEN r.reservation_status = 'RESERVED'
         AND r.checkout_date = #{today}
         AND s.actual_checkin_at IS NOT NULL
@@ -59,54 +59,52 @@
         END AS operationStatus
 
         FROM reservation r
-        INNER JOIN property p ON r.property_code = p.property_code
-        INNER JOIN customer c ON r.customer_code = c.customer_code
-        LEFT JOIN stay s ON r.reservation_code = s.reservation_code
-        LEFT JOIN room ro ON r.room_code = ro.room_code
-        LEFT JOIN room_type rt ON ro.room_type_code = rt.room_type_code
-        WHERE p.hotel_group_code = #{hotelGroupCode}
-        AND r.reservation_status = 'RESERVED'
+
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+
+        LEFT JOIN room ro
+        ON r.room_code = ro.room_code
+
+        LEFT JOIN room_type rt
+        ON ro.room_type_code = rt.room_type_code
+
+        WHERE r.reservation_status = 'RESERVED'
         AND r.canceled_at IS NULL
 
-        <!-- =========================
-             지점 필터 (범위 조건)
-             ========================= -->
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
         ) t
         WHERE t.operationStatus IS NOT NULL
 
-        <!-- =========================
-             Summary 카드 필터 (상태 조건)
-             ========================= -->
+        <!-- Summary 카드 필터 -->
         <choose>
             <when test="summaryType == 'CHECKIN_PLANNED'">
                 AND t.operationStatus = 'CHECKIN_PLANNED'
             </when>
-
             <when test="summaryType == 'CHECKOUT_PLANNED'">
                 AND t.operationStatus = 'CHECKOUT_PLANNED'
             </when>
-
             <when test="summaryType == 'STAYING'">
                 AND t.operationStatus = 'STAYING'
-            </when>
-
-            <when test="summaryType == 'COMPLETED'">
-                AND t.operationStatus = 'COMPLETED'
             </when>
         </choose>
 
         ORDER BY
         <choose>
-            <!-- 프론트 정렬 요청 -->
             <when test="sort != null and sort.sortBy != null">
                 ${sort.sortBy} ${sort.direction},
                 t.reservationCode DESC
             </when>
-
-            <!-- 기본 Today 정렬 -->
             <otherwise>
                 t.plannedCheckoutDate DESC,
                 t.reservationCode DESC
@@ -117,56 +115,71 @@
         OFFSET #{page.offset}
     </select>
 
-
     <!-- ================================================= -->
-    <!-- 오늘 운영 대상 SUMMARY (상태별 COUNT) -->
+    <!-- 오늘 운영 대상 SUMMARY -->
     <!-- ================================================= -->
     <select id="countTodayOperationsByStatus" resultType="map">
-        SELECT
-        t.operationStatus,
-        COUNT(*) cnt
-        FROM (
-        SELECT
 
-        CASE
-        -- 체크아웃 예정 (아직 안 나간 경우만)
-        WHEN r.reservation_status = 'RESERVED'
-        AND r.checkout_date = #{today}
-        AND s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NULL
-        THEN 'CHECKOUT_PLANNED'
-
-        -- 체크인 예정
-        WHEN r.reservation_status = 'RESERVED'
+        SELECT 'CHECKIN_PLANNED' AS operationStatus, COUNT(*) AS cnt
+        FROM reservation r
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
         AND r.checkin_date = #{today}
         AND s.actual_checkin_at IS NULL
-        THEN 'CHECKIN_PLANNED'
-
-        -- 투숙중
-        WHEN r.reservation_status = 'RESERVED'
-        AND s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NULL
-        AND #{today} BETWEEN r.checkin_date AND r.checkout_date
-        THEN 'STAYING'
-        END AS operationStatus
-
-        FROM reservation r
-        INNER JOIN property p ON r.property_code = p.property_code
-        INNER JOIN customer c ON r.customer_code = c.customer_code
-        LEFT JOIN stay s ON r.reservation_code = s.reservation_code
-        LEFT JOIN room ro ON r.room_code = ro.room_code
-        LEFT JOIN room_type rt ON ro.room_type_code = rt.room_type_code
-        WHERE p.hotel_group_code = #{hotelGroupCode}
-        AND r.reservation_status = 'RESERVED'
-        AND r.canceled_at IS NULL
-
-        <!-- LIST와 완전히 동일 -->
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
-        ) t
-        WHERE t.operationStatus IS NOT NULL
-        GROUP BY t.operationStatus
+
+        UNION ALL
+
+        SELECT 'STAYING' AS operationStatus, COUNT(*) AS cnt
+        FROM reservation r
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+        AND s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
+
+        UNION ALL
+
+        SELECT 'CHECKOUT_PLANNED' AS operationStatus, COUNT(*) AS cnt
+        FROM reservation r
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+        AND r.checkout_date = #{today}
+        AND s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
+
     </select>
 
 </mapper>

@@ -2,10 +2,7 @@ package com.gaekdam.gaekdambe.customer_service.customer.query.service;
 
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerListSearchRequest;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.request.CustomerStatusHistoryRequest;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerDetailResponse;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerMarketingConsentResponse;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusHistoryResponse;
-import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusResponse;
+import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.*;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerListItem;
 import com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerMapper;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.assembler.CustomerResponseAssembler;
@@ -15,6 +12,7 @@ import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.C
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerListRow;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusHistoryRow;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusRow;
+import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.crypto.Normalizer;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
@@ -47,6 +45,7 @@ public class CustomerQueryService {
     private final CustomerMapper customerMapper;
     private final CustomerResponseAssembler assembler;
     private final SearchHashService searchHashService;
+    private final DecryptionService decryptionService;
 
     public PageResponse<CustomerListItem> getCustomerList(CustomerListSearchRequest request) {
         PageRequest page = buildPageRequest(request.getPage(), request.getSize());
@@ -291,4 +290,45 @@ public class CustomerQueryService {
         static KeywordResolved phone(String v) { return new KeywordResolved(KeywordType.PHONE, v, null); }
         static KeywordResolved name(String v) { return new KeywordResolved(KeywordType.NAME, v, null); }
     }
+
+
+
+// 고객활동쪽에서 추가함
+    public CustomerBasicResponse getCustomerBasic(
+            Long hotelGroupCode,
+            Long customerCode
+    ) {
+        CustomerBasicRow row =
+                customerMapper.findCustomerBasic(hotelGroupCode, customerCode);
+
+        if (row == null) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
+        }
+
+        String customerName = null;
+        if (row.getCustomerNameEnc() != null && row.getDekEnc() != null) {
+            customerName = decryptionService.decrypt(
+                    row.getCustomerCode(),
+                    row.getDekEnc(),
+                    row.getCustomerNameEnc()
+            );
+        }
+
+        String phoneNumber = null;
+        if (row.getPhoneEnc() != null && row.getDekEnc() != null) {
+            phoneNumber = decryptionService.decrypt(
+                    row.getCustomerCode(),
+                    row.getDekEnc(),
+                    row.getPhoneEnc()
+            );
+        }
+
+        return new CustomerBasicResponse(
+                row.getCustomerCode(),
+                customerName,
+                phoneNumber
+        );
+    }
+
+
 }

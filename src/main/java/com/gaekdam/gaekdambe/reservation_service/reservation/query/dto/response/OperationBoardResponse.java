@@ -20,6 +20,7 @@ public class OperationBoardResponse {
 
     // API 응답용
     private String customerName;
+    private Long customerCode;
 
     private String propertyName;
     private String roomType;
