@@ -18,23 +18,42 @@
                   AND s.stay_status = 'COMPLETED'
             ) AS totalStayCount,
 
-            /* LTV: reservation.total_price 합 (취소 제외) */
+            /* ✅ LTV: COMPLETED 기준 (숙박 예약금액 + 부대시설 이용금액) */
             (
-                SELECT COALESCE(SUM(r.total_price), 0)
-                FROM reservation r
-                WHERE r.customer_code = c.customer_code
-                  AND r.canceled_at IS NULL
-            ) AS ltvAmount,
+                /* 숙박 예약금액 합 */
+                COALESCE((
+                             SELECT SUM(r.total_price)
+                             FROM reservation r
+                                      JOIN stay s1
+                                           ON s1.reservation_code = r.reservation_code
+                                               AND s1.customer_code = c.customer_code
+                                               AND s1.stay_status = 'COMPLETED'
+                             WHERE r.customer_code = c.customer_code
+                               AND r.canceled_at IS NULL
+                         ), 0)
+
+                    +
+
+                    /* 부대시설 이용금액 합 (FacilityUsage) */
+                COALESCE((
+                             SELECT SUM(fu.usage_price)
+                             FROM facility_usage fu
+                                      JOIN stay s2
+                                           ON s2.stay_code = fu.stay_code
+                                               AND s2.customer_code = c.customer_code
+                                               AND s2.stay_status = 'COMPLETED'
+                         ), 0)
+                ) AS ltvAmount,
 
             /* 최근 이용일: checkout > checkin > created */
             (
                 SELECT COALESCE(
-                               MAX(s2.actual_checkout_at),
-                               MAX(s2.actual_checkin_at),
-                               MAX(s2.created_at)
+                               MAX(s3.actual_checkout_at),
+                               MAX(s3.actual_checkin_at),
+                               MAX(s3.created_at)
                        )
-                FROM stay s2
-                WHERE s2.customer_code = c.customer_code
+                FROM stay s3
+                WHERE s3.customer_code = c.customer_code
             ) AS lastUsedAt,
 
             /* 미해결 이슈: inquiry_status = IN_PROGRESS */
