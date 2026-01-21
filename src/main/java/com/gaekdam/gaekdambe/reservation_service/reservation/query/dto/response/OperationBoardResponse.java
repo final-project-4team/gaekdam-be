@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class OperationBoardResponse {
 
     private Long reservationCode;
+    private Long stayCode;
 
 //    // DB 조회용 (내부)
 //    private byte[] customerNameEnc;

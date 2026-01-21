@@ -9,6 +9,7 @@ import java.time.LocalDate;
 public class OperationBoardCryptoRow {
 
     private Long reservationCode;
+    private Long stayCode;
 
     private Long customerCode;
     private byte[] customerNameEnc;

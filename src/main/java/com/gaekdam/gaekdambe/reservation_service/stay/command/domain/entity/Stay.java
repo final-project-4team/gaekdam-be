@@ -75,4 +75,16 @@ public class Stay {
                 .updatedAt(now)
                 .build();
     }
+
+
+
+    // 체크인 , 체크아웃 등록
+    public void checkIn(LocalDateTime time) {
+        this.actualCheckinAt = time;
+    }
+
+    public void checkOut(LocalDateTime time) {
+        this.actualCheckoutAt = time;
+    }
+
 }

@@ -18,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -72,25 +73,38 @@ public class ReservationQueryController {
     public ApiResponse<PageResponse<OperationBoardResponse>> getTodayOperations(
             @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,
-            @RequestParam(required = false) String summaryType
+            SortRequest sort,
+            @RequestParam(required = false) String summaryType,
+            @RequestParam(required = false) Long propertyCode
     ) {
+
+        if (sort == null || sort.getSortBy() == null) {
+            sort = new SortRequest();
+            sort.setSortBy("t.plannedCheckoutDate");
+            sort.setDirection("DESC");
+        }
+
         return ApiResponse.success(
                 todayOperationQueryService.findTodayOperations(
                         page,
                         customUser.getHotelGroupCode(),
-                        summaryType
+                        propertyCode,
+                        summaryType,
+                        sort
                 )
         );
     }
 
 
     @GetMapping("/today/operations/summary")
-    public ApiResponse<java.util.Map<String, Long>> getTodayOperationSummary(
-            @AuthenticationPrincipal CustomUser customUser
+    public ApiResponse<Map<String, Long>> getTodayOperationSummary(
+            @AuthenticationPrincipal CustomUser customUser,
+            @RequestParam(required = false) Long propertyCode
     ) {
         return ApiResponse.success(
                 todayOperationQueryService.getTodayOperationSummary(
-                        customUser.getHotelGroupCode()
+                        customUser.getHotelGroupCode(),
+                        propertyCode
                 )
         );
     }
