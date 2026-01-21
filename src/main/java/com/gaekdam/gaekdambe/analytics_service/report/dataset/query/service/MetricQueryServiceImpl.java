@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -45,9 +46,13 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         BigDecimal actual = queryActualFromDb(metricKey, start, end, filter);
 
         // 3) target 조회
-        BigDecimal target = targetRepo.findFirstByKpiCodeAndPeriodValue(metricKey, period)
+        String kpiCode = normalizeToKpiCode(metricKey);         // target lookup
+        String internalKey = normalizeToInternalKey(metricKey); // DB aggregation key
+
+        // target 조회: repository 메서드명이 변경된 것을 사용
+        BigDecimal target = targetRepo.findFirstByKpiCodeAndPeriodValue(kpiCode, period)
                 .map(ReportKPITarget::getTargetValue)
-                .orElseGet(() -> targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(metricKey)
+                .orElseGet(() -> targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(kpiCode)
                         .map(ReportKPITarget::getTargetValue).orElse(BigDecimal.ZERO));
 
         // 4) changePct & trend 계산
@@ -61,8 +66,8 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         }
 
         // 5) 포맷
-        String formattedActual = formatByMetric(metricKey, actual);
-        String formattedTarget = formatByMetric(metricKey, target);
+        String formattedActual = formatByMetric(internalKey, actual);
+        String formattedTarget = formatByMetric(internalKey, target);
 
         MetricResult r = new MetricResult();
         r.setActual(actual);
@@ -136,5 +141,21 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 // 정수형 수치 표시
                 return String.format("%s", value.setScale(0, RoundingMode.HALF_UP).toPlainString());
         }
+    }
+
+    private String normalizeToKpiCode(String widgetKey) {
+        if (widgetKey == null) return null;
+        return widgetKey.toUpperCase(Locale.ROOT); // 기본: KPI 코드가 대문자 형태라 가정
+    }
+
+    private String normalizeToInternalKey(String widgetKey) {
+        if (widgetKey == null) return null;
+        return switch(widgetKey.toUpperCase(Locale.ROOT)) {
+            case "CHECKIN_COUNT", "CHECKIN" -> "checkin";
+            case "CHECKOUT_COUNT", "CHECKOUT" -> "checkout";
+            case "ADR", "AVG_DAILY_RATE" -> "avg_daily_rate";
+            // ...필요한 KPI 매핑을 추가(16개 KPI에 맞춰)
+            default -> widgetKey.toLowerCase(Locale.ROOT);
+        };
     }
 }
