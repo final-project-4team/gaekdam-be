@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,6 +20,14 @@ public class FacilityUsageSummaryService {
             Long hotelGroupCode,
             Long propertyCode
     ) {
-        return mapper.findTodayUsageSummary(date, hotelGroupCode, propertyCode);
+        LocalDateTime startAt = date.atStartOfDay();
+        LocalDateTime endAt = date.plusDays(1).atStartOfDay();
+
+        return mapper.findTodayUsageSummary(
+                hotelGroupCode,
+                propertyCode,
+                startAt,
+                endAt
+        );
     }
 }

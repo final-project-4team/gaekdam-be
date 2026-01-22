@@ -6,29 +6,51 @@
 <mapper namespace="com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityUsageSummaryMapper">
 
     <!-- =========================
-         오늘 부대시설 이용 현황 (SaaS / 호텔그룹 기준 + 지점 선택)
+         오늘 부대시설 이용 현황 (SUMMARY)
+         - LIST 기준과 100% 동일
          ========================= -->
     <select id="findTodayUsageSummary"
             resultType="com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageSummaryResponse">
 
         SELECT
-        fu.facility_code AS facilityCode,
-        f.facility_name AS facilityName,
-        COUNT(*) AS usageCount
+        f.facility_code   AS facilityCode,
+        f.facility_name   AS facilityName,
+        COUNT(*)          AS usageCount
+
         FROM facility_usage fu
-        JOIN facility f ON fu.facility_code = f.facility_code
-        JOIN property p ON f.property_code = p.property_code
-        WHERE DATE(fu.usage_at) = #{date}
 
-        <!-- SaaS 호텔 그룹 스코프 (필수) -->
+        /* === LIST 기준 JOIN 시작 === */
+        INNER JOIN stay s
+        ON fu.stay_code = s.stay_code
+
+        INNER JOIN reservation r
+        ON s.reservation_code = r.reservation_code
+
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+
+        INNER JOIN facility f
+        ON fu.facility_code = f.facility_code
+
+        INNER JOIN property p
+        ON f.property_code = p.property_code
         AND p.hotel_group_code = #{hotelGroupCode}
+        /* === LIST 기준 JOIN 끝 === */
 
-        <!-- 지점 선택 (선택) -->
+        WHERE 1=1
+
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
 
-        GROUP BY fu.facility_code, f.facility_name
+        AND fu.usage_at <![CDATA[ >= ]]> #{startAt}
+        AND fu.usage_at <![CDATA[ < ]]> #{endAt}
+
+        GROUP BY
+        f.facility_code,
+        f.facility_name
+
         ORDER BY usageCount DESC
     </select>
 
