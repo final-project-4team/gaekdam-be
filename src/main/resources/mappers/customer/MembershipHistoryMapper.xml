@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.membership.query.mapper.MembershipHistoryMapper">
+
+    <select id="findHistory"
+            resultType="com.gaekdam.gaekdambe.customer_service.membership.query.dto.response.MembershipHistoryResponse">
+        SELECT
+        mh.changed_at AS changedAt,
+
+        CASE
+        WHEN mh.before_grade IS NULL THEN '가입'
+        WHEN mh.before_grade != mh.after_grade THEN '등급 변경'
+        WHEN mh.before_status != mh.after_status THEN '상태 변경'
+        ELSE '변경'
+        END AS changeType,
+
+        CASE
+        WHEN mh.before_grade IS NULL
+        THEN CONCAT(mh.after_grade, ' / ', mh.after_status)
+        ELSE CONCAT(
+        mh.before_grade, ' / ', mh.before_status,
+        ' => ',
+        mh.after_grade, ' / ', mh.after_status
+        )
+        END AS content,
+
+        CASE
+        WHEN mh.change_source = 'SYSTEM' THEN 'SYSTEM'
+        ELSE 'MANUAL'
+        END AS changeSource,
+
+        CASE
+        WHEN mh.change_source = 'SYSTEM' THEN NULL
+        ELSE mh.employee_code
+        END AS changedByEmployeeCode
+
+        FROM membership_history mh
+        JOIN membership m
+        ON m.membership_code = mh.membership_code
+        AND m.hotel_group_code = #{hotelGroupCode}
+        AND m.customer_code = #{customerCode}
+
+        WHERE mh.changed_at <![CDATA[ >= ]]> #{from}
+        AND mh.changed_at <![CDATA[ <= ]]> #{to}
+
+        ORDER BY mh.changed_at DESC
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countHistory" resultType="long">
+        SELECT COUNT(1)
+        FROM membership_history mh
+        JOIN membership m
+        ON m.membership_code = mh.membership_code
+        AND m.hotel_group_code = #{hotelGroupCode}
+        AND m.customer_code = #{customerCode}
+        WHERE mh.changed_at <![CDATA[ >= ]]> #{from}
+        AND mh.changed_at <![CDATA[ <= ]]> #{to}
+    </select>
+
+</mapper>
