@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,7 +39,7 @@ public class ReportKpiDatasetGenerator {
             kpis.put("CHECKIN", new Object[]{"체크인", "REV", "COUNT", "체크인 수", null, 1});
             kpis.put("CHECKOUT", new Object[]{"체크아웃", "REV", "COUNT", "체크아웃 수", null, 1});
             kpis.put("ADR", new Object[]{"평균객실단가", "REV", "KRW", "Average Daily Rate", null, 1});
-            kpis.put("OCC_RATE", new Object[]{"객실점유율", "REV", "PEqRCENT", "Occupancy Rate", null, 1});
+            kpis.put("OCC_RATE", new Object[]{"객실점유율", "REV", "PERCENT", "Occupancy Rate", null, 1});
             kpis.put("GUEST_COUNT", new Object[]{"투숙객", "CUST", "COUNT", "Guest Count", null, 1});
             kpis.put("REPEAT_RATE", new Object[]{"재방문율", "CUST", "PERCENT", "Repeat visitor rate", null, 1});
             kpis.put("MEMBERSHIP_RATE", new Object[]{"멤버십 비율", "CUST", "PERCENT", "Membership penetration rate", null, 1});
@@ -78,72 +79,22 @@ public class ReportKpiDatasetGenerator {
                 codeRepo.saveAll(codeEntities);
             }
         }
-
-        // existing simple target seeding (kept for backward compatibility)
-        if (targetRepo.count() == 0) {
-            LocalDateTime now = LocalDateTime.now();
-            Map<String, Double[]> targets = new LinkedHashMap<>();
-            targets.put("CHECKIN", new Double[]{150.0, 120.0, 90.0});
-            targets.put("CHECKOUT", new Double[]{145.0,115.0,85.0});
-            targets.put("ADR", new Double[]{180000.0,150000.0,120000.0});
-            targets.put("OCC_RATE", new Double[]{0.75,0.6,0.45});
-            targets.put("GUEST_COUNT", new Double[]{1200.0,1000.0,800.0});
-            targets.put("REPEAT_RATE", new Double[]{0.32,0.25,0.15});
-            targets.put("MEMBERSHIP_RATE", new Double[]{0.42,0.3,0.2});
-            targets.put("FOREIGN_RATE", new Double[]{0.31,0.2,0.1});
-            targets.put("INQUIRY_COUNT", new Double[]{200.0,150.0,100.0});
-            targets.put("CLAIM_COUNT", new Double[]{15.0,25.0,40.0});
-            targets.put("UNRESOLVED_RATE", new Double[]{0.12,0.2,0.3});
-            targets.put("AVG_RESPONSE_TIME", new Double[]{4.0,6.0,8.0});
-            targets.put("RESERVATION_COUNT", new Double[]{1400.0,1200.0,900.0});
-            targets.put("CANCELLATION_RATE", new Double[]{0.14,0.2,0.3});
-            targets.put("NO_SHOW_RATE", new Double[]{0.038,0.06,0.1});
-            targets.put("NON_ROOM_REVENUE", new Double[]{3500000.0,2500000.0,1500000.0});
-
-            String periodValue = "2025-12";
-            long hotelGroup = 10001L;
-            LocalDate effectiveFrom = LocalDate.of(2025,12,1);
-            LocalDate effectiveTo = LocalDate.of(2025,12,31);
-
-            List<ReportKPITarget> targetEntities = new ArrayList<>();
-            for (Map.Entry<String, Double[]> e : targets.entrySet()) {
-                String kpi = e.getKey();
-                Double[] vals = e.getValue();
-                String targetId = "TGT-" + kpi + "-" + periodValue;
-
-                // create embedded id and check existence with correct type
-                ReportKPITargetId id = new ReportKPITargetId(targetId, hotelGroup);
-                if (targetRepo.existsById(id)) continue;
-
-                // build entity using setters and set EmbeddedId
-                ReportKPITarget t = new ReportKPITarget();
-                t.setId(id);
-                t.setKpiCode(kpi);
-                t.setPeriodType("MONTH");
-                t.setPeriodValue(periodValue);
-                t.setTargetValue(java.math.BigDecimal.valueOf(vals[0]));
-                t.setWarningThreshold(java.math.BigDecimal.valueOf(vals[1]));
-                t.setDangerThreshold(java.math.BigDecimal.valueOf(vals[2]));
-                t.setSeasonType(null);
-                t.setEffectiveFrom(effectiveFrom);
-                t.setEffectiveTo(effectiveTo);
-                t.setCreatedAt(now);
-                t.setUpdatedAt(now);
-
-                targetEntities.add(t);
-            }
-
-            if (!targetEntities.isEmpty()) {
-                targetRepo.saveAll(targetEntities);
-            }
-        }
-
+        
         // 3) Rich dummy generator for years 2021..2031 for hotelGroup=1
         {
             LocalDateTime now = LocalDateTime.now();
             long hotelGroup = 1L;
 
-            // Select 11 KPI codes to generate (consistent across years/months)
+            // remove existing targets for this hotelGroup to regenerate clean set
+            List<ReportKPITarget> allExisting = targetRepo.findAll();
+            List<ReportKPITarget> toRemove = allExisting.stream()
+                    .filter(t -> t.getId() != null && t.getId().getHotelGroupCode() == hotelGroup)
+                    .collect(Collectors.toList());
+            if (!toRemove.isEmpty()) {
+                targetRepo.deleteAll(toRemove);
+            }
+
+            // Select 16 KPI codes to generate (consistent across years/months)
             String[] genKpis = new String[] {
                 "CHECKIN",
                 "CHECKOUT",
@@ -155,6 +106,11 @@ public class ReportKpiDatasetGenerator {
                 "FOREIGN_RATE",
                 "INQUIRY_COUNT",
                 "CLAIM_COUNT",
+                "UNRESOLVED_RATE",
+                "AVG_RESPONSE_TIME",
+                "RESERVATION_COUNT",
+                "CANCELLATION_RATE",
+                "NO_SHOW_RATE",
                 "NON_ROOM_REVENUE"
             };
 
@@ -170,6 +126,11 @@ public class ReportKpiDatasetGenerator {
             baseAnnual.put("FOREIGN_RATE", 0.20);
             baseAnnual.put("INQUIRY_COUNT", 160.0);
             baseAnnual.put("CLAIM_COUNT", 20.0);
+            baseAnnual.put("UNRESOLVED_RATE", 0.12);
+            baseAnnual.put("AVG_RESPONSE_TIME", 5.0);
+            baseAnnual.put("RESERVATION_COUNT", 1200.0);
+            baseAnnual.put("CANCELLATION_RATE", 0.15);
+            baseAnnual.put("NO_SHOW_RATE", 0.04);
             baseAnnual.put("NON_ROOM_REVENUE", 2000000.0);
 
             List<ReportKPITarget> toSave = new ArrayList<>();
