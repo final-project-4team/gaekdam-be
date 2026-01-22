@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FacilityUsageResponse {
+public class FacilityUsageCryptoRow {
 
     private Long facilityUsageCode;
     private LocalDateTime usageAt;
@@ -24,10 +24,13 @@ public class FacilityUsageResponse {
 
     private Long stayCode;
 
-    // 화면 표시용
+    // customer crypto
     private Long customerCode;
-    private String customerName;
+    private byte[] customerNameEnc;   // DB 타입이 VARBINARY면 byte[]가 안전
+    private String customerNameHash;
+    private byte[] dekEnc;
 
+    // room / facility
     private String roomNumber;
 
     private Long facilityCode;

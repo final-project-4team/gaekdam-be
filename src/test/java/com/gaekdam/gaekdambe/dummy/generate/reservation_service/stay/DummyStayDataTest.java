@@ -36,34 +36,29 @@ public class DummyStayDataTest {
 
         for (Reservation r : reservations) {
 
+            if (r.getCustomerCode() == null) continue;
 
-            /* =========================
-               stay 생성 제외 대상
-               ========================= */
+            // 날짜 이상
             if (!r.getCheckinDate().isBefore(r.getCheckoutDate())) continue;
-
-            // 체크인 예정 (오늘)
-            if (r.getCheckinDate().isEqual(today)) continue;
 
             // 미래 예약
             if (r.getCheckinDate().isAfter(today)) continue;
 
-            // NO_SHOW (체크아웃 지나도록 stay 없음)
-            if (r.getCheckoutDate().isBefore(today)
-                    && r.getCheckinDate().isBefore(today)
-                    && r.getReservationStatus() == ReservationStatus.NO_SHOW) {
-                continue;
-            }
+            // 체크인 예정(오늘)은 아직 투숙 아님
+            if (r.getCheckinDate().isEqual(today)) continue;
+
+            // NO_SHOW
+            if (r.getReservationStatus() == ReservationStatus.NO_SHOW) continue;
 
             /* =========================
-               stay 생성 대상
+               실제 투숙 생성
                ========================= */
 
             LocalDateTime checkinAt = r.getCheckinDate().atTime(15, 0);
             LocalDateTime checkoutAt = null;
             StayStatus stayStatus = StayStatus.STAYING;
 
-            // 오늘 체크아웃 대상 → 70% 예정 / 30% 완료
+            // 오늘 체크아웃 대상
             if (r.getCheckoutDate().isEqual(today)) {
                 if (random.nextInt(100) < 30) {
                     checkoutAt = today.atTime(10, 0);
@@ -71,7 +66,7 @@ public class DummyStayDataTest {
                 }
             }
 
-            // 과거 체크아웃 → 무조건 완료
+            // 과거 투숙
             if (r.getCheckoutDate().isBefore(today)) {
                 checkoutAt = r.getCheckoutDate().atTime(10, 0);
                 stayStatus = StayStatus.COMPLETED;
