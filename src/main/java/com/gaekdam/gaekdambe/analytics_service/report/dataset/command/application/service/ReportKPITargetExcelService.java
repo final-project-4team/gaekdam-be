@@ -64,15 +64,8 @@ public class ReportKPITargetExcelService {
                 for (int m=1;m<=12;m++) cols[4+m] = String.format("%02d", m);
                 for (int i=0;i<cols.length;i++) header.createCell(i).setCellValue(cols[i]);
 
-                // 한 번에 그 연도의 targets 조회 (연간 + 월간)
-                List<ReportKPITarget> targets = targetRepo.findTargetsForYear(hotelGroupCode, year);
-
-                // KPI -> periodValue -> targetValue 매핑
-                Map<String, Map<String, BigDecimal>> map = new HashMap<>();
-                for (ReportKPITarget t : targets) {
-                    String k = t.getKpiCode();
-                    map.computeIfAbsent(k, k2 -> new HashMap<>()).put(t.getPeriodValue(), t.getTargetValue());
-                }
+                // TEMPLATE MODE: don't fetch or populate existing target values. Leave annual/month cells empty so user
+                // can fill them when uploading. Previously we fetched targets and populated values here; remove that.
 
                 int r = 1;
                 for (ReportKPICodeDim kpi : kpis) {
@@ -81,18 +74,7 @@ public class ReportKPITargetExcelService {
                     row.createCell(1).setCellValue(kpi.getKpiCode());
                     row.createCell(2).setCellValue(kpi.getKpiName());
                     row.createCell(3).setCellValue(kpi.getUnit());
-
-                    Map<String, BigDecimal> per = map.getOrDefault(kpi.getKpiCode(), Map.of());
-
-                    // Annual
-                    BigDecimal annual = per.get(year); // periodValue for annual is "2024"
-                    if (annual != null) row.createCell(4).setCellValue(annual.doubleValue());
-                    // Months
-                    for (int m=1;m<=12;m++) {
-                        String pm = String.format("%s-%02d", year, m); // "2024-01"
-                        BigDecimal mv = per.get(pm);
-                        if (mv != null) row.createCell(4 + m).setCellValue(mv.doubleValue());
-                    }
+                    // Leave Annual and monthly value cells blank intentionally for template download
                 }
 
                 for (int i=0;i<cols.length;i++) sheet.autoSizeColumn(i);
