@@ -13,10 +13,7 @@ public interface ReportKPITargetRepository extends JpaRepository<ReportKPITarget
     List<ReportKPITarget> findByIdHotelGroupCode(Long hotelGroupCode);
     List<ReportKPITarget> findByIdHotelGroupCodeAndKpiCode(Long hotelGroupCode, String kpiCode);
 
-    Optional<ReportKPITarget> findByIdHotelGroupCodeAndKpiCodeAndPeriodTypeAndPeriodValue(
-            Long hotelGroupCode,
-            String kpiCode,
-            String periodType,
-            String periodValue
-    );
+    // Refer to embedded id property using id_<fieldName>
+    Optional<ReportKPITarget> findById_HotelGroupCodeAndKpiCodeAndPeriodTypeAndPeriodValue(
+        Long hotelGroupCode, String kpiCode, String periodType, String periodValue);
 }
