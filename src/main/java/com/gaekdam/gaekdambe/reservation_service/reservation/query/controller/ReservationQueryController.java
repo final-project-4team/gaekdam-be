@@ -9,7 +9,6 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.request.O
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.request.ReservationSearchRequest;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.ReservationResponse;
-import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.TodayReservationSummaryResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.OperationBoardQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.TodayOperationQueryService;

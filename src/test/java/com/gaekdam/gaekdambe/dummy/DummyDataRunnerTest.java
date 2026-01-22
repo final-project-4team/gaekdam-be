@@ -63,13 +63,20 @@ class DummyDataRunnerTest {
     @Autowired
     DummyFacilityDataTest facilityDataTest;
     @Autowired
-    DummyFacilityUsageDataTest facilityUsageDataTest;
-    @Autowired
     DummyReservationPackageDataTest reservationPackageDataTest;
     @Autowired
     DummyRoomDataTest roomDataTest;
     @Autowired
     DummyRoomTypeDataTest roomTypeDataTest;
+
+
+    // 고객 서비스
+    @Autowired
+    DummyCustomerDataTest customerDataTest;
+    @Autowired
+    DummyMembershipDataTest membershipDataTest;
+    @Autowired
+    DummyLoyaltyDataTest loyaltyDataTest;
 
     // 예약 서비스
     @Autowired
@@ -79,13 +86,8 @@ class DummyDataRunnerTest {
     @Autowired
     DummyCheckInOutDataTest checkInOutDataTest;
 
-    // 고객 서비스
     @Autowired
-    DummyCustomerDataTest customerDataTest;
-    @Autowired
-    DummyMembershipDataTest membershipDataTest;
-    @Autowired
-    DummyLoyaltyDataTest loyaltyDataTest;
+    DummyFacilityUsageDataTest facilityUsageDataTest;
 
     // 커뮤니케이션 서비스 (문의, 사건, 메세지 더미데이터 생성)
     @Autowired
@@ -110,6 +112,8 @@ class DummyDataRunnerTest {
 
 
 
+
+
     @Test
     void generateAll() {
         System.out.println(">>> generateAll called");
@@ -126,23 +130,25 @@ class DummyDataRunnerTest {
         permissionMappingDataTest.generate();
         employeeDataTest.generate();
 
-
         // 오퍼레이션 서비스
         facilityDataTest.generate();
-        facilityUsageDataTest.generate();
         reservationPackageDataTest.generate();
         roomDataTest.generate();
         roomTypeDataTest.generate();
+
+        // 고객 서비스
+        customerDataTest.generate();
+        membershipDataTest.generate();
+        loyaltyDataTest.generate();
 
         // 예약 서비스
         reservationDataTest.generate();
         stayDataTest.generate();
         checkInOutDataTest.generate();
 
-        // 고객 서비스
-        customerDataTest.generate();
-        membershipDataTest.generate();
-        loyaltyDataTest.generate();
+        // 부대시설이용
+        facilityUsageDataTest.generate();
+
 
         // communication_service (문의, 사건, 메세지 더미데이터 생성)
         incidentDataTest.generate();
@@ -154,9 +160,11 @@ class DummyDataRunnerTest {
         messageSendHistoryDataTest.generate();
 
         // analytics_service (dashboard/report dummy data)
-        reportKpiDatasetGenerator.generate();     
+        reportKpiDatasetGenerator.generate();
         reportTemplateGenerator.generate();
         reportTemplateWidgetGenerator.generate();
+
+
 
     }
 }

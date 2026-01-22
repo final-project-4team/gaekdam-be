@@ -65,7 +65,6 @@ public class FacilityUsageQueryController {
             @AuthenticationPrincipal CustomUser customUser,
             @RequestParam(required = false) Long propertyCode
     ) {
-
         return ApiResponse.success(
                 facilityUsageSummaryService.getTodaySummary(
                         LocalDate.now(),

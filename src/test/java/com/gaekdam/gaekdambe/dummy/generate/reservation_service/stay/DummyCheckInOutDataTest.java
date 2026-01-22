@@ -30,7 +30,10 @@ public class DummyCheckInOutDataTest {
 
         for (Stay stay : stayRepository.findAll()) {
 
-            // CHECK_IN
+            //  실제 체크인한 투숙만
+            if (stay.getActualCheckinAt() == null) continue;
+
+            // CHECK_IN (무조건 1건)
             checkInOutRepository.save(
                     CheckInOut.createCheckInOut(
                             CheckInOutRecordType.CHECK_IN,
@@ -42,7 +45,7 @@ public class DummyCheckInOutDataTest {
                     )
             );
 
-            // CHECK_OUT
+            // CHECK_OUT (완료된 투숙만)
             if (stay.getActualCheckoutAt() != null) {
                 checkInOutRepository.save(
                         CheckInOut.createCheckInOut(
