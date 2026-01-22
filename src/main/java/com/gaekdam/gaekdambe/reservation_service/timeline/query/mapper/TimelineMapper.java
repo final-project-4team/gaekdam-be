@@ -11,10 +11,10 @@ import java.util.List;
 public interface TimelineMapper {
 
     // 고객 → 투숙 리스트
-    List<CustomerStayResponse> findCustomerStays(Long customerCode);
+    List<CustomerStayResponse> findCustomerStays(Long hotelGroupCode,Long customerCode );
 
     // 투숙 → 타임라인 이벤트
-    List<TimelineEventResponse> findTimelineEvents(Long stayCode);
+    List<TimelineEventResponse> findTimelineEvents(Long hotelGroupCode ,Long stayCode);
 
 
     // 투숙 → 요약 카드

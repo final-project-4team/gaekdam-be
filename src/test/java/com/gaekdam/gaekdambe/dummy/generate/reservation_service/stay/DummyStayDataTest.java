@@ -18,10 +18,8 @@ import java.util.Random;
 @Component
 public class DummyStayDataTest {
 
-    @Autowired
-    ReservationRepository reservationRepository;
-    @Autowired
-    StayRepository stayRepository;
+    @Autowired ReservationRepository reservationRepository;
+    @Autowired StayRepository stayRepository;
 
     @Transactional
     public void generate() {
@@ -29,44 +27,25 @@ public class DummyStayDataTest {
         if (stayRepository.count() > 0) return;
 
         LocalDate today = LocalDate.now();
-        Random random = new Random();
 
         List<Reservation> reservations =
                 reservationRepository.findByReservationStatus(ReservationStatus.RESERVED);
 
         for (Reservation r : reservations) {
 
-            if (r.getCustomerCode() == null) continue;
-
-            // 날짜 이상
-            if (!r.getCheckinDate().isBefore(r.getCheckoutDate())) continue;
-
-            // 미래 예약
+            // 미래 예약 → 투숙 없음
             if (r.getCheckinDate().isAfter(today)) continue;
 
-            // 체크인 예정(오늘)은 아직 투숙 아님
-            if (r.getCheckinDate().isEqual(today)) continue;
-
-            // NO_SHOW
-            if (r.getReservationStatus() == ReservationStatus.NO_SHOW) continue;
-
-            /* =========================
-               실제 투숙 생성
-               ========================= */
+            // 노쇼 후보 → 투숙 생성 안 함
+            if (r.getCheckoutDate().isBefore(today)
+                    && Math.random() < 0.3) {
+                continue;
+            }
 
             LocalDateTime checkinAt = r.getCheckinDate().atTime(15, 0);
             LocalDateTime checkoutAt = null;
             StayStatus stayStatus = StayStatus.STAYING;
 
-            // 오늘 체크아웃 대상
-            if (r.getCheckoutDate().isEqual(today)) {
-                if (random.nextInt(100) < 30) {
-                    checkoutAt = today.atTime(10, 0);
-                    stayStatus = StayStatus.COMPLETED;
-                }
-            }
-
-            // 과거 투숙
             if (r.getCheckoutDate().isBefore(today)) {
                 checkoutAt = r.getCheckoutDate().atTime(10, 0);
                 stayStatus = StayStatus.COMPLETED;
