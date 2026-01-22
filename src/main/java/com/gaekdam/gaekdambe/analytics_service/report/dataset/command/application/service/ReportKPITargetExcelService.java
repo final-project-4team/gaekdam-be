@@ -43,29 +43,63 @@ public class ReportKPITargetExcelService {
     }
 
     public byte[] generateTemplateExcel(Long hotelGroupCode, String periodType, String period) throws IOException {
+        // period 파라미터를 연도로 해석: 만약 user가 '2024' 넘겼다면 그 해만, 아니면 자동으로 모든 연도 생성
+        List<String> years;
+        if (period != null && period.matches("^\\d{4}$")) {
+            years = List.of(period);
+        } else {
+            years = targetRepo.findDistinctYearsByHotelGroupCode(hotelGroupCode); // 추가 메서드
+        }
+
         List<ReportKPICodeDim> kpis = kpiRepo.findByIsActiveTrueOrderByKpiCodeAsc();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-        XSSFSheet sheet = wb.createSheet("KPI_Template");
-        String[] headers = {"hotelGroupCode","kpiCode","kpiName","unit","periodType","periodValue","targetValue"};
-        Row h = sheet.createRow(0);
-        for (int i=0;i<headers.length;i++) h.createCell(i).setCellValue(headers[i]);
+            for (String year : years) {
+                XSSFSheet sheet = wb.createSheet(year);
+                // 헤더: hotelGroupCode,kpiCode,kpiName,unit,Annual,Jan,...,Dec
+                Row header = sheet.createRow(0);
+                String[] cols = new String[4 + 1 + 12]; // 4 기본 + Annual + 12 months
+                cols[0] = "hotelGroupCode"; cols[1] = "kpiCode"; cols[2] = "kpiName"; cols[3] = "unit";
+                cols[4] = "Annual";
+                for (int m=1;m<=12;m++) cols[4+m] = String.format("%02d", m);
+                for (int i=0;i<cols.length;i++) header.createCell(i).setCellValue(cols[i]);
 
-        int r = 1;
-        for (ReportKPICodeDim k : kpis) {
-            Row row = sheet.createRow(r++);
-            row.createCell(0).setCellValue(hotelGroupCode);
-            row.createCell(1).setCellValue(k.getKpiCode());
-            row.createCell(2).setCellValue(k.getKpiName());
-            row.createCell(3).setCellValue(k.getUnit());
-            row.createCell(4).setCellValue(periodType);
-            row.createCell(5).setCellValue(period);
-            row.createCell(6).setCellValue(""); // targetValue 빈칸
-        }
+                // 한 번에 그 연도의 targets 조회 (연간 + 월간)
+                List<ReportKPITarget> targets = targetRepo.findTargetsForYear(hotelGroupCode, year);
 
-        for (int i=0;i<headers.length;i++) sheet.autoSizeColumn(i);
-        wb.write(bos);
-        return bos.toByteArray();
+                // KPI -> periodValue -> targetValue 매핑
+                Map<String, Map<String, BigDecimal>> map = new HashMap<>();
+                for (ReportKPITarget t : targets) {
+                    String k = t.getKpiCode();
+                    map.computeIfAbsent(k, k2 -> new HashMap<>()).put(t.getPeriodValue(), t.getTargetValue());
+                }
+
+                int r = 1;
+                for (ReportKPICodeDim kpi : kpis) {
+                    Row row = sheet.createRow(r++);
+                    row.createCell(0).setCellValue(hotelGroupCode);
+                    row.createCell(1).setCellValue(kpi.getKpiCode());
+                    row.createCell(2).setCellValue(kpi.getKpiName());
+                    row.createCell(3).setCellValue(kpi.getUnit());
+
+                    Map<String, BigDecimal> per = map.getOrDefault(kpi.getKpiCode(), Map.of());
+
+                    // Annual
+                    BigDecimal annual = per.get(year); // periodValue for annual is "2024"
+                    if (annual != null) row.createCell(4).setCellValue(annual.doubleValue());
+                    // Months
+                    for (int m=1;m<=12;m++) {
+                        String pm = String.format("%s-%02d", year, m); // "2024-01"
+                        BigDecimal mv = per.get(pm);
+                        if (mv != null) row.createCell(4 + m).setCellValue(mv.doubleValue());
+                    }
+                }
+
+                for (int i=0;i<cols.length;i++) sheet.autoSizeColumn(i);
+            }
+
+            wb.write(bos);
+            return bos.toByteArray();
         }
     }
 
