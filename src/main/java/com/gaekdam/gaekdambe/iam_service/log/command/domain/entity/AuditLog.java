@@ -1,45 +1,87 @@
 package com.gaekdam.gaekdambe.iam_service.log.command.domain.entity;
 
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "audit_log")
 public class AuditLog {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "audit_log_code", nullable = false)
+  @Column(name = "audit_log_code", nullable = false, updatable = false)
   private Long auditLogCode;
 
-  @Column(name = "job_name", nullable = false, length = 50)
-  private String jobName; // DELETE/UPDATE/CREATE/SELECT
+  @Column(name = "permission_type_key", nullable = false, length = 50, updatable = false)
+  @Enumerated(EnumType.STRING)
+  private PermissionTypeKey permissionTypeKey;
 
-  @Column(name = "occurred_at", nullable = false)
+  @CreatedDate
+  @Column(name = "occurred_at", nullable = false, updatable = false)
   private LocalDateTime occurredAt;
 
-  @Column(name = "menu_name", nullable = false, length = 50)
-  private String menuName;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "employee_code", nullable = false)
-  private Employee employee;
+  @Column(name = "employee_code", nullable = false, updatable = false)
+  private Long employeeCode;
 
+  @Column(name = "employee_login_id", nullable = false, length = 50, updatable = false)
+  private String employeeLoginId;
+
+  @Column(name = "employee_name", length = 100, updatable = false)
+  private String employeeName; // 당시 이름 스냅샷
+
+  @Column(name = "hotel_group_code", nullable = false, updatable = false)
+  private Long hotelGroupCode; // HotelGroup FK 제거 -> ID 저장
+
+  // --- 상세 정보 ---
   @Lob
-  @Column(name = "details")
+  @Column(name = "details", updatable = false)
   private String details;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "hotel_group_code", nullable = false)
-  private HotelGroup hotelGroup;
+  @Builder
+  public AuditLog(
+      PermissionTypeKey permissionTypeKey,
+      Long employeeCode,
+      String employeeLoginId,
+      String employeeName,
+      Long hotelGroupCode,
+      String details) {
+    this.permissionTypeKey = permissionTypeKey;
+    this.employeeCode = employeeCode;
+    this.employeeLoginId = employeeLoginId;
+    this.employeeName = employeeName;
+    this.hotelGroupCode = hotelGroupCode;
+    this.details = details;
+    this.occurredAt = LocalDateTime.now();
+  }
 
+  // 생성 팩토리 메서드
+  public static AuditLog createLog(
+      Employee employee,
+      PermissionTypeKey type,
+      String details) {
 
- }
-
-
+    return AuditLog.builder()
+        .permissionTypeKey(type)
+        // Employee 객체에서 필요한 값만 추출 (약한 참조)
+        .employeeCode(employee.getEmployeeCode())
+        .employeeLoginId(employee.getLoginId())
+        .employeeName(employee.getLoginId())
+        .hotelGroupCode(employee.getHotelGroup().getHotelGroupCode())
+        .details(details)
+        .build();
+  }
+}

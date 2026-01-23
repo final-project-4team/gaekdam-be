@@ -11,6 +11,8 @@ import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeLis
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryListEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.mapper.EmployeeQueryMapper;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.LogPersonalInfo;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +28,16 @@ public class EmployeeQueryService {
   private final DecryptionService decryptionService;
   private final SearchHashService searchHashService;
 
-  public EmployeeDetailResponse getEmployeeDetail(Long employeeCode) {
+
+  @LogPersonalInfo(
+      type = PermissionTypeKey.EMPLOYEE_READ,
+      purpose = "직원 인사 정보 조회"
+  )
+  public EmployeeDetailResponse getEmployeeDetail(Long hotelGroupCode,Long employeeCode) {
+
     EmployeeQueryEncResponse response = employeeQueryMapper.findByEmployeeCode(employeeCode);
-    if (response == null) {
-      throw new IllegalArgumentException("Not found: " + employeeCode);
+    if (response == null || !response.hotelGroupCode().equals(hotelGroupCode)) {
+      throw new IllegalArgumentException("Not found: " + employeeCode+"or 검색하려는 직원의 hotelGroupCode가 본인의 호텔코드와 일치하지 않습니다.");
     }
     return toDetailDto(response);
   }
@@ -99,5 +107,13 @@ public class EmployeeQueryService {
         response.updatedAt(),
         response.failedLoginCount(),
         response.lastLoginAt());
+  }
+
+  public EmployeeDetailResponse getMyPage(Long hotelGroupCode,String loginId) {
+    EmployeeQueryEncResponse response = employeeQueryMapper.findMyPage(hotelGroupCode,loginId);
+    if (response == null || !response.hotelGroupCode().equals(hotelGroupCode)){
+      throw new IllegalArgumentException("Not found: " + loginId+"or Not match hotelGroupCode");
+    }
+    return toDetailDto(response);
   }
 }

@@ -18,13 +18,18 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/employee")
 public class EmployeeQueryController {
+
   private final EmployeeQueryService employeeQueryService;
 
 
   @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
   @GetMapping("/detail/{employeeCode}")
-  public ApiResponse<EmployeeDetailResponse> getEmployee(@PathVariable Long employeeCode) {
-    return ApiResponse.success(employeeQueryService.getEmployeeDetail(employeeCode));
+  public ApiResponse<EmployeeDetailResponse> getEmployee(
+      @AuthenticationPrincipal CustomUser employee,
+      @PathVariable Long employeeCode
+      ) {
+    Long hotelGroupCode = employee.getHotelGroupCode();
+    return ApiResponse.success(employeeQueryService.getEmployeeDetail(hotelGroupCode,employeeCode));
   }
 
   @PreAuthorize("hasAuthority('EMPLOYEE_LIST')")
@@ -36,12 +41,21 @@ public class EmployeeQueryController {
       SortRequest sort
   ) {
 
-    Long hotelGroupCode=employee.getHotelGroupCode();
+    Long hotelGroupCode = employee.getHotelGroupCode();
     if (sort == null || sort.getSortBy() == null) {
       sort = new SortRequest();
       sort.setSortBy("created_at");
       sort.setDirection("DESC");
     }
-    return ApiResponse.success(employeeQueryService.searchEmployees(hotelGroupCode,search,page,sort));
+    return ApiResponse.success(
+        employeeQueryService.searchEmployees(hotelGroupCode, search, page, sort));
+  }
+
+  @GetMapping("/detail")
+  public ApiResponse<EmployeeDetailResponse> getMyPage(
+      @AuthenticationPrincipal CustomUser employee) {
+    Long hotelGroupCode = employee.getHotelGroupCode();
+    String loginId = employee.getUsername();
+    return ApiResponse.success(employeeQueryService.getMyPage(hotelGroupCode, loginId));
   }
 }

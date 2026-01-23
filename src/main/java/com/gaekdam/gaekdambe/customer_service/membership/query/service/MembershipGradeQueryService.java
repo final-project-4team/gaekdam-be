@@ -16,12 +16,9 @@ public class MembershipGradeQueryService {
 
   private final MembershipGradeMapper membershipGradeMapper;
   public List<MembershipGradeListQueryResponse> getMembershipGradeList(
-      Long hotelGroupCode,String sortBy,String direction,String status ){
-    SortRequest sortReq = new SortRequest();
-    sortReq.setSortBy(sortBy);
-    sortReq.setDirection(direction);
+      Long hotelGroupCode,SortRequest sort,String status ){
 
-    return  membershipGradeMapper.findMembershipGradeList(hotelGroupCode,sortReq,status);
+    return  membershipGradeMapper.findMembershipGradeList(hotelGroupCode,sort,status);
 
   }
 
