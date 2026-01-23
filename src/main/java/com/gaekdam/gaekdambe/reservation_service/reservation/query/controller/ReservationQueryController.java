@@ -74,7 +74,9 @@ public class ReservationQueryController {
             PageRequest page,
             SortRequest sort,
             @RequestParam(required = false) String summaryType,
-            @RequestParam(required = false) Long propertyCode
+            @RequestParam(required = false) Long propertyCode,
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String reservationCode
     ) {
 
         if (sort == null || sort.getSortBy() == null) {
@@ -89,10 +91,13 @@ public class ReservationQueryController {
                         customUser.getHotelGroupCode(),
                         propertyCode,
                         summaryType,
+                        customerName,
+                        reservationCode,
                         sort
                 )
         );
     }
+
 
 
     @GetMapping("/today/operations/summary")

@@ -2,6 +2,7 @@ package com.gaekdam.gaekdambe.reservation_service.timeline.query.mapper;
 
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineCustomerRow;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -9,7 +10,9 @@ import java.util.List;
 public interface TimelineCustomerMapper {
 
     List<TimelineCustomerRow> findTimelineCustomers(
-            Long hotelGroupCode,
-            String keyword
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("customerCodeKeyword") String customerCodeKeyword,
+            @Param("nameHash") String nameHash,
+            @Param("phoneHash") String phoneHash
     );
 }

@@ -1,6 +1,6 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.query.service;
 
-import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.*;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
@@ -20,44 +20,56 @@ public class TodayOperationQueryService {
 
     private final TodayOperationMapper mapper;
     private final DecryptionService decryptionService;
+    private final SearchHashService searchHashService;
 
     public PageResponse<OperationBoardResponse> findTodayOperations(
             PageRequest page,
             Long hotelGroupCode,
             Long propertyCode,
             String summaryType,
+            String customerName,
+            String reservationCode,
             SortRequest sort
     ) {
 
         LocalDate today = LocalDate.now();
 
-        // LIST
+        String nameHashHex = null;
+        if (customerName != null && !customerName.isBlank()) {
+
+            nameHashHex = HexUtils.toHex(
+                    searchHashService.nameHash(customerName)
+            );
+        }
+
         List<OperationBoardResponse> list =
                 mapper.findTodayOperations(
                                 hotelGroupCode,
                                 propertyCode,
                                 summaryType,
+                                nameHashHex,
+                                reservationCode,
                                 page,
                                 today,
                                 sort
                         )
                         .stream()
                         .map(row -> {
-
-                            String customerName = "(알 수 없음)";
+                            String name = "(알 수 없음)";
                             if (row.getCustomerNameEnc() != null && row.getDekEnc() != null) {
-                                customerName = decryptionService.decrypt(
+                                String decrypted = decryptionService.decrypt(
                                         row.getCustomerCode(),
                                         row.getDekEnc(),
                                         row.getCustomerNameEnc()
                                 );
+                                name = MaskingUtils.maskName(decrypted);
                             }
 
                             return OperationBoardResponse.builder()
                                     .reservationCode(row.getReservationCode())
                                     .customerCode(row.getCustomerCode())
                                     .stayCode(row.getStayCode())
-                                    .customerName(customerName)
+                                    .customerName(name)
                                     .roomType(row.getRoomType())
                                     .propertyName(row.getPropertyName())
                                     .plannedCheckinDate(row.getPlannedCheckinDate())
@@ -67,7 +79,6 @@ public class TodayOperationQueryService {
                         })
                         .toList();
 
-        // COUNT (LIST와 동일 CASE 기준)
         long total = calculateTotalBySummaryType(
                 mapper.countTodayOperationsByStatus(
                         hotelGroupCode,
@@ -84,6 +95,8 @@ public class TodayOperationQueryService {
                 total
         );
     }
+
+
 
     private long calculateTotalBySummaryType(
             List<Map<String, Object>> rows,

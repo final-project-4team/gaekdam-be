@@ -5,9 +5,9 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.OperationBoardMapper">
 
-    <!-- ================================================= -->
-    <!-- 운영보드 조회 (LIST) -->
-    <!-- ================================================= -->
+    <!-- ========================= -->
+    <!-- LIST -->
+    <!-- ========================= -->
     <select id="findOperationBoard"
             resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow">
 
@@ -34,37 +34,13 @@
         r.checkout_date    AS plannedCheckoutDate,
         r.property_code    AS propertyCode,
 
-        /* =========================
-        운영보드 상태 (정합성 보장)
-        ========================= */
         CASE
-        -- 취소
-        WHEN r.reservation_status = 'CANCELED'
-        THEN 'CANCELED'
-
-        -- 노쇼 (명시적)
-        WHEN r.reservation_status = 'NO_SHOW'
-        THEN 'NO_SHOW'
-
-        -- 노쇼 (예약기간 지남 + 투숙 없음)
-        WHEN r.checkout_date <![CDATA[ < ]]> CURRENT_DATE
-        AND s.stay_code IS NULL
-        THEN 'NO_SHOW'
-
-        -- 예약 완료 (아직 체크인 전)
-        WHEN s.stay_code IS NULL
-        THEN 'RESERVED'
-
-        -- 투숙 중
-        WHEN s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NULL
-        THEN 'STAYING'
-
-        -- 정상 완료
-        WHEN s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NOT NULL
-        THEN 'COMPLETED'
-
+        WHEN r.reservation_status = 'CANCELED' THEN 'CANCELED'
+        WHEN r.reservation_status = 'NO_SHOW' THEN 'NO_SHOW'
+        WHEN r.checkout_date <![CDATA[ < ]]> CURDATE() AND s.stay_code IS NULL THEN 'NO_SHOW'
+        WHEN s.stay_code IS NULL THEN 'RESERVED'
+        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NULL THEN 'STAYING'
+        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
         ELSE 'UNKNOWN'
         END AS operationStatus
 
@@ -78,110 +54,59 @@
         ) t
         WHERE 1 = 1
 
-        <!-- =========================
-             검색 필터
-             ========================= -->
         <if test="search.propertyCode != null">
             AND t.propertyCode = #{search.propertyCode}
         </if>
 
         <if test="search.reservationCode != null">
-            AND t.reservationCode = #{search.reservationCode}
+            AND
+            CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.reservationCode}, '%')
         </if>
 
-        <if test="search.customerName != null and search.customerName != ''">
-            AND t.customerNameHash LIKE CONCAT('%', #{search.customerName}, '%')
+        <if test="search.customerNameHash != null">
+            AND t.customerNameHash = #{search.customerNameHash}
         </if>
 
         <if test="search.status != null and search.status != ''">
             AND t.operationStatus = #{search.status}
         </if>
 
+        <!-- 전체검색 (고객명 제외) -->
         <if test="search.keyword != null and search.keyword != ''">
             AND (
             CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.keyword}, '%')
-            OR t.customerNameHash LIKE CONCAT('%', #{search.keyword}, '%')
             OR t.roomType LIKE CONCAT('%', #{search.keyword}, '%')
             OR t.propertyName LIKE CONCAT('%', #{search.keyword}, '%')
             )
         </if>
 
-        <!-- =========================
-             ORDER BY
-             ========================= -->
         ORDER BY
-        <choose>
-            <when test="sort != null and sort.sortBy == 't.operationStatus'">
-                CASE
-                WHEN t.operationStatus = 'CANCELED'  THEN 1
-                WHEN t.operationStatus = 'NO_SHOW'   THEN 2
-                WHEN t.operationStatus = 'RESERVED'  THEN 3
-                WHEN t.operationStatus = 'STAYING'   THEN 4
-                WHEN t.operationStatus = 'COMPLETED' THEN 5
-                ELSE 6
-                END ${sort.direction},
-                t.plannedCheckinDate DESC,
-                t.reservationCode DESC
-            </when>
-
-            <when test="sort != null and sort.sortBy != null">
-                ${sort.sortBy} ${sort.direction},
-                t.reservationCode DESC
-            </when>
-
-            <otherwise>
-                t.plannedCheckinDate DESC,
-                t.reservationCode DESC
-            </otherwise>
-        </choose>
-
+        ${sort.sortBy} ${sort.direction}
         LIMIT #{page.size}
         OFFSET #{page.offset}
     </select>
 
-    <!-- ================================================= -->
-    <!-- 운영보드 조회 (COUNT) -->
-    <!-- ================================================= -->
+    <!-- ========================= -->
+    <!-- COUNT -->
+    <!-- ========================= -->
     <select id="countOperationBoard" resultType="long">
+
         SELECT COUNT(*)
         FROM (
         SELECT
         r.reservation_code AS reservationCode,
         r.property_code    AS propertyCode,
         c.customer_name_hash AS customerNameHash,
-        r.checkin_date     AS plannedCheckinDate,
-        r.checkout_date    AS plannedCheckoutDate,
         rt.type_name       AS roomType,
         p.property_name    AS propertyName,
 
         CASE
-        -- 취소
-        WHEN r.reservation_status = 'CANCELED'
-        THEN 'CANCELED'
-
-        -- 노쇼 (명시적)
-        WHEN r.reservation_status = 'NO_SHOW'
-        THEN 'NO_SHOW'
-
-        -- 노쇼 (예약기간 지남 + 투숙 없음)
-        WHEN r.checkout_date <![CDATA[ < ]]> CURRENT_DATE
-        AND s.stay_code IS NULL
-        THEN 'NO_SHOW'
-
-        -- 예약 완료 (아직 체크인 전)
-        WHEN s.stay_code IS NULL
-        THEN 'RESERVED'
-
-        -- 투숙 중
-        WHEN s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NULL
-        THEN 'STAYING'
-
-        -- 정상 완료
-        WHEN s.actual_checkin_at IS NOT NULL
-        AND s.actual_checkout_at IS NOT NULL
-        THEN 'COMPLETED'
-
+        WHEN r.reservation_status = 'CANCELED' THEN 'CANCELED'
+        WHEN r.reservation_status = 'NO_SHOW' THEN 'NO_SHOW'
+        WHEN r.checkout_date <![CDATA[ < ]]> CURDATE() AND s.stay_code IS NULL THEN 'NO_SHOW'
+        WHEN s.stay_code IS NULL THEN 'RESERVED'
+        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NULL THEN 'STAYING'
+        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
         ELSE 'UNKNOWN'
         END AS operationStatus
 
@@ -203,8 +128,8 @@
             AND t.reservationCode = #{search.reservationCode}
         </if>
 
-        <if test="search.customerName != null and search.customerName != ''">
-            AND t.customerNameHash LIKE CONCAT('%', #{search.customerName}, '%')
+        <if test="search.customerNameHash != null">
+            AND t.customerNameHash = #{search.customerNameHash}
         </if>
 
         <if test="search.status != null and search.status != ''">
@@ -214,11 +139,11 @@
         <if test="search.keyword != null and search.keyword != ''">
             AND (
             CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.keyword}, '%')
-            OR t.customerNameHash LIKE CONCAT('%', #{search.keyword}, '%')
             OR t.roomType LIKE CONCAT('%', #{search.keyword}, '%')
             OR t.propertyName LIKE CONCAT('%', #{search.keyword}, '%')
             )
         </if>
+
     </select>
 
 </mapper>

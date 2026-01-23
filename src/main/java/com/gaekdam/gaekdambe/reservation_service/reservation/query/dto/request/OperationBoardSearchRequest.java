@@ -23,6 +23,7 @@ public class OperationBoardSearchRequest {
     // 검색 / 상세검색
     private String keyword;
     private String customerName;     // 고객명 검색
+    private String customerNameHash;
     private Long reservationCode;    // 예약번호 검색
 
 

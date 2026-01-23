@@ -1,12 +1,15 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.query.service;
 
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
+import com.gaekdam.gaekdambe.global.crypto.Normalizer;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
+import com.gaekdam.gaekdambe.global.crypto.HexUtils;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.ReservationStatus;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.request.OperationBoardSearchRequest;
-import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.OperationBoardMapper;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.enums.StayStatus;
@@ -22,6 +25,7 @@ public class OperationBoardQueryService {
 
     private final OperationBoardMapper mapper;
     private final DecryptionService decryptionService;
+    private final SearchHashService searchHashService;
 
     public PageResponse<OperationBoardResponse> findOperationBoard(
             PageRequest page,
@@ -29,6 +33,26 @@ public class OperationBoardQueryService {
             SortRequest sort
     ) {
 
+
+        if (search.getKeyword() != null && search.getKeyword().isBlank()) {
+            search.setKeyword(null);
+        }
+        // =========================
+        // 고객명 → 해시 변환 (핵심)
+        // =========================
+        if (search.getCustomerName() != null && !search.getCustomerName().isBlank()) {
+            String normalizedName = Normalizer.name(search.getCustomerName());
+            String nameHashHex = HexUtils.toHex(
+                    searchHashService.nameHash(normalizedName)
+            );
+
+            search.setCustomerNameHash(nameHashHex);
+            search.setCustomerName(null);
+        }
+
+        // =========================
+        // Summary 필터
+        // =========================
         if (search.getSummaryType() != null) {
             applySummaryFilter(search);
         }
@@ -40,18 +64,20 @@ public class OperationBoardQueryService {
 
                             String customerName = "(알 수 없음)";
                             if (row.getCustomerNameEnc() != null && row.getDekEnc() != null) {
-                                customerName = decryptionService.decrypt(
+                                String decryptedName = decryptionService.decrypt(
                                         row.getCustomerCode(),
                                         row.getDekEnc(),
                                         row.getCustomerNameEnc()
                                 );
+                                customerName = MaskingUtils.maskName(decryptedName);
                             }
 
                             return OperationBoardResponse.builder()
                                     .reservationCode(row.getReservationCode())
+                                    .customerCode(row.getCustomerCode())
                                     .customerName(customerName)
-                                    .roomType(row.getRoomType())
                                     .propertyName(row.getPropertyName())
+                                    .roomType(row.getRoomType())
                                     .plannedCheckinDate(row.getPlannedCheckinDate())
                                     .plannedCheckoutDate(row.getPlannedCheckoutDate())
                                     .operationStatus(row.getOperationStatus())
@@ -59,8 +85,7 @@ public class OperationBoardQueryService {
                         })
                         .toList();
 
-        long total =
-                mapper.countOperationBoard(search);
+        long total = mapper.countOperationBoard(search);
 
         return new PageResponse<>(
                 list,
@@ -69,7 +94,6 @@ public class OperationBoardQueryService {
                 total
         );
     }
-
 
     private void applySummaryFilter(OperationBoardSearchRequest search) {
         LocalDate today = LocalDate.now();
