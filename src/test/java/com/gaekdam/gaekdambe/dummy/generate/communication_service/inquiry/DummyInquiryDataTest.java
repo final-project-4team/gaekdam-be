@@ -25,13 +25,13 @@ public class DummyInquiryDataTest {
     public void generate() {
         if (inquiryRepository.count() > 0) return;
 
-        // property_code + hotel_group_code
-        List<PropertyPair> props = jdbcTemplate.query("""
-            SELECT property_code, hotel_group_code
+        // property_code만 사용
+        List<Long> propertyCodes = jdbcTemplate.query("""
+            SELECT property_code
             FROM property
-        """, (rs, rowNum) -> new PropertyPair(rs.getLong(1), rs.getLong(2)));
+        """, (rs, rowNum) -> rs.getLong(1));
 
-        if (props.isEmpty()) return;
+        if (propertyCodes.isEmpty()) return;
 
         // category PK
         List<Long> categoryIds = jdbcTemplate.query("""
@@ -42,7 +42,7 @@ public class DummyInquiryDataTest {
 
         if (categoryIds.isEmpty()) return;
 
-        // ✅ 실제 customer PK 뽑아서 사용 (조인 누락 방지)
+        // customer_code
         List<Long> customerCodes = jdbcTemplate.query("""
             SELECT customer_code
             FROM customer
@@ -50,7 +50,13 @@ public class DummyInquiryDataTest {
 
         if (customerCodes.isEmpty()) return;
 
-        // ✅ user_code -> employee_code 로 변경
+        // employee_code (nullable이면 비어도 OK)
+        List<Long> employeeCodes = jdbcTemplate.query("""
+            SELECT employee_code
+            FROM employee
+        """, (rs, rowNum) -> rs.getLong(1));
+
+        // hotel_group_code 제거
         String insertSql = """
             INSERT INTO inquiry (
                 inquiry_status,
@@ -62,49 +68,56 @@ public class DummyInquiryDataTest {
                 customer_code,
                 employee_code,
                 inquiry_category_code,
-                hotel_group_code,
                 property_code
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         Random rnd = new Random(1234);
-        int total = 100;
+        int total = 1000;
 
         for (int i = 1; i <= total; i++) {
-            String title = String.format("테스트 문의 #%03d", i);
-            String content = String.format("더미 문의 내용입니다. 번호=%03d. 설명: sample inquiry content.", i);
+            String title = String.format("테스트 문의 #%04d", i);
+            String content = """
+                더미 문의 내용입니다.
+                - 번호: %04d
+                - 설명: sample inquiry content
+                """.formatted(i);
 
-            Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+            LocalDateTime createdAt = LocalDateTime.now()
+                    .minusDays(rnd.nextInt(30))
+                    .minusMinutes(rnd.nextInt(24 * 60));
 
-            // ✅ 존재하는 customer_code만 넣기
+            Timestamp createdTs = Timestamp.valueOf(createdAt);
+            Timestamp updatedTs = Timestamp.valueOf(createdAt.plusMinutes(rnd.nextInt(180)));
+
             Long customerCode = customerCodes.get(rnd.nextInt(customerCodes.size()));
 
-            // 직원(담당자) nullable
-            Long employeeCode = (rnd.nextInt(10) < 3) ? (100L + rnd.nextInt(20)) : null;
+            Long employeeCode = null;
+            if (!employeeCodes.isEmpty() && rnd.nextInt(10) < 3) {
+                employeeCode = employeeCodes.get(rnd.nextInt(employeeCodes.size()));
+            }
 
-            PropertyPair pickedProp = props.get(rnd.nextInt(props.size()));
-            long propertyCode = pickedProp.propertyCode();
-            long hotelGroupCode = pickedProp.hotelGroupCode();
+            Long propertyCode = propertyCodes.get(rnd.nextInt(propertyCodes.size()));
+            Long inquiryCategoryCode = categoryIds.get(rnd.nextInt(categoryIds.size()));
 
-            long inquiryCategoryCode = categoryIds.get(rnd.nextInt(categoryIds.size()));
+            boolean answered = rnd.nextInt(10) < 3;
+            String status = answered ? "ANSWERED" : "IN_PROGRESS";
+            String answerContent = answered ? "외부 시스템 답변 수신(더미) - 안내 완료되었습니다." : null;
 
             jdbcTemplate.update(
                     insertSql,
-                    "IN_PROGRESS",
+                    status,
                     title,
                     content,
-                    null,
-                    now,
-                    now,
+                    answerContent,
+                    createdTs,
+                    updatedTs,
                     customerCode,
                     employeeCode,
                     inquiryCategoryCode,
-                    hotelGroupCode,
                     propertyCode
             );
         }
     }
-
-    private record PropertyPair(long propertyCode, long hotelGroupCode) {}
 }
