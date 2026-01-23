@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.operation_service.facility.query.service;
 
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
@@ -54,14 +55,13 @@ public class FacilityUsageQueryService {
 
         // 고객이 null일 수 있는 케이스(조인 누락/데이터 이상) 방어
         if (row.getCustomerCode() != null && row.getDekEnc() != null && row.getCustomerNameEnc() != null) {
-            customerName = decryptionService.decrypt(
+            String decryptedName = decryptionService.decrypt(
                     row.getCustomerCode(),
                     row.getDekEnc(),
                     row.getCustomerNameEnc()
             );
-        } else if (row.getCustomerNameHash() != null) {
-            // 복호화 실패/불가시 fallback(원하면 제거)
-            customerName = row.getCustomerNameHash();
+
+            customerName = MaskingUtils.maskName(decryptedName);
         }
 
         return new FacilityUsageResponse(

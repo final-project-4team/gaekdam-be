@@ -9,10 +9,10 @@
             resultType="com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineCustomerRow">
 
         SELECT DISTINCT
-        c.customer_code        AS customerCode,
-        c.customer_name_enc    AS customerNameEnc,
-        cc.contact_value_enc   AS phoneEnc,
-        c.dek_enc              AS dekEnc
+        c.customer_code      AS customerCode,
+        c.customer_name_enc  AS customerNameEnc,
+        cc.contact_value_enc AS phoneEnc,
+        c.dek_enc            AS dekEnc
         FROM stay s
         INNER JOIN reservation r
         ON s.reservation_code = r.reservation_code
@@ -26,17 +26,22 @@
         AND cc.is_primary = TRUE
         WHERE p.hotel_group_code = #{hotelGroupCode}
 
-        <if test="keyword != null and keyword != ''">
-            AND (
-            CAST(c.customer_code AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
-            OR c.customer_name_hash LIKE CONCAT('%', #{keyword}, '%')
-            OR EXISTS (
+        <if test="customerCodeKeyword != null and customerCodeKeyword != ''">
+            AND CAST(c.customer_code AS CHAR)
+            LIKE CONCAT('%', #{customerCodeKeyword}, '%')
+        </if>
+
+        <if test="nameHash != null">
+            AND c.customer_name_hash = #{nameHash}
+        </if>
+
+        <if test="phoneHash != null">
+            AND EXISTS (
             SELECT 1
             FROM customer_contact cx
             WHERE cx.customer_code = c.customer_code
             AND cx.contact_type = 'PHONE'
-            AND cx.contact_value_hash LIKE CONCAT('%', #{keyword}, '%')
-            )
+            AND cx.contact_value_hash = #{phoneHash}
             )
         </if>
 

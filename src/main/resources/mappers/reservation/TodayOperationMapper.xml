@@ -85,6 +85,17 @@
         ) t
         WHERE t.operationStatus IS NOT NULL
 
+        <!-- 검색 -->
+        <if test="customerNameHash != null">
+            AND t.customerNameHash = #{customerNameHash}
+        </if>
+
+        <if test="reservationCode != null and reservationCode != ''">
+            AND CAST(t.reservationCode AS CHAR)
+            LIKE CONCAT('%', #{reservationCode}, '%')
+        </if>
+
+
         <!-- Summary 카드 필터 -->
         <choose>
             <when test="summaryType == 'CHECKIN_PLANNED'">

@@ -2,6 +2,8 @@ package com.gaekdam.gaekdambe.operation_service.facility.query.controller;
 
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
+import com.gaekdam.gaekdambe.global.crypto.HexUtils;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
@@ -12,7 +14,10 @@ import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityUs
 import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityUsageSummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,27 +29,42 @@ public class FacilityUsageQueryController {
 
     private final FacilityUsageQueryService facilityUsageQueryService;
     private final FacilityUsageSummaryService facilityUsageSummaryService;
-
-
-    // 현재 로그인 정보를 못불러오니
-    // 일단 파라미터값으로 호텔그룹코드를 받아온다
-    // 추후 유저 생기면 로그인 객체로 받아서 사용 -> 변경 완료
+    private final SearchHashService searchHashService; // 🔥 추가
 
     /**
      * 부대시설 이용내역 조회 (검색 + 페이징)
      */
-    @GetMapping()
+    @GetMapping
     public ApiResponse<PageResponse<FacilityUsageResponse>> getFacilityUsages(
             @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,
             FacilityUsageSearchRequest search,
-            SortRequest sort
+            SortRequest sort,
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String stayCode
     ) {
 
-        // SaaS 호텔 스코프 주입
+        /* =========================
+           SaaS 스코프 주입
+           ========================= */
         search.setHotelGroupCode(customUser.getHotelGroupCode());
 
-        // 도메인 기본 정렬
+
+        if (customerName != null && !customerName.isBlank()) {
+            String hashHex = HexUtils.toHex(
+                    searchHashService.nameHash(customerName)
+            );
+            search.setCustomerNameHash(hashHex);
+        }
+
+
+        if (stayCode != null && !stayCode.isBlank()) {
+            search.setStayCodeLike(stayCode);
+        }
+
+        /* =========================
+           기본 정렬
+           ========================= */
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
             sort.setSortBy("usage_at");
@@ -74,5 +94,3 @@ public class FacilityUsageQueryController {
         );
     }
 }
-
-

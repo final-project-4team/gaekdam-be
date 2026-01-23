@@ -17,6 +17,8 @@ public interface TodayOperationMapper {
             @Param("hotelGroupCode") Long hotelGroupCode,
             @Param("propertyCode") Long propertyCode,
             @Param("summaryType") String summaryType,
+            @Param("customerNameHash") String customerNameHash,
+            @Param("reservationCode") String reservationCode,
             @Param("page") PageRequest page,
             @Param("today") LocalDate today,
             @Param("sort") SortRequest sort

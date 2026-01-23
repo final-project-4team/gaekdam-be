@@ -65,8 +65,17 @@
                 AND s.stay_code = #{search.stayCode}
             </if>
 
+            <if test="search.stayCodeLike != null and search.stayCodeLike != ''">
+                AND CAST(s.stay_code AS CHAR)
+                LIKE CONCAT('%', #{search.stayCodeLike}, '%')
+            </if>
+
             <if test="search.facilityCode != null">
                 AND f.facility_code = #{search.facilityCode}
+            </if>
+
+            <if test="search.customerNameHash != null">
+                AND c.customer_name_hash = #{search.customerNameHash}
             </if>
 
             <if test="search.usageType != null and search.usageType != ''">
@@ -123,8 +132,17 @@
                 AND s.stay_code = #{search.stayCode}
             </if>
 
+            <if test="search.stayCodeLike != null and search.stayCodeLike != ''">
+                AND CAST(s.stay_code AS CHAR)
+                LIKE CONCAT('%', #{search.stayCodeLike}, '%')
+            </if>
+
             <if test="search.facilityCode != null">
                 AND f.facility_code = #{search.facilityCode}
+            </if>
+
+            <if test="search.customerNameHash != null">
+                AND c.customer_name_hash = #{search.customerNameHash}
             </if>
 
             <if test="search.usageType != null and search.usageType != ''">

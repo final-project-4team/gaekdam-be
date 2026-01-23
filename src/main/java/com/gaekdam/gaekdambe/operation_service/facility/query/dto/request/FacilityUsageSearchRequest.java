@@ -21,6 +21,9 @@ public class FacilityUsageSearchRequest {
     private Long stayCode;
     private Long facilityCode;
 
+    private String customerNameHash;
+    private String stayCodeLike;
+
     private String usageType;
     private String priceSource;
 
