@@ -33,7 +33,8 @@ public class ReportKPITarget {
     @Column(name = "period_value", length = 7, nullable = false)
     private String periodValue; // YYYY or YYYY-MM
 
-    @Column(name = "target_value", precision = 15, scale = 4, nullable = false)
+    // allow null targets when importing; change nullable=false -> true
+    @Column(name = "target_value", precision = 15, scale = 4, nullable = true)
     private BigDecimal targetValue;
 
     @Column(name = "warning_threshold", precision = 15, scale = 4)

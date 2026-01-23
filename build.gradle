@@ -56,6 +56,10 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // excel
+    implementation 'org.apache.poi:poi-ooxml:5.5.1'
+    // csv
+    implementation 'com.opencsv:opencsv:5.12.0'
 }
 
 tasks.named('test') {

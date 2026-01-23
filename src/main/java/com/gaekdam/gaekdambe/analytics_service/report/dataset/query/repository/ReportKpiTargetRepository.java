@@ -10,4 +10,8 @@ import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.ent
 public interface ReportKpiTargetRepository extends JpaRepository<ReportKPITarget, ReportKPITargetId> {
     Optional<ReportKPITarget> findFirstByKpiCodeAndPeriodValue(String kpiCode, String periodValue);
     Optional<ReportKPITarget> findFirstByKpiCodeOrderByCreatedAtDesc(String kpiCode);
+
+    // Refer to embedded id property using id_<fieldName>
+    Optional<ReportKPITarget> findById_HotelGroupCodeAndKpiCodeAndPeriodTypeAndPeriodValue(
+        Long hotelGroupCode, String kpiCode, String periodType, String periodValue);
 }
