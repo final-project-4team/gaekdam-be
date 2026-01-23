@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Table(
         name = "inquiry",
         indexes = {
-                @Index(name = "IDX_inquiry_hotel_group", columnList = "hotel_group_code"),
                 @Index(name = "IDX_inquiry_property", columnList = "property_code"),
                 @Index(name = "IDX_inquiry_status", columnList = "inquiry_status"),
                 @Index(name = "IDX_inquiry_category", columnList = "inquiry_category_code")
@@ -58,14 +57,11 @@ public class Inquiry {
     @JoinColumn(name = "inquiry_category_code", nullable = false)
     private InquiryCategory category;
 
-    @Column(name = "hotel_group_code", nullable = false)
-    private Long hotelGroupCode;
 
     @Column(name = "property_code", nullable = false)
     private Long propertyCode;
 
     public static Inquiry create(
-            Long hotelGroupCode,
             Long propertyCode,
             Long customerCode,
             InquiryCategory category,
@@ -74,7 +70,6 @@ public class Inquiry {
     ) {
         LocalDateTime now = LocalDateTime.now();
         return Inquiry.builder()
-                .hotelGroupCode(hotelGroupCode)
                 .propertyCode(propertyCode)
                 .customerCode(customerCode)
                 .category(category)

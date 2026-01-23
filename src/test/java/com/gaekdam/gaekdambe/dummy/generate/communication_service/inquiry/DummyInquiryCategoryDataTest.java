@@ -21,10 +21,7 @@ public class DummyInquiryCategoryDataTest {
             return;
         }
 
-        inquiryCategoryRepository.save(InquiryCategory.create("시설", true));
-        inquiryCategoryRepository.save(InquiryCategory.create("결제", true));
-        inquiryCategoryRepository.save(InquiryCategory.create("고객", true));
-        inquiryCategoryRepository.save(InquiryCategory.create("직원", true));
-        inquiryCategoryRepository.save(InquiryCategory.create("기타", true));
+        inquiryCategoryRepository.save(InquiryCategory.create("문의", true));
+        inquiryCategoryRepository.save(InquiryCategory.create("클레임", true));
     }
 }
