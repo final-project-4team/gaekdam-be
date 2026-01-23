@@ -59,14 +59,16 @@ public class ReportKPITarget {
     private LocalDateTime updatedAt;
 
     @PrePersist
-    void prePersist() {
+    public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) createdAt = now;
-        updatedAt = now;
+        if (this.createdAt == null) this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
-    void preUpdate() {
-        updatedAt = LocalDateTime.now();
+    public void preUpdate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (this.createdAt == null) this.createdAt = now; // <-- 추가
+        this.updatedAt = now;
     }
 }
