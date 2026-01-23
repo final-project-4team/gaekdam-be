@@ -11,7 +11,4 @@ public interface ReportKpiTargetRepository extends JpaRepository<ReportKPITarget
     Optional<ReportKPITarget> findFirstByKpiCodeAndPeriodValue(String kpiCode, String periodValue);
     Optional<ReportKPITarget> findFirstByKpiCodeOrderByCreatedAtDesc(String kpiCode);
 
-    // Refer to embedded id property using id_<fieldName>
-    Optional<ReportKPITarget> findById_HotelGroupCodeAndKpiCodeAndPeriodTypeAndPeriodValue(
-        Long hotelGroupCode, String kpiCode, String periodType, String periodValue);
 }

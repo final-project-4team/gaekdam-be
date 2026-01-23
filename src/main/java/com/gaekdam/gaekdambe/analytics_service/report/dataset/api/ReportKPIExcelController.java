@@ -30,12 +30,12 @@ public class ReportKPIExcelController {
     public ResponseEntity<ByteArrayResource> downloadTemplate(
         @RequestParam Long hotelGroupCode,
         @RequestParam String periodType,   // "YEAR" or "MONTH"
-        @RequestParam String period       // "2024" or "2024-03"
+        @RequestParam String periodValue       // "2024" or "2024-03"
     ) throws IOException {
-        byte[] bytes = excelService.generateTemplateExcel(hotelGroupCode, periodType, period);
+        byte[] bytes = excelService.generateTemplateExcel(hotelGroupCode, periodType, periodValue);
         ByteArrayResource resource = new ByteArrayResource(bytes);
 
-        String filename = String.format("KPI_Template_%s_%s.xlsx", periodType, period);
+        String filename = String.format("KPI_Template.xlsx");
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
             .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -43,14 +43,14 @@ public class ReportKPIExcelController {
             .body(resource);
     }
 
-    @PostMapping(value = "/objective/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/objective/template/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<ImportResultDto> importTargets(
         @RequestParam Long hotelGroupCode,
-        @RequestParam String periodType,
-        @RequestParam String period,
+        @RequestParam(required = false) String periodType,
+        @RequestParam(required = false) String periodValue,
         @RequestParam("file") MultipartFile file
     ) {
-        ImportResultDto result = excelService.importFromExcel(hotelGroupCode, periodType, period, file);
+        ImportResultDto result = excelService.importFromExcel(hotelGroupCode, periodType, periodValue, file);
         return ApiResponse.success(result);
     }
 }
