@@ -24,29 +24,48 @@
         FROM (
         SELECT
         r.reservation_code AS reservationCode,
-        c.customer_code AS customerCode,
+        c.customer_code    AS customerCode,
         c.customer_name_enc AS customerNameEnc,
         c.customer_name_hash AS customerNameHash,
-        c.dek_enc AS dekEnc,
-        rt.type_name AS roomType,
-        p.property_name AS propertyName,
-        r.checkin_date AS plannedCheckinDate,
-        r.checkout_date AS plannedCheckoutDate,
-        r.property_code AS propertyCode,
+        c.dek_enc          AS dekEnc,
+        rt.type_name       AS roomType,
+        p.property_name    AS propertyName,
+        r.checkin_date     AS plannedCheckinDate,
+        r.checkout_date    AS plannedCheckoutDate,
+        r.property_code    AS propertyCode,
 
         /* =========================
-        운영보드 상태 (관리 관점)
+        운영보드 상태 (정합성 보장)
         ========================= */
         CASE
+        -- 취소
         WHEN r.reservation_status = 'CANCELED'
         THEN 'CANCELED'
+
+        -- 노쇼 (명시적)
         WHEN r.reservation_status = 'NO_SHOW'
         THEN 'NO_SHOW'
+
+        -- 노쇼 (예약기간 지남 + 투숙 없음)
+        WHEN r.checkout_date <![CDATA[ < ]]> CURRENT_DATE
+        AND s.stay_code IS NULL
+        THEN 'NO_SHOW'
+
+        -- 예약 완료 (아직 체크인 전)
         WHEN s.stay_code IS NULL
         THEN 'RESERVED'
-        WHEN s.actual_checkout_at IS NULL
+
+        -- 투숙 중
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
         THEN 'STAYING'
-        ELSE 'COMPLETED'
+
+        -- 정상 완료
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NOT NULL
+        THEN 'COMPLETED'
+
+        ELSE 'UNKNOWN'
         END AS operationStatus
 
         FROM reservation r
@@ -88,11 +107,10 @@
         </if>
 
         <!-- =========================
-             ORDER BY (정렬 핵심 수정)
+             ORDER BY
              ========================= -->
         ORDER BY
         <choose>
-            <!-- 운영상태 정렬 -->
             <when test="sort != null and sort.sortBy == 't.operationStatus'">
                 CASE
                 WHEN t.operationStatus = 'CANCELED'  THEN 1
@@ -100,18 +118,17 @@
                 WHEN t.operationStatus = 'RESERVED'  THEN 3
                 WHEN t.operationStatus = 'STAYING'   THEN 4
                 WHEN t.operationStatus = 'COMPLETED' THEN 5
+                ELSE 6
                 END ${sort.direction},
                 t.plannedCheckinDate DESC,
                 t.reservationCode DESC
             </when>
 
-            <!-- 그 외 컬럼 정렬 -->
             <when test="sort != null and sort.sortBy != null">
                 ${sort.sortBy} ${sort.direction},
                 t.reservationCode DESC
             </when>
 
-            <!-- 기본 정렬 -->
             <otherwise>
                 t.plannedCheckinDate DESC,
                 t.reservationCode DESC
@@ -130,23 +147,42 @@
         FROM (
         SELECT
         r.reservation_code AS reservationCode,
-        r.property_code AS propertyCode,
+        r.property_code    AS propertyCode,
         c.customer_name_hash AS customerNameHash,
-        r.checkin_date AS plannedCheckinDate,
-        r.checkout_date AS plannedCheckoutDate,
-        rt.type_name AS roomType,
-        p.property_name AS propertyName,
+        r.checkin_date     AS plannedCheckinDate,
+        r.checkout_date    AS plannedCheckoutDate,
+        rt.type_name       AS roomType,
+        p.property_name    AS propertyName,
 
         CASE
+        -- 취소
         WHEN r.reservation_status = 'CANCELED'
         THEN 'CANCELED'
+
+        -- 노쇼 (명시적)
         WHEN r.reservation_status = 'NO_SHOW'
         THEN 'NO_SHOW'
+
+        -- 노쇼 (예약기간 지남 + 투숙 없음)
+        WHEN r.checkout_date <![CDATA[ < ]]> CURRENT_DATE
+        AND s.stay_code IS NULL
+        THEN 'NO_SHOW'
+
+        -- 예약 완료 (아직 체크인 전)
         WHEN s.stay_code IS NULL
         THEN 'RESERVED'
-        WHEN s.actual_checkout_at IS NULL
+
+        -- 투숙 중
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
         THEN 'STAYING'
-        ELSE 'COMPLETED'
+
+        -- 정상 완료
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NOT NULL
+        THEN 'COMPLETED'
+
+        ELSE 'UNKNOWN'
         END AS operationStatus
 
         FROM reservation r

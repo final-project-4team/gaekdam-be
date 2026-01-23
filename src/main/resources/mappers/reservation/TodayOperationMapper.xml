@@ -54,7 +54,6 @@
         WHEN r.reservation_status = 'RESERVED'
         AND s.actual_checkin_at IS NOT NULL
         AND s.actual_checkout_at IS NULL
-        AND #{today} BETWEEN r.checkin_date AND r.checkout_date
         THEN 'STAYING'
         END AS operationStatus
 

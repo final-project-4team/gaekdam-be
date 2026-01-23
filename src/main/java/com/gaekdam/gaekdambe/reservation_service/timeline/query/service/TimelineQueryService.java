@@ -4,13 +4,11 @@ import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.Cus
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.StaySummaryResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineDetailResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineEventResponse;
-
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.mapper.TimelineMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
 
 @Service
 @RequiredArgsConstructor
@@ -18,14 +16,19 @@ public class TimelineQueryService {
 
     private final TimelineMapper mapper;
 
-    public List<CustomerStayResponse> getCustomerStays(Long customerCode) {
-        return mapper.findCustomerStays(customerCode);
+    public List<CustomerStayResponse> getCustomerStays(
+            Long hotelGroupCode,
+            Long customerCode
+    ) {
+        return mapper.findCustomerStays(hotelGroupCode, customerCode);
     }
 
-    public TimelineDetailResponse getTimeline(Long stayCode) {
-
+    public TimelineDetailResponse getTimeline(
+            Long hotelGroupCode,
+            Long stayCode
+    ) {
         List<TimelineEventResponse> events =
-                mapper.findTimelineEvents(stayCode);
+                mapper.findTimelineEvents(hotelGroupCode, stayCode);
 
         String customerType = mapper.findCustomerType(stayCode);
         int totalUsage = mapper.countFacilityUsage(stayCode);

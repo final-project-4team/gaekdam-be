@@ -16,22 +16,16 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class DummyReservationDataTest {
 
-    @Autowired
-    ReservationRepository reservationRepository;
-    @Autowired
-    RoomRepository roomRepository;
-    @Autowired
-    RoomTypeRepository roomTypeRepository;
-    @Autowired
-    ReservationPackageRepository packageRepository;
+    @Autowired ReservationRepository reservationRepository;
+    @Autowired RoomRepository roomRepository;
+    @Autowired RoomTypeRepository roomTypeRepository;
+    @Autowired ReservationPackageRepository packageRepository;
 
     @Transactional
     public void generate() {
@@ -62,96 +56,53 @@ public class DummyReservationDataTest {
             ReservationStatus status;
             LocalDate checkin;
             LocalDate checkout;
-            LocalDateTime canceledAt = null;
 
-            /* =========================
-               예약 상태 분기
-               ========================= */
-            if (i < 800) { // CANCELED (미래 예약)
+            if (i < 800) {
+                // 취소
                 status = ReservationStatus.CANCELED;
                 checkin = today.plusDays(1 + random.nextInt(30));
                 checkout = checkin.plusDays(1 + random.nextInt(5));
-                canceledAt = LocalDateTime.now().minusHours(1);
-
-            } else if (i < 1600) { // NO_SHOW (이미 지나감)
-                status = ReservationStatus.NO_SHOW;
-                checkin = today.minusDays(5 + random.nextInt(20));
-                checkout = checkin.plusDays(1 + random.nextInt(3));
-
-            } else { // RESERVED
+            } else {
+                // 전부 RESERVED
                 status = ReservationStatus.RESERVED;
 
-                int mod = (i - 1600) % 4;
+                int mod = (i - 800) % 4;
 
-                if (mod == 0) {                // CHECKIN_PLANNED
-                    checkin = today;
-                    checkout = today.plusDays(1 + random.nextInt(5));
-
-                } else if (mod == 1) {         // STAYING
-                    checkin = today.minusDays(1 + random.nextInt(10));
-                    checkout = today.plusDays(1 + random.nextInt(10));
-
-                } else if (mod == 2) {         // CHECKOUT_PLANNED (today)
-                    checkin = today.minusDays(1 + random.nextInt(10));
-                    checkout = today;
-
-                } else {                      // COMPLETED (과거)
-                    checkin = today.minusDays(10 + random.nextInt(20));
+                if (mod == 0) {                 // 체크인 예정
+                    checkin = today.plusDays(1);
                     checkout = checkin.plusDays(1 + random.nextInt(5));
+                } else if (mod == 1) {          // 투숙중
+                    checkin = today.minusDays(1 + random.nextInt(3));
+                    checkout = today.plusDays(1 + random.nextInt(3));
+                } else if (mod == 2) {          // 정상 완료
+                    checkin = today.minusDays(10 + random.nextInt(10));
+                    checkout = checkin.plusDays(1 + random.nextInt(5));
+                } else {                       // 노쇼 후보 (과거 + Stay 없음)
+                    checkin = today.minusDays(5 + random.nextInt(5));
+                    checkout = checkin.plusDays(1 + random.nextInt(3));
                 }
             }
 
-            /* =========================
-               패키지 선택 (property 기준)
-               ========================= */
-            List<ReservationPackage> pkgs =
-                    packagesByProperty.getOrDefault(roomType.getPropertyCode(), List.of());
-
-            ReservationPackage pkg =
-                    pkgs.isEmpty() || random.nextBoolean()
-                            ? null
-                            : pkgs.get(random.nextInt(pkgs.size()));
+            LocalDateTime reservedAt =
+                    checkin.minusDays(1 + random.nextInt(14)).atTime(10, 0);
 
             Reservation reservation =
-                    Reservation.createReservation(
-                            checkin,
-                            checkout,
-                            1 + random.nextInt(roomType.getMaxCapacity()),
-                            GuestType.INDIVIDUAL,
-                            ReservationChannel.WEB,
-                            roomType.getBasePrice(),
-                            pkg != null ? pkg.getPackagePrice() : BigDecimal.ZERO,
-                            roomType.getPropertyCode(),
-                            room.getRoomCode(),
-                            (long) (random.nextInt(5_000) + 1),
-                            pkg != null ? pkg.getPackageCode() : null,
-                            status
-                    );
-
-            /* =========================
-               CANCELED 보정 (canceledAt 필요)
-               ========================= */
-            if (status == ReservationStatus.CANCELED) {
-                reservation =
-                        Reservation.builder()
-                                .reservationStatus(status)
-                                .checkinDate(checkin)
-                                .checkoutDate(checkout)
-                                .guestCount(reservation.getGuestCount())
-                                .guestType(reservation.getGuestType())
-                                .reservationChannel(reservation.getReservationChannel())
-                                .reservationRoomPrice(reservation.getReservationRoomPrice())
-                                .reservationPackagePrice(reservation.getReservationPackagePrice())
-                                .totalPrice(reservation.getTotalPrice())
-                                .reservedAt(reservation.getReservedAt())
-                                .canceledAt(canceledAt)
-                                .createdAt(reservation.getCreatedAt())
-                                .propertyCode(reservation.getPropertyCode())
-                                .roomCode(reservation.getRoomCode())
-                                .customerCode(reservation.getCustomerCode())
-                                .packageCode(reservation.getPackageCode())
-                                .build();
-            }
+                    Reservation.builder()
+                            .reservationStatus(status)
+                            .checkinDate(checkin)
+                            .checkoutDate(checkout)
+                            .guestCount(1 + random.nextInt(roomType.getMaxCapacity()))
+                            .guestType(GuestType.INDIVIDUAL)
+                            .reservationChannel(ReservationChannel.WEB)
+                            .reservationRoomPrice(roomType.getBasePrice())
+                            .reservationPackagePrice(BigDecimal.ZERO)
+                            .totalPrice(roomType.getBasePrice())
+                            .reservedAt(reservedAt)
+                            .createdAt(reservedAt)
+                            .propertyCode(roomType.getPropertyCode())
+                            .roomCode(room.getRoomCode())
+                            .customerCode((long) (random.nextInt(5_000) + 1))
+                            .build();
 
             reservationRepository.save(reservation);
         }

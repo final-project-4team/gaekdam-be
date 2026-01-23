@@ -15,7 +15,6 @@ public class CustomerStayResponse {
     private LocalDateTime actualCheckinAt;
     private LocalDateTime actualCheckoutAt;
 
-    private Long roomCode;
     private Integer roomNumber;
 
     private int guestCount;

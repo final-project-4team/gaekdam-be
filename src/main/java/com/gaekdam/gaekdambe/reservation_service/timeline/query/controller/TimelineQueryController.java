@@ -1,14 +1,15 @@
 package com.gaekdam.gaekdambe.reservation_service.timeline.query.controller;
 
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
+import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.CustomerStayResponse;
+import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineCustomerResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineDetailResponse;
+import com.gaekdam.gaekdambe.reservation_service.timeline.query.service.TimelineCustomerQueryService;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.service.TimelineQueryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,24 +19,53 @@ import java.util.List;
 public class TimelineQueryController {
 
     private final TimelineQueryService timelineQueryService;
+    private final TimelineCustomerQueryService timelineCustomerQueryService;
 
-    // 고객 선택 → 투숙 리스트
-    @GetMapping("/customers/{customerCode}/stays")
-    public ApiResponse<List<CustomerStayResponse>> getCustomerStays(
-            @PathVariable Long customerCode
+    /**
+     * 타임라인 고객 검색 (stay 기준)
+     */
+    @GetMapping("/customers")
+    public ApiResponse<List<TimelineCustomerResponse>> getTimelineCustomers(
+            @AuthenticationPrincipal CustomUser principal,
+            @RequestParam(required = false) String keyword
     ) {
         return ApiResponse.success(
-                timelineQueryService.getCustomerStays(customerCode)
+                timelineCustomerQueryService.findTimelineCustomers(
+                        principal.getHotelGroupCode(),
+                        keyword
+                )
         );
     }
 
-    // 투숙 선택 → 타임라인
-    @GetMapping("/stays/{stayCode}")
-    public ApiResponse<TimelineDetailResponse> getTimeline(
-            @PathVariable Long stayCode
+    /**
+     * 고객 선택 → 투숙 리스트
+     */
+    @GetMapping("/customers/{customerCode}/stays")
+    public ApiResponse<List<CustomerStayResponse>> getCustomerStays(
+            @PathVariable Long customerCode,
+            @AuthenticationPrincipal CustomUser principal
     ) {
         return ApiResponse.success(
-                timelineQueryService.getTimeline(stayCode)
+                timelineQueryService.getCustomerStays(
+                        principal.getHotelGroupCode(),
+                        customerCode
+                )
+        );
+    }
+
+    /**
+     * 투숙 선택 → 타임라인
+     */
+    @GetMapping("/stays/{stayCode}")
+    public ApiResponse<TimelineDetailResponse> getTimeline(
+            @PathVariable Long stayCode,
+            @AuthenticationPrincipal CustomUser principal
+    ) {
+        return ApiResponse.success(
+                timelineQueryService.getTimeline(
+                        principal.getHotelGroupCode(),
+                        stayCode
+                )
         );
     }
 }
