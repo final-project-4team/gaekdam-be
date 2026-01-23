@@ -34,4 +34,7 @@ public interface EmployeeQueryMapper {
       @Param("emailHash") byte[] emailHash,
       @Param("search") EmployeeQuerySearchRequest search
   );
+
+  EmployeeQueryEncResponse findMyPage(@Param("hotelGroupCode") Long hotelGroupCode,@Param("loginId") String LoginId);
+
 }

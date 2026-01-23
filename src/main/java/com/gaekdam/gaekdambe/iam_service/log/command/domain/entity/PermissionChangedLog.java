@@ -5,11 +5,15 @@ import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee
 import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Table(name = "permission_changed_log")
 public class PermissionChangedLog {
@@ -22,8 +26,6 @@ public class PermissionChangedLog {
   @Column(name = "changed_at", nullable = false)
   private LocalDateTime changedAt;
 
-  @Column(name = "changed_name", nullable = false, length = 50)
-  private String changedName;
 
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -48,23 +50,20 @@ public class PermissionChangedLog {
   private Employee employeeChanged;
 
 
-  public static PermissionChangedLog of(
+  public static PermissionChangedLog createPermissionChangedLog(
       LocalDateTime changedAt,
-      String changedName,
-      Employee accessor,
+      Employee employeeAccessor,
       HotelGroup hotelGroup,
       Permission beforePermission,
       Permission afterPermission,
-      Employee changedUser
+      Employee employeeChanged
   ) {
-    PermissionChangedLog log = new PermissionChangedLog();
-    log.changedAt = changedAt;
-    log.changedName = changedName;
-    log.employeeAccessor = accessor;
-    log.hotelGroup = hotelGroup;
-    log.beforePermission = beforePermission;
-    log.afterPermission = afterPermission;
-    log.employeeChanged = changedUser;
-    return log;
+    return PermissionChangedLog.builder()
+        .changedAt(changedAt)
+        .employeeAccessor(employeeAccessor)
+        .hotelGroup(hotelGroup)
+        .beforePermission(beforePermission)
+        .afterPermission(afterPermission)
+        .employeeChanged(employeeChanged).build();
   }
 }

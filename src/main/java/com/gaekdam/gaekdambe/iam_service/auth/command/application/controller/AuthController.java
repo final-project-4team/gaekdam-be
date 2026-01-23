@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.iam_service.auth.command.application.controller;
 
+import com.gaekdam.gaekdambe.global.Logging.IpLogging;
 import com.gaekdam.gaekdambe.global.config.jwt.JwtTokenProvider;
 import com.gaekdam.gaekdambe.global.config.jwt.RefreshTokenService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
@@ -43,27 +44,31 @@ public class AuthController {
 
   private static final String COOKIE_NAME = "refreshToken";
   private final long REFRESH_TOKEN_EXPIRE = 1000 * 60 * 60;
+  private final IpLogging ipLogging;
 
-
-  //직원 로그인
+  // 직원 로그인
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<TokenResponse>> login(
       @RequestBody LoginRequest request) {
     String loginId = request.loginId();
     String password = request.password();
+    String ip = ipLogging.searchIp();
 
     Employee employee = employeeRepository.findByLoginId(loginId)
         .orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER_ID));
     // 소프트 삭제된 계정(status = N) 체크
     if (employee.getEmployeeStatus() == EmployeeStatus.DORMANCY) {
+      loginAuthService.loginFailed(employee, ip,"휴면 게정 접속 시도");
       throw new CustomException(ErrorCode.INVALID_USER_ID, "휴면 처리된 회원 입니다.");
     }
     if (employee.getEmployeeStatus() == EmployeeStatus.LOCKED) {
+      loginAuthService.loginFailed(employee, ip,"잠긴 계정 접속 시도");
       throw new CustomException(ErrorCode.INVALID_USER_ID, "이용 불가능 한 회원입니다.");
+
     }
 
-    if ( !passwordEncoder.matches(password, employee.getPasswordHash())) {
-        loginAuthService.loginFailed(employee);
+    if (!passwordEncoder.matches(password, employee.getPasswordHash())) {
+      loginAuthService.loginFailed(employee, ip,"비밀번호 불일치");
 
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .body(ApiResponse.failure(
@@ -72,7 +77,7 @@ public class AuthController {
     }
 
     // 로그인 성공 시 카운트 초기화 및 시간 갱신
-   loginAuthService.loginSuccess(employee);
+    loginAuthService.loginSuccess(employee, ip);
 
     String role = permissionRepository.findById(employee.getPermission().getPermissionCode()).get()
         .getPermissionName();
@@ -106,7 +111,6 @@ public class AuthController {
         .body(ApiResponse.success(body));
   }
 
-
   @DeleteMapping("/logout")
   public ResponseEntity<ApiResponse<Void>> logout(
       @AuthenticationPrincipal UserDetails userDetails,
@@ -128,7 +132,6 @@ public class AuthController {
         .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
         .body(ApiResponse.success(null));
   }
-
 
   //
   @PostMapping("/refresh")
