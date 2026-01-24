@@ -96,7 +96,6 @@
 
     <!-- =========================
          총 개수 (COUNT)
-         - LIST와 JOIN/조건 100% 동일
          ========================= -->
     <select id="countFacilityUsages" resultType="long">
 

@@ -37,10 +37,11 @@
         CASE
         WHEN r.reservation_status = 'CANCELED' THEN 'CANCELED'
         WHEN r.reservation_status = 'NO_SHOW' THEN 'NO_SHOW'
-        WHEN r.checkout_date <![CDATA[ < ]]> CURDATE() AND s.stay_code IS NULL THEN 'NO_SHOW'
         WHEN s.stay_code IS NULL THEN 'RESERVED'
-        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NULL THEN 'STAYING'
-        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL THEN 'STAYING'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
         ELSE 'UNKNOWN'
         END AS operationStatus
 
@@ -103,10 +104,11 @@
         CASE
         WHEN r.reservation_status = 'CANCELED' THEN 'CANCELED'
         WHEN r.reservation_status = 'NO_SHOW' THEN 'NO_SHOW'
-        WHEN r.checkout_date <![CDATA[ < ]]> CURDATE() AND s.stay_code IS NULL THEN 'NO_SHOW'
         WHEN s.stay_code IS NULL THEN 'RESERVED'
-        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NULL THEN 'STAYING'
-        WHEN s.actual_checkin_at IS NOT NULL AND s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL THEN 'STAYING'
+        WHEN s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NOT NULL THEN 'COMPLETED'
         ELSE 'UNKNOWN'
         END AS operationStatus
 
@@ -125,7 +127,8 @@
         </if>
 
         <if test="search.reservationCode != null">
-            AND t.reservationCode = #{search.reservationCode}
+            AND
+            CAST(t.reservationCode AS CHAR) LIKE CONCAT('%', #{search.reservationCode}, '%')
         </if>
 
         <if test="search.customerNameHash != null">

@@ -28,10 +28,14 @@ import jakarta.transaction.Transactional;
 @Component
 public class DummyReservationDataTest {
 
-    @Autowired ReservationRepository reservationRepository;
-    @Autowired RoomRepository roomRepository;
-    @Autowired RoomTypeRepository roomTypeRepository;
-    @Autowired ReservationPackageRepository packageRepository;
+    @Autowired
+    ReservationRepository reservationRepository;
+    @Autowired
+    RoomRepository roomRepository;
+    @Autowired
+    RoomTypeRepository roomTypeRepository;
+    @Autowired
+    ReservationPackageRepository packageRepository;
 
     @Transactional
     public void generate() {
@@ -67,13 +71,19 @@ public class DummyReservationDataTest {
             Long chosenPackageCode = null;
             BigDecimal chosenPackagePrice = BigDecimal.ZERO;
             List<ReservationPackage> pkgs = packagesByProperty.get(roomType.getPropertyCode());
-            if (pkgs != null && !pkgs.isEmpty()) {
+
+
+            boolean usePackage = pkgs != null && !pkgs.isEmpty() && random.nextDouble() < 0.4;
+
+            if (usePackage) {
                 ReservationPackage pkg = pkgs.get(random.nextInt(pkgs.size()));
                 if (pkg != null) {
                     chosenPackageCode = pkg.getPackageCode();
-                    chosenPackagePrice = pkg.getPackagePrice() != null ? pkg.getPackagePrice() : BigDecimal.ZERO;
+                    chosenPackagePrice = pkg.getPackagePrice() != null
+                            ? pkg.getPackagePrice() : BigDecimal.ZERO;
                 }
             }
+
 
             LocalDateTime canceledAt = null;
 
@@ -114,7 +124,7 @@ public class DummyReservationDataTest {
             // reservation_status 값이 CANCELED 이면 cancel_at 데이터를 reservedAt 시점으로 72시간 이내에 생성함
             if (status == ReservationStatus.CANCELED) {
                 long maxHours = Math.max(1, java.time.Duration.between(reservedAt, checkin.atStartOfDay()).toHours());
-                int hours = 1 + random.nextInt((int)Math.max(1, Math.min(72, maxHours)));
+                int hours = 1 + random.nextInt((int) Math.max(1, Math.min(72, maxHours)));
                 canceledAt = reservedAt.plusHours(hours);
             }
 
@@ -129,14 +139,14 @@ public class DummyReservationDataTest {
                             .reservationRoomPrice(roomType.getBasePrice())
                             .reservationPackagePrice(chosenPackagePrice)
                             .totalPrice(roomType.getBasePrice().add(chosenPackagePrice != null ? chosenPackagePrice : BigDecimal.ZERO))
-                             .reservedAt(reservedAt)
-                             .createdAt(reservedAt)
-                             .canceledAt(canceledAt)
-                             .propertyCode(roomType.getPropertyCode())
-                             .roomCode(room.getRoomCode())
-                             .packageCode(chosenPackageCode)
-                             .customerCode((long) (random.nextInt(5_000) + 1))
-                             .build();
+                            .reservedAt(reservedAt)
+                            .createdAt(reservedAt)
+                            .canceledAt(canceledAt)
+                            .propertyCode(roomType.getPropertyCode())
+                            .roomCode(room.getRoomCode())
+                            .packageCode(chosenPackageCode)
+                            .customerCode((long) (random.nextInt(5_000) + 1))
+                            .build();
 
             reservationRepository.save(reservation);
         }

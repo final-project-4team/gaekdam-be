@@ -36,11 +36,6 @@ public class DummyStayDataTest {
             // 미래 예약 → 투숙 없음
             if (r.getCheckinDate().isAfter(today)) continue;
 
-            // 노쇼 후보 → 투숙 생성 안 함
-            if (r.getCheckoutDate().isBefore(today)
-                    && Math.random() < 0.3) {
-                continue;
-            }
 
             LocalDateTime checkinAt = r.getCheckinDate().atTime(15, 0);
             LocalDateTime checkoutAt = null;
