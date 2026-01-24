@@ -9,6 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,11 +52,25 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         String kpiCode = normalizeToKpiCode(metricKey);         // target lookup
         String internalKey = normalizeToInternalKey(metricKey); // DB aggregation key
 
-        // target 조회: repository 메서드명이 변경된 것을 사용
-        BigDecimal target = targetRepo.findFirstByKpiCodeAndPeriodValue(kpiCode, period)
-                .map(ReportKPITarget::getTargetValue)
-                .orElseGet(() -> targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(kpiCode)
-                        .map(ReportKPITarget::getTargetValue).orElse(BigDecimal.ZERO));
+        // target 조회: 먼저 필터에 hotelGroupCode가 있으면 해당 그룹의 목표값을 우선 조회하고, 없거나 없을 경우 기존 repo 폴백
+        Object hotelGroupFilter = filter != null ? filter.get("hotelGroupCode") : null;
+        BigDecimal target = null;
+        if (hotelGroupFilter != null) {
+            try {
+                target = jdbc.queryForObject(
+                    "SELECT target_value FROM reportkpitarget WHERE kpi_code = ? AND period_value = ? AND hotel_group_code = ? ORDER BY created_at DESC LIMIT 1",
+                    BigDecimal.class, kpiCode, period, hotelGroupFilter);
+            } catch (EmptyResultDataAccessException ex) {
+                target = null;
+            }
+        }
+
+        if (target == null) {
+            target = targetRepo.findFirstByKpiCodeAndPeriodValue(kpiCode, period)
+                    .map(ReportKPITarget::getTargetValue)
+                    .orElseGet(() -> targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(kpiCode)
+                            .map(ReportKPITarget::getTargetValue).orElse(BigDecimal.ZERO));
+        }
 
         // 4) changePct & trend 계산
         Double changePct = null;
@@ -109,10 +124,14 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         Timestamp tsStart = Timestamp.valueOf(start.atStartOfDay());
         Timestamp tsEnd = Timestamp.valueOf(end.atStartOfDay());
 
-        switch (metricKey) {
-            case "checkin": {
-                // Use checkinout joined with stay -> reservation -> property to respect property.hotel_group_code
-                Object hotelGroup = filter != null ? filter.get("hotelGroupCode") : null;
+        String mk = metricKey == null ? "" : metricKey.toLowerCase(Locale.ROOT);
+        // common filters extracted once to avoid repeated declarations in each case
+        Object hotelGroup = filter != null ? filter.get("hotelGroupCode") : null;
+        Object hotelId = filter != null ? filter.get("hotelId") : null; // treated as property_code
+        switch (mk) {
+            // 1. 체크인수
+            case "checkin" -> {
+                // use hotelGroup from outer scope
                 Integer cnt;
                 if (hotelGroup != null) {
                     cnt = jdbc.queryForObject(
@@ -125,14 +144,14 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 }
                 return BigDecimal.valueOf(cnt != null ? cnt : 0);
             }
-            case "checkout": {
-                // Use same join pattern for checkout
-                Object hotelGroup2 = filter != null ? filter.get("hotelGroupCode") : null;
+            // 2. 체크아웃수
+            case "checkout" -> {
+                // use hotelGroup from outer scope
                 Integer cnt2;
-                if (hotelGroup2 != null) {
+                if (hotelGroup != null) {
                     cnt2 = jdbc.queryForObject(
                         "SELECT COUNT(*) FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code WHERE c.record_type = 'CHECK_OUT' AND c.recorded_at >= ? AND c.recorded_at < ? AND p.hotel_group_code = ?",
-                        Integer.class, tsStart, tsEnd, hotelGroup2);
+                        Integer.class, tsStart, tsEnd, hotelGroup);
                 } else {
                     cnt2 = jdbc.queryForObject(
                         "SELECT COUNT(*) FROM checkinout WHERE record_type = 'CHECK_OUT' AND recorded_at >= ? AND recorded_at < ?",
@@ -140,9 +159,8 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 }
                 return BigDecimal.valueOf(cnt2 != null ? cnt2 : 0);
             }
-            case "adr": {
-                // ADR: weighted average = total room revenue during overlapping nights / occupied_room_nights
-                // Use reservation.reservation_room_price (assumed total room charge per reservation) and overlap logic
+            // 3. 평균객실단가
+            case "adr" -> {
                 BigDecimal totalRevenue = jdbc.queryForObject(
                     "SELECT COALESCE(SUM(reservation_room_price),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL",
                     BigDecimal.class, dEnd, dStart);
@@ -153,55 +171,42 @@ public class MetricQueryServiceImpl implements MetricQueryService {
 
                 if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
                 if (occupiedNights == null || occupiedNights == 0) return BigDecimal.ZERO;
-
                 return totalRevenue.divide(BigDecimal.valueOf(occupiedNights.longValue()), 2, RoundingMode.HALF_UP);
             }
-            case "occ_rate": {
+            // 4. 객실점유율
+            case "occ_rate" -> {
                 // Occupancy = occupied_room_nights / (total_rooms * days_in_period) * 100
-                Object hotelId = filter != null ? filter.get("hotelId") : null; // treated as property_code
-                Object hotelGroup = filter != null ? filter.get("hotelGroupCode") : null;
-
+                // use hotelId and hotelGroup from outer scope
                 long periodDays = ChronoUnit.DAYS.between(start, end);
                 if (periodDays <= 0) return BigDecimal.ZERO;
 
                 Integer occupiedNights;
                 if (hotelId != null) {
-                    // count occupied nights for reservations belonging to the specific property (property_code)
                     occupiedNights = jdbc.queryForObject(
-                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) " +
-                        "FROM reservation r JOIN property p ON r.property_code = p.property_code " +
-                        "WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.property_code = ?",
+                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.property_code = ?",
                         Integer.class, dEnd, dStart, dEnd, dStart, hotelId);
                 } else if (hotelGroup != null) {
-                    // count occupied nights for reservations in properties that belong to the hotel group
                     occupiedNights = jdbc.queryForObject(
-                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) " +
-                        "FROM reservation r JOIN property p ON r.property_code = p.property_code " +
-                        "WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
                         Integer.class, dEnd, dStart, dEnd, dStart, hotelGroup);
                 } else {
-                    // count occupied nights across all reservations (no property filter)
                     occupiedNights = jdbc.queryForObject(
-                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) " +
-                        "FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
                         Integer.class, dEnd, dStart, dEnd, dStart);
                 }
 
-                Integer totalRooms = 0;
+                Integer totalRooms;
                 if (hotelId != null) {
-                    // count active rooms for the property via Room -> RoomType -> property mapping
                     totalRooms = jdbc.queryForObject(
-                        "SELECT COALESCE(COUNT(r.room_code),0) FROM Room r JOIN RoomType rt ON r.room_type_code = rt.room_type_code WHERE rt.property_code = ? AND r.room_status = 'ACTIVE'",
+                        "SELECT COALESCE(COUNT(r.room_code),0) FROM room r JOIN room_type rt ON r.room_type_code = rt.room_type_code WHERE rt.property_code = ? AND r.room_status = 'ACTIVE'",
                         Integer.class, hotelId);
                 } else if (hotelGroup != null) {
-                    // count active rooms for all properties in the hotel group
                     totalRooms = jdbc.queryForObject(
-                        "SELECT COALESCE(COUNT(r.room_code),0) FROM Room r JOIN RoomType rt ON r.room_type_code = rt.room_type_code JOIN Property p ON rt.property_code = p.property_code WHERE p.hotel_group_code = ? AND r.room_status = 'ACTIVE'",
+                        "SELECT COALESCE(COUNT(r.room_code),0) FROM room r JOIN room_type rt ON r.room_type_code = rt.room_type_code JOIN property p ON rt.property_code = p.property_code WHERE p.hotel_group_code = ? AND r.room_status = 'ACTIVE'",
                         Integer.class, hotelGroup);
                 } else {
-                    // total active rooms across all properties
                     totalRooms = jdbc.queryForObject(
-                        "SELECT COALESCE(COUNT(r.room_code),0) FROM Room r WHERE r.room_status = 'ACTIVE'",
+                        "SELECT COALESCE(COUNT(r.room_code),0) FROM room r WHERE r.room_status = 'ACTIVE'",
                         Integer.class);
                 }
 
@@ -213,41 +218,316 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                         .multiply(BigDecimal.valueOf(100));
                 return occ;
             }
-            // 필요한 metricKey 추가 구현...
-            default:
+            // 5. 투숙객수
+            case "stay_guest_count", "guest_count", "stay_guests" -> {
+                // Total number of guests who stayed during the period (sum of Stay.guest_count)
+                // use hotelId and hotelGroup from outer scope
+                BigDecimal guests = jdbc.queryForObject(
+                    "SELECT COALESCE(SUM(s.guest_count),0) FROM stay s WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL)",
+                    BigDecimal.class, tsEnd, tsStart);
+
+                if (hotelId != null) {
+                    guests = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(s.guest_count),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND r.property_code = ?",
+                        BigDecimal.class, tsEnd, tsStart, hotelId);
+                } else if (hotelGroup != null) {
+                    guests = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(s.guest_count),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsEnd, tsStart, hotelGroup);
+                }
+
+                if (guests == null) guests = BigDecimal.ZERO;
+                return guests;
+            }
+            // 6. 재방문율
+            case "repeat_rate" -> {
+                // Repeat rate = distinct customers in period who had prior stay before period start / distinct customers in period * 100
+                // use hotelGroup from outer scope
+                String totalSql = "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code";
+                String repeatSql = "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code";
+                if (hotelGroup != null) {
+                    totalSql += " JOIN property p ON r.property_code = p.property_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ?";
+                    repeatSql += " JOIN property p ON r.property_code = p.property_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ? AND EXISTS (SELECT 1 FROM stay s2 WHERE s2.customer_code = s.customer_code AND s2.actual_checkin_at < ?)";
+
+                    BigDecimal totalCust = jdbc.queryForObject(totalSql, BigDecimal.class, tsEnd, tsStart, hotelGroup);
+                    BigDecimal repeatCust = jdbc.queryForObject(repeatSql, BigDecimal.class, tsEnd, tsStart, hotelGroup, tsStart);
+                    if (totalCust == null || totalCust.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return repeatCust.divide(totalCust, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    totalSql += " WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL)";
+                    repeatSql += " WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND EXISTS (SELECT 1 FROM stay s2 WHERE s2.customer_code = s.customer_code AND s2.actual_checkin_at < ?)";
+
+                    BigDecimal totalCust = jdbc.queryForObject(totalSql, BigDecimal.class, tsEnd, tsStart);
+                    BigDecimal repeatCust = jdbc.queryForObject(repeatSql, BigDecimal.class, tsEnd, tsStart, tsStart);
+                    if (totalCust == null || totalCust.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return repeatCust.divide(totalCust, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            // 7. 멤버십비율
+            case "membership_rate" -> {
+                // use hotelGroup from outer scope
+                if (hotelGroup != null) {
+                    BigDecimal total = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsEnd, tsStart, hotelGroup);
+                    BigDecimal member = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code JOIN member m ON s.customer_code = m.customer_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsEnd, tsStart, hotelGroup);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return member.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    BigDecimal total = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL)",
+                        BigDecimal.class, tsEnd, tsStart);
+                    BigDecimal member = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN member m ON s.customer_code = m.customer_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL)",
+                        BigDecimal.class, tsEnd, tsStart);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return member.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            // 8. 외국인비율
+            case "foreign_rate" -> {
+                if (hotelGroup != null) {
+                    BigDecimal foreignCnt = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code JOIN customer c ON s.customer_code = c.customer_code JOIN property p ON r.property_code = p.property_code WHERE c.nationality_type = 'FOREIGN' AND s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsEnd, tsStart, hotelGroup);
+                    BigDecimal totalCnt = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL) AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsEnd, tsStart, hotelGroup);
+                    if (totalCnt == null || totalCnt.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return foreignCnt.divide(totalCnt, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    BigDecimal foreignCnt = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s JOIN customer c ON s.customer_code = c.customer_code WHERE c.nationality_type = 'FOREIGN' AND s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL)",
+                        BigDecimal.class, tsEnd, tsStart);
+                    BigDecimal totalCnt = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(DISTINCT s.customer_code),0) FROM stay s WHERE s.actual_checkin_at < ? AND (s.actual_checkout_at > ? OR s.actual_checkout_at IS NULL)",
+                        BigDecimal.class, tsEnd, tsStart);
+                    if (totalCnt == null || totalCnt.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return foreignCnt.divide(totalCnt, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            // 9. 문의수
+            case "inquiry_count" -> {
+                if (hotelGroup != null) {
+                    return jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i JOIN property p ON i.property_code = p.property_code WHERE i.created_at >= ? AND i.created_at < ? AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                } else {
+                    return jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i WHERE i.created_at >= ? AND i.created_at < ?",
+                        BigDecimal.class, tsStart, tsEnd);
+                }
+            }
+            // 10. 클레임수
+            case "claim_count" -> {
+                if (hotelGroup != null) {
+                    return jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i JOIN property p ON i.property_code = p.property_code WHERE i.inquiry_category_code = 2 AND i.created_at >= ? AND i.created_at < ? AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                } else {
+                    return jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i WHERE i.inquiry_category_code = 2 AND i.created_at >= ? AND i.created_at < ?",
+                        BigDecimal.class, tsStart, tsEnd);
+                }
+            }
+            // 11. 미처리문의비율
+            case "unresolved_rate" -> {
+                if (hotelGroup != null) {
+                    BigDecimal total = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i JOIN property p ON i.property_code = p.property_code WHERE i.created_at >= ? AND i.created_at < ? AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                    BigDecimal unresolved = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i JOIN property p ON i.property_code = p.property_code WHERE i.created_at >= ? AND i.created_at < ? AND p.hotel_group_code = ? AND i.inquiry_status = 'IN_PROGRESS'",
+                        BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return unresolved.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    BigDecimal total = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i WHERE i.created_at >= ? AND i.created_at < ?",
+                        BigDecimal.class, tsStart, tsEnd);
+                    BigDecimal unresolved = jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(i.inquiry_code),0) FROM inquiry i WHERE i.created_at >= ? AND i.created_at < ? AND i.inquiry_status = 'IN_PROGRESS'",
+                        BigDecimal.class, tsStart, tsEnd);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return unresolved.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            // 12. 평균응답시간
+            case "avg_response_time" -> {
+                if (hotelGroup != null) {
+                    BigDecimal secs = jdbc.queryForObject(
+                        "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND, i.created_at, i.updated_at)),0) FROM inquiry i JOIN property p ON i.property_code = p.property_code WHERE i.created_at >= ? AND i.created_at < ? AND i.answer_content IS NOT NULL AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                    if (secs == null) secs = BigDecimal.ZERO;
+                    return secs.divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
+                } else {
+                    BigDecimal secs = jdbc.queryForObject(
+                        "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND, i.created_at, i.updated_at)),0) FROM inquiry i WHERE i.created_at >= ? AND i.created_at < ? AND i.answer_content IS NOT NULL",
+                        BigDecimal.class, tsStart, tsEnd);
+                    if (secs == null) secs = BigDecimal.ZERO;
+                    return secs.divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
+                }
+            }
+            // 13. 예약수
+            case "reservation_count" -> {
+                if (hotelGroup != null) {
+                    return jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.created_at >= ? AND r.created_at < ? AND p.hotel_group_code = ?",
+                        BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                } else {
+                    return jdbc.queryForObject(
+                        "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.created_at >= ? AND r.created_at < ?",
+                        BigDecimal.class, tsStart, tsEnd);
+                }
+            }
+            // 14. 예약취소율
+            case "cancellation_rate" -> {
+                String totalSql;
+                String canceledSql;
+                if (hotelGroup != null) {
+                    totalSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.created_at >= ? AND r.created_at < ? AND p.hotel_group_code = ?";
+                    canceledSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.created_at >= ? AND r.created_at < ? AND p.hotel_group_code = ? AND r.canceled_at IS NOT NULL";
+
+                    BigDecimal total = jdbc.queryForObject(totalSql, BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                    BigDecimal canceled = jdbc.queryForObject(canceledSql, BigDecimal.class, tsStart, tsEnd, hotelGroup);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return canceled.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    totalSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.created_at >= ? AND r.created_at < ?";
+                    canceledSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.created_at >= ? AND r.created_at < ? AND r.canceled_at IS NOT NULL";
+
+                    BigDecimal total = jdbc.queryForObject(totalSql, BigDecimal.class, tsStart, tsEnd);
+                    BigDecimal canceled = jdbc.queryForObject(canceledSql, BigDecimal.class, tsStart, tsEnd);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return canceled.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            // 15. 노쇼율
+            case "no_show_rate" -> {
+                String totalSql;
+                String noshowSql;
+                if (hotelGroup != null) {
+                    totalSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?";
+                    noshowSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ? AND r.reservation_status = 'NO_SHOW'";
+
+                    BigDecimal total = jdbc.queryForObject(totalSql, BigDecimal.class, dEnd, dStart, hotelGroup);
+                    BigDecimal noshow = jdbc.queryForObject(noshowSql, BigDecimal.class, dEnd, dStart, hotelGroup);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return noshow.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    totalSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL";
+                    noshowSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.reservation_status = 'NO_SHOW'";
+
+                    BigDecimal total = jdbc.queryForObject(totalSql, BigDecimal.class, dEnd, dStart);
+                    BigDecimal noshow = jdbc.queryForObject(noshowSql, BigDecimal.class, dEnd, dStart);
+                    if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return noshow.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            // 16. 객실외매출비율
+            case "non_room_revenue" -> {
+                if (hotelGroup != null) {
+                    BigDecimal packageSum = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(r.reservation_package_price),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE p.hotel_group_code = ? AND r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        BigDecimal.class, hotelGroup, dEnd, dStart);
+                    BigDecimal denomSum = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(COALESCE(r.reservation_room_price,0) + COALESCE(r.reservation_package_price,0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE p.hotel_group_code = ? AND r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        BigDecimal.class, hotelGroup, dEnd, dStart);
+                    if (packageSum == null) packageSum = BigDecimal.ZERO;
+                    if (denomSum == null) denomSum = BigDecimal.ZERO;
+                    if (denomSum.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return packageSum.divide(denomSum, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                } else {
+                    BigDecimal packageSum = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(r.reservation_package_price),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        BigDecimal.class, dEnd, dStart);
+                    BigDecimal denomSum = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(COALESCE(r.reservation_room_price,0) + COALESCE(r.reservation_package_price,0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        BigDecimal.class, dEnd, dStart);
+                    if (packageSum == null) packageSum = BigDecimal.ZERO;
+                    if (denomSum == null) denomSum = BigDecimal.ZERO;
+                    if (denomSum.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+                    return packageSum.divide(denomSum, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+                }
+            }
+            default -> {
                 return BigDecimal.ZERO;
+            }
         }
+        // end switch
     }
 
     // --- helper: simple formatting rule (정수 vs 통화) ---
     private String formatByMetric(String metricKey, BigDecimal value) {
         if (value == null) return "-";
-        switch (metricKey) {
-            case "avg_daily_rate":
-                // 통화(원) 포맷. 간단히 정수에 콤마 + "원" 붙이기
-                return String.format("%,d원", value.setScale(0, RoundingMode.HALF_UP).longValue());
-            case "occupancy":
-            case "occ_rate":
-                return String.format("%s%%", value.setScale(1, RoundingMode.HALF_UP).toPlainString());
-            default:
-                // 정수형 수치 표시
-                return String.format("%s", value.setScale(0, RoundingMode.HALF_UP).toPlainString());
-        }
+        String key = metricKey == null ? "" : metricKey.toLowerCase(Locale.ROOT);
+        return switch (key) {
+            case "avg_daily_rate", "adr" -> String.format("%,d원", value.setScale(0, RoundingMode.HALF_UP).longValue());
+            case "occupancy", "occ_rate", "repeat_rate" -> String.format("%s%%", value.setScale(1, RoundingMode.HALF_UP).toPlainString());
+            default -> String.format("%s", value.setScale(0, RoundingMode.HALF_UP).toPlainString());
+        };
     }
 
     private String normalizeToKpiCode(String widgetKey) {
         if (widgetKey == null) return null;
-        return widgetKey.toUpperCase(Locale.ROOT); // 기본: KPI 코드가 대문자 형태라 가정
+        // Map common widget keys / aliases to the canonical KPI codes stored in reportkpitarget.kpi_code
+        return switch(widgetKey.toUpperCase(Locale.ROOT)) {
+            case "STAY_GUEST_COUNT", "GUEST_COUNT", "STAY_GUESTS", "GUESTS" -> "GUEST_COUNT";
+            case "REPEAT_RATE", "REPEAT" -> "REPEAT_RATE";
+            case "ADR", "AVG_DAILY_RATE", "AVERAGE_DAILY_RATE" -> "ADR";
+            case "AVG_RESPONSE_TIME", "AVERAGE_RESPONSE_TIME", "RESPONSE_TIME" -> "AVG_RESPONSE_TIME";
+            case "CANCELLATION_RATE", "CANCEL_RATE", "CANCELLED_RATE", "CANCELLATION" -> "CANCELLATION_RATE";
+            case "CHECKIN", "CHECKIN_COUNT" -> "CHECKIN";
+            case "CHECKOUT", "CHECKOUT_COUNT" -> "CHECKOUT";
+            case "CLAIM_COUNT", "CLAIMS" -> "CLAIM_COUNT";
+            case "FOREIGN_RATE", "FOREIGN" -> "FOREIGN_RATE";
+            case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY" -> "INQUIRY_COUNT";
+            case "MEMBERSHIP_RATE", "MEMBERSHIP" -> "MEMBERSHIP_RATE";
+            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM" -> "NON_ROOM_REVENUE";
+            case "NO_SHOW_RATE", "NOSHOW_RATE", "NO_SHOW" -> "NO_SHOW_RATE";
+            case "OCC_RATE", "OCCUPANCY", "OCCUPANCY_RATE" -> "OCC_RATE";
+            case "RESERVATION_COUNT", "RESERVATIONS", "RESERVATION" -> "RESERVATION_COUNT";
+            case "UNRESOLVED_RATE", "UNRESOLVED" -> "UNRESOLVED_RATE";
+            default -> widgetKey.toUpperCase(Locale.ROOT);
+        };
     }
 
     private String normalizeToInternalKey(String widgetKey) {
         if (widgetKey == null) return null;
         return switch(widgetKey.toUpperCase(Locale.ROOT)) {
+            // CHECKIN / CHECKOUT
             case "CHECKIN_COUNT", "CHECKIN" -> "checkin";
             case "CHECKOUT_COUNT", "CHECKOUT" -> "checkout";
-            case "ADR", "AVG_DAILY_RATE" -> "avg_daily_rate";
-            case "OCC_RATE", "OCCUPANCY" -> "occupancy";
-            // ...필요한 KPI 매핑을 추가(16개 KPI에 맞춰)
+            // ADR
+            case "ADR", "AVG_DAILY_RATE", "AVERAGE_DAILY_RATE" -> "avg_daily_rate";
+            // Response time
+            case "AVG_RESPONSE_TIME", "AVERAGE_RESPONSE_TIME", "RESPONSE_TIME" -> "avg_response_time";
+            // Occupancy
+            case "OCC_RATE", "OCCUPANCY", "OCCUPANCY_RATE" -> "occ_rate";
+            // Guest count
+            case "GUEST_COUNT", "STAY_GUEST_COUNT", "STAY_GUESTS", "GUESTS" -> "stay_guest_count";
+            // Repeat
+            case "REPEAT_RATE", "REPEAT" -> "repeat_rate";
+            // Reservation count
+            case "RESERVATION_COUNT", "RESERVATIONS", "RESERVATION" -> "reservation_count";
+            // Cancellation
+            case "CANCELLATION_RATE", "CANCEL_RATE", "CANCELLED_RATE", "CANCELLATION" -> "cancellation_rate";
+            // No-show
+            case "NO_SHOW_RATE", "NOSHOW_RATE", "NO_SHOW" -> "no_show_rate";
+            // Inquiry
+            case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY" -> "inquiry_count";
+            // Unresolved
+            case "UNRESOLVED_RATE", "UNRESOLVED" -> "unresolved_rate";
+            // Claim
+            case "CLAIM_COUNT", "CLAIMS" -> "claim_count";
+            // Foreign rate
+            case "FOREIGN_RATE", "FOREIGN" -> "foreign_rate";
+            // Membership rate
+            case "MEMBERSHIP_RATE", "MEMBERSHIP" -> "membership_rate";
+            // Non-room revenue
+            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM" -> "non_room_revenue";
             default -> widgetKey.toLowerCase(Locale.ROOT);
         };
     }

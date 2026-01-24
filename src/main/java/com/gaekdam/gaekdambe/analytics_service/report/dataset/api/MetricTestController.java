@@ -25,11 +25,13 @@ public class MetricTestController {
     @GetMapping
     public ResponseEntity<ApiResponse<MetricResult>> getMetric(
         @RequestParam String metric,                // CHECKIN, CHECKOUT, ADR, OCC_RATE 등
-        @RequestParam(name = "period", required = true) String periodValue,                // YYYY or YYYY-MM
+        @RequestParam String periodValue,                // YYYY or YYYY-MM
+        @RequestParam(required = false) Long propertyCode,
         @RequestParam(required = false) Long hotelId,
-        @RequestParam(required = false, name = "hotel_group_code") Long hotelGroupCode
+        @RequestParam(required = false) Long hotelGroupCode
     ) {
         Map<String, Object> filter = new HashMap<>();
+        if (propertyCode != null) filter.put("propertyCode", propertyCode);
         if (hotelId != null) filter.put("hotelId", hotelId);
         if (hotelGroupCode != null) filter.put("hotelGroupCode", hotelGroupCode);
 
