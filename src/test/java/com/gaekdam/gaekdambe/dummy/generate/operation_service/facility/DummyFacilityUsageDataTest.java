@@ -78,25 +78,66 @@ public class DummyFacilityUsageDataTest {
                 boolean isPackage = random.nextInt(100) < 60;
                 boolean isPersonBased = random.nextBoolean();
 
-                LocalDateTime usageAt =
-                        randomDateTimeBetween(start, end, random);
+                LocalDateTime usageAt;
+
+                if (stay.getActualCheckoutAt() == null) {
+                    //  STAYING → 오늘 데이터 보장
+                    LocalDateTime todayStart = LocalDateTime.now()
+                            .toLocalDate()
+                            .atStartOfDay();
+                    LocalDateTime now = LocalDateTime.now();
+
+                    // 체크인이 오늘 이후면 체크인~now
+                    if (todayStart.isBefore(stay.getActualCheckinAt())) {
+                        usageAt = randomDateTimeBetween(
+                                stay.getActualCheckinAt(),
+                                now,
+                                random
+                        );
+                    } else {
+                        // 오늘 구간에서 반드시 생성
+                        usageAt = randomDateTimeBetween(
+                                todayStart,
+                                now,
+                                random
+                        );
+                    }
+                } else {
+                    // COMPLETED → 체크인 ~ 체크아웃
+                    usageAt = randomDateTimeBetween(
+                            stay.getActualCheckinAt(),
+                            stay.getActualCheckoutAt(),
+                            random
+                    );
+                }
 
                 FacilityUsage usage;
+
+                Integer usedPersonCount =
+                        isPersonBased ? random.nextInt(4) + 1 : null;
+
+                Integer usageQuantity =
+                        isPersonBased ? null : random.nextInt(3) + 1;
+
+                FacilityUsageType usageType =
+                        (usedPersonCount != null && usedPersonCount >= 2)
+                                ? FacilityUsageType.WITH_GUEST
+                                : FacilityUsageType.PERSONAL;
 
                 if (isPackage) {
                     usage = FacilityUsage.builder()
                             .stayCode(stay.getStayCode())
                             .facilityCode(facility.getFacilityCode())
                             .usageAt(usageAt)
-                            .usageType(FacilityUsageType.PERSONAL)
-                            .usedPersonCount(isPersonBased ? random.nextInt(4) + 1 : null)
-                            .usageQuantity(isPersonBased ? null : random.nextInt(3) + 1)
+                            .usageType(usageType)
+                            .usedPersonCount(usedPersonCount)
+                            .usageQuantity(usageQuantity)
                             .usagePrice(BigDecimal.ZERO)
                             .priceSource(PriceSource.PACKAGE)
                             .createdAt(LocalDateTime.now())
                             .build();
                 } else {
-                    int quantity = isPersonBased ? 1 : random.nextInt(3) + 1;
+                    int quantity = usageQuantity != null ? usageQuantity : 1;
                     BigDecimal unitPrice =
                             BigDecimal.valueOf((random.nextInt(5) + 1) * 10_000);
 
@@ -104,9 +145,9 @@ public class DummyFacilityUsageDataTest {
                             .stayCode(stay.getStayCode())
                             .facilityCode(facility.getFacilityCode())
                             .usageAt(usageAt)
-                            .usageType(FacilityUsageType.PERSONAL)
-                            .usedPersonCount(isPersonBased ? random.nextInt(4) + 1 : null)
-                            .usageQuantity(isPersonBased ? null : quantity)
+                            .usageType(usageType)
+                            .usedPersonCount(usedPersonCount)
+                            .usageQuantity(usageQuantity)
                             .usagePrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
                             .priceSource(PriceSource.EXTRA)
                             .createdAt(LocalDateTime.now())
