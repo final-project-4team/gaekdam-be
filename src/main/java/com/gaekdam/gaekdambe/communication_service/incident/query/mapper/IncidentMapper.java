@@ -20,6 +20,7 @@ public interface IncidentMapper {
             @Param("sort") SortRequest sort
     );
 
+
     long countIncidents(@Param("search") IncidentListSearchRequest search);
 
     IncidentDetailEncResponse findIncidentDetail(
