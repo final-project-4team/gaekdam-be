@@ -13,6 +13,11 @@ import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.re
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerMemoRepository;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerStatusHistoryRepository;
+import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
+import com.gaekdam.gaekdambe.global.crypto.DataKey;
+import com.gaekdam.gaekdambe.global.crypto.HexUtils;
+import com.gaekdam.gaekdambe.global.crypto.KmsService;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
@@ -24,8 +29,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -36,6 +39,7 @@ public class DummyCustomerDataTest {
     private static final int TOTAL_CUSTOMERS = 50_000;
     private static final int BATCH = 500;
 
+    // Customer.createCustomer 시그니처가 keyId를 받으니 유지 (LocalKmsService는 내부 masterKey라 실제로 안 씀)
     private static final String KMS_KEY_ID = "dummy-kms-key";
 
     private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
@@ -48,6 +52,10 @@ public class DummyCustomerDataTest {
 
     @Autowired HotelGroupRepository hotelGroupRepository;
     @Autowired EmployeeRepository employeeRepository;
+
+    // ✅ 추가: KMS + SearchHash
+    @Autowired KmsService kmsService;
+    @Autowired SearchHashService searchHashService;
 
     @PersistenceContext
     EntityManager em;
@@ -64,7 +72,6 @@ public class DummyCustomerDataTest {
                 .map(HotelGroup::getHotelGroupCode)
                 .filter(Objects::nonNull)
                 .toList();
-
         if (hotelGroupCodes.isEmpty()) return;
 
         Map<Long, List<Long>> employeeCodesByHotelGroup = buildEmployeeCodesByHotelGroup();
@@ -73,7 +80,6 @@ public class DummyCustomerDataTest {
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
-
         if (fallbackEmployeeCodes.isEmpty()) return;
 
         Random random = new Random();
@@ -81,6 +87,9 @@ public class DummyCustomerDataTest {
         List<Customer> customerBuffer = new ArrayList<>(BATCH);
         List<Integer> indexBuffer = new ArrayList<>(BATCH);
         List<Long> hotelGroupBuffer = new ArrayList<>(BATCH);
+
+        // ✅ 추가: 고객별 plaintext DEK (contact 암호화에 사용)
+        List<byte[]> plaintextDekBuffer = new ArrayList<>(BATCH);
 
         for (int i = 1; i <= TOTAL_CUSTOMERS; i++) {
 
@@ -95,10 +104,17 @@ public class DummyCustomerDataTest {
             long hotelGroupCode = hotelGroupCodes.get((i - 1) % hotelGroupCodes.size());
 
             String name = makeName(i, nationality, contractType);
-            byte[] nameEnc = name.getBytes(StandardCharsets.UTF_8);
-            String nameHash = sha256Hex(name);
 
-            byte[] dekEnc = randomBytes(random, 64);
+            // ✅ KMS에서 DEK 생성
+            DataKey dataKey = kmsService.generateDataKey();
+            byte[] plaintextDek = dataKey.plaintext();
+            byte[] dekEnc = dataKey.encrypted();
+
+            // ✅ nameEnc는 AES 암호문
+            byte[] nameEnc = AesCryptoUtils.encrypt(name, plaintextDek);
+
+            // ✅ nameHash는 SearchHashService(HMAC) + Hex 문자열
+            String nameHash = HexUtils.toHex(searchHashService.nameHash(name));
 
             Customer customer = Customer.createCustomer(
                     hotelGroupCode,
@@ -114,14 +130,21 @@ public class DummyCustomerDataTest {
             customerBuffer.add(customer);
             indexBuffer.add(i);
             hotelGroupBuffer.add(hotelGroupCode);
+            plaintextDekBuffer.add(plaintextDek);
 
             if (customerBuffer.size() == BATCH) {
-                flushCustomerBatch(customerBuffer, indexBuffer, hotelGroupBuffer, employeeCodesByHotelGroup, fallbackEmployeeCodes, random);
+                flushCustomerBatch(
+                        customerBuffer, indexBuffer, hotelGroupBuffer, plaintextDekBuffer,
+                        employeeCodesByHotelGroup, fallbackEmployeeCodes, random
+                );
             }
         }
 
         if (!customerBuffer.isEmpty()) {
-            flushCustomerBatch(customerBuffer, indexBuffer, hotelGroupBuffer, employeeCodesByHotelGroup, fallbackEmployeeCodes, random);
+            flushCustomerBatch(
+                    customerBuffer, indexBuffer, hotelGroupBuffer, plaintextDekBuffer,
+                    employeeCodesByHotelGroup, fallbackEmployeeCodes, random
+            );
         }
     }
 
@@ -147,6 +170,7 @@ public class DummyCustomerDataTest {
             List<Customer> customerBuffer,
             List<Integer> indexBuffer,
             List<Long> hotelGroupBuffer,
+            List<byte[]> plaintextDekBuffer,
             Map<Long, List<Long>> employeeCodesByHotelGroup,
             List<Long> fallbackEmployeeCodes,
             Random random
@@ -162,19 +186,24 @@ public class DummyCustomerDataTest {
             Customer customer = customerBuffer.get(i);
             int idx = indexBuffer.get(i);
             Long hotelGroupCode = hotelGroupBuffer.get(i);
+            byte[] plaintextDek = plaintextDekBuffer.get(i);
 
             Long customerCode = customer.getCustomerCode();
             LocalDateTime createdAt = customer.getCreatedAt() != null ? customer.getCreatedAt() : LocalDateTime.now();
 
             Long employeeCode = pickEmployeeCode(hotelGroupCode, employeeCodesByHotelGroup, fallbackEmployeeCodes, random);
 
+            // ✅ PHONE enc/hash
             String phone = makePhone(idx);
+            byte[] phoneEnc = AesCryptoUtils.encrypt(phone, plaintextDek);
+            String phoneHash = HexUtils.toHex(searchHashService.phoneHash(phone));
+
             contactBuffer.add(
                     CustomerContact.createCustomerContact(
                             customerCode,
                             ContactType.PHONE,
-                            phone.getBytes(StandardCharsets.UTF_8),
-                            sha256Hex(phone),
+                            phoneEnc,          // ✅ 암호문 저장
+                            phoneHash,         // ✅ HMAC hash (hex string)
                             true,
                             random.nextInt(100) < 35,
                             createdAt,
@@ -182,14 +211,18 @@ public class DummyCustomerDataTest {
                     )
             );
 
+            // ✅ EMAIL enc/hash
             if (random.nextInt(100) < 65) {
                 String email = "user" + idx + "@example.com";
+                byte[] emailEnc = AesCryptoUtils.encrypt(email, plaintextDek);
+                String emailHash = HexUtils.toHex(searchHashService.emailHash(email));
+
                 contactBuffer.add(
                         CustomerContact.createCustomerContact(
                                 customerCode,
                                 ContactType.EMAIL,
-                                email.getBytes(StandardCharsets.UTF_8),
-                                sha256Hex(email),
+                                emailEnc,        // ✅ 암호문 저장
+                                emailHash,       // ✅ HMAC hash (hex string)
                                 false,
                                 random.nextInt(100) < 25,
                                 createdAt,
@@ -209,7 +242,6 @@ public class DummyCustomerDataTest {
                 );
             }
 
-            // history는 후처리에서 상태를 만들 거라, 과하게 넣지 않음
             if (random.nextInt(100) < 3) {
                 LocalDateTime changedAt = createdAt.plusDays(1 + random.nextInt(30));
                 if (changedAt.isAfter(END)) changedAt = END;
@@ -238,6 +270,7 @@ public class DummyCustomerDataTest {
         customerBuffer.clear();
         indexBuffer.clear();
         hotelGroupBuffer.clear();
+        plaintextDekBuffer.clear(); // ✅ 추가
     }
 
     private Long pickEmployeeCode(
@@ -269,23 +302,5 @@ public class DummyCustomerDataTest {
         if (seconds <= 0) return start;
         long add = (random.nextLong() & Long.MAX_VALUE) % seconds;
         return start.plusSeconds(add);
-    }
-
-    private static byte[] randomBytes(Random random, int len) {
-        byte[] b = new byte[len];
-        random.nextBytes(b);
-        return b;
-    }
-
-    private static String sha256Hex(String value) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] dig = md.digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(dig.length * 2);
-            for (byte x : dig) sb.append(String.format("%02x", x));
-            return sb.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

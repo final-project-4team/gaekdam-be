@@ -8,7 +8,6 @@ import com.gaekdam.gaekdambe.customer_service.loyalty.command.domain.entity.Loya
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyGradeRepository;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyHistoryRepository;
 import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyRepository;
-import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -31,8 +30,6 @@ public class DummyLoyaltyDataTest {
     @Autowired LoyaltyGradeRepository loyaltyGradeRepository;
     @Autowired LoyaltyHistoryRepository loyaltyHistoryRepository;
 
-    @Autowired EmployeeRepository employeeRepository;
-
     @PersistenceContext
     EntityManager em;
 
@@ -44,12 +41,15 @@ public class DummyLoyaltyDataTest {
         List<LoyaltyGrade> grades = loyaltyGradeRepository.findAll();
         if (grades.isEmpty()) return;
 
-        List<Long> employeeIds = loadIds("select employee_code from employee");
-        if (employeeIds.isEmpty() && employeeRepository.count() == 0) return;
-
-        // 고객+호텔그룹을 실제 DB에서 가져와서 호텔그룹 10개 분산 그대로 따라감
         List<Object[]> customerRows = loadCustomerHotelGroupRows();
         if (customerRows.isEmpty()) return;
+
+        Map<Long, List<Long>> employeeByHotelGroup = loadActiveEmployeeCodesByHotelGroup();
+        List<Long> fallbackEmployees = employeeByHotelGroup.values().stream()
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
+        if (fallbackEmployees.isEmpty()) return;
 
         Random random = new Random();
 
@@ -82,7 +82,7 @@ public class DummyLoyaltyDataTest {
                 LocalDateTime changedAt = joinedAt.plusDays(5 + random.nextInt(180));
                 if (changedAt.isAfter(END)) changedAt = END;
 
-                Long employeeCode = pickEmployee(employeeIds, random);
+                Long employeeCode = pickEmployeeCode(hotelGroupCode, employeeByHotelGroup, fallbackEmployees, random);
 
                 LoyaltyHistory history = LoyaltyHistory.recordLoyaltyChange(
                         customerCode,
@@ -117,7 +117,6 @@ public class DummyLoyaltyDataTest {
 
         List<LoyaltyHistory> historyBuffer = new ArrayList<>(historySlots.size());
 
-        // “해당 고객의 loyalty_code”로 정확히 매핑
         for (HistorySlot slot : historySlots) {
             Loyalty saved = loyaltyBuffer.get(slot.loyaltyIndex);
             setLoyaltyCode(slot.history, saved.getLoyaltyCode());
@@ -137,27 +136,45 @@ public class DummyLoyaltyDataTest {
 
     private record HistorySlot(int loyaltyIndex, LoyaltyHistory history) {}
 
-    private Long pickEmployee(List<Long> employeeIds, Random random) {
-        if (employeeIds == null || employeeIds.isEmpty()) return 1L;
-        return employeeIds.get(random.nextInt(employeeIds.size()));
+    private Long pickEmployeeCode(
+            Long hotelGroupCode,
+            Map<Long, List<Long>> employeeByHotelGroup,
+            List<Long> fallbackEmployees,
+            Random random
+    ) {
+        List<Long> scoped = employeeByHotelGroup.get(hotelGroupCode);
+        if (scoped != null && !scoped.isEmpty()) {
+            return scoped.get(random.nextInt(scoped.size()));
+        }
+        return fallbackEmployees.get(random.nextInt(fallbackEmployees.size()));
     }
 
     private List<Object[]> loadCustomerHotelGroupRows() {
         @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery("select customer_code, hotel_group_code from customer").getResultList();
+        List<Object[]> rows = em.createNativeQuery("""
+                select customer_code, hotel_group_code
+                  from customer
+                """).getResultList();
         return rows;
     }
 
-    private List<Long> loadIds(String sql) {
+    private Map<Long, List<Long>> loadActiveEmployeeCodesByHotelGroup() {
         @SuppressWarnings("unchecked")
-        List<Object> rows = em.createNativeQuery(sql).getResultList();
+        List<Object[]> rows = em.createNativeQuery("""
+                select hotel_group_code, employee_code
+                  from employee
+                 where employee_status = 'ACTIVE'
+                   and hotel_group_code is not null
+                """).getResultList();
 
-        List<Long> ids = new ArrayList<>(rows.size());
-        for (Object o : rows) {
-            if (o instanceof Number n) ids.add(n.longValue());
-            else if (o instanceof String s) ids.add(Long.parseLong(s));
+        Map<Long, List<Long>> map = new HashMap<>();
+        for (Object[] r : rows) {
+            Long hg = ((Number) r[0]).longValue();
+            Long ec = ((Number) r[1]).longValue();
+            map.computeIfAbsent(hg, k -> new ArrayList<>()).add(ec);
         }
-        return ids;
+        map.values().forEach(list -> list.sort(Comparator.naturalOrder()));
+        return map;
     }
 
     private static LocalDateTime randomDateTimeBetween(LocalDateTime start, LocalDateTime end, Random random) {

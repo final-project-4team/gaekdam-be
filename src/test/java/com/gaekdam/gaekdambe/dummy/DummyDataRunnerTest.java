@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.dummy;
 
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyCustomerStatusPostProcess;
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyMemberDataTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -81,6 +82,8 @@ class DummyDataRunnerTest {
     DummyLoyaltyDataTest loyaltyDataTest;
     @Autowired
     DummyCustomerStatusPostProcess customerStatusPostProcess;
+    @Autowired
+    DummyMemberDataTest memberDataTest;
 
     // 예약 서비스
     @Autowired
@@ -153,6 +156,7 @@ class DummyDataRunnerTest {
         // 고객 서비스
         run(sw, "customer", customerDataTest::generate);
         run(sw, "membership", membershipDataTest::generate);
+        run(sw, "member", memberDataTest::generate);
         run(sw, "loyalty", loyaltyDataTest::generate);
 
         // 예약 서비스

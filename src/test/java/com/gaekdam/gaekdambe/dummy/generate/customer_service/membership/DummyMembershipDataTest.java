@@ -1,8 +1,6 @@
 package com.gaekdam.gaekdambe.dummy.generate.customer_service.membership;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
-import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Member;
-import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.MemberRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.Membership;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.MembershipGrade;
@@ -10,7 +8,6 @@ import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.M
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipGradeRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipHistoryRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipRepository;
-import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -29,16 +26,11 @@ public class DummyMembershipDataTest {
     private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
     private static final LocalDateTime END = LocalDateTime.of(2026, 12, 31, 23, 59);
 
-    // 멤버십 보유율
     private static final int MEMBERSHIP_RATE_PERCENT = 35;
 
     @Autowired MembershipRepository membershipRepository;
     @Autowired MembershipGradeRepository membershipGradeRepository;
     @Autowired MembershipHistoryRepository membershipHistoryRepository;
-
-    @Autowired MemberRepository memberRepository;
-
-    @Autowired EmployeeRepository employeeRepository;
 
     @PersistenceContext
     EntityManager em;
@@ -46,22 +38,25 @@ public class DummyMembershipDataTest {
     @Transactional
     public void generate() {
 
-        if (membershipRepository.count() > 0 || memberRepository.count() > 0) return;
+        // ✅ memberRepository 체크 제거 (member는 별도 후처리 더미에서 생성)
+        if (membershipRepository.count() > 0) return;
 
         List<MembershipGrade> grades = membershipGradeRepository.findAll();
         if (grades.isEmpty()) return;
 
-        List<Long> employeeIds = loadIds("select employee_code from employee");
-        if (employeeIds.isEmpty() && employeeRepository.count() == 0) return;
-
-        // 고객+호텔그룹을 실제 DB에서 가져와서 호텔그룹 10개 분산 그대로 따라감
         List<Object[]> customerRows = loadCustomerHotelGroupRows();
         if (customerRows.isEmpty()) return;
+
+        Map<Long, List<Long>> employeeByHotelGroup = loadActiveEmployeeCodesByHotelGroup();
+        List<Long> fallbackEmployees = employeeByHotelGroup.values().stream()
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
+        if (fallbackEmployees.isEmpty()) return;
 
         Random random = new Random();
 
         List<Membership> membershipBuffer = new ArrayList<>(BATCH);
-        List<Member> memberBuffer = new ArrayList<>(BATCH);
         List<HistorySlot> historySlots = new ArrayList<>(BATCH);
 
         for (Object[] row : customerRows) {
@@ -85,7 +80,6 @@ public class DummyMembershipDataTest {
 
             int idxInBatch = membershipBuffer.size();
             membershipBuffer.add(membership);
-            memberBuffer.add(Member.registerMember(customerCode, now));
 
             // 히스토리 20%
             if (random.nextInt(100) < 20) {
@@ -97,7 +91,7 @@ public class DummyMembershipDataTest {
                 LocalDateTime changedAt = joinedAt.plusDays(10 + random.nextInt(200));
                 if (changedAt.isAfter(END)) changedAt = END;
 
-                Long employeeCode = pickEmployee(employeeIds, random);
+                Long employeeCode = pickEmployeeCode(hotelGroupCode, employeeByHotelGroup, fallbackEmployees, random);
 
                 MembershipHistory history = MembershipHistory.recordMembershipChange(
                         customerCode,
@@ -119,48 +113,46 @@ public class DummyMembershipDataTest {
             }
 
             if (membershipBuffer.size() == BATCH) {
-                flushBatch(membershipBuffer, memberBuffer, historySlots);
+                flushBatch(membershipBuffer, historySlots);
             }
         }
 
         if (!membershipBuffer.isEmpty()) {
-            flushBatch(membershipBuffer, memberBuffer, historySlots);
+            flushBatch(membershipBuffer, historySlots);
         }
     }
 
-    private void flushBatch(
-            List<Membership> membershipBuffer,
-            List<Member> memberBuffer,
-            List<HistorySlot> historySlots
-    ) {
+    private void flushBatch(List<Membership> membershipBuffer, List<HistorySlot> historySlots) {
         membershipRepository.saveAll(membershipBuffer);
         em.flush();
 
         List<MembershipHistory> historyBuffer = new ArrayList<>(historySlots.size());
-
-        // “해당 고객의 membership_code”로 정확히 매핑
         for (HistorySlot slot : historySlots) {
             Membership saved = membershipBuffer.get(slot.membershipIndex);
             setMembershipCode(slot.history, saved.getMembershipCode());
             historyBuffer.add(slot.history);
         }
 
-        if (!memberBuffer.isEmpty()) memberRepository.saveAll(memberBuffer);
         if (!historyBuffer.isEmpty()) membershipHistoryRepository.saveAll(historyBuffer);
 
         em.flush();
         em.clear();
 
         membershipBuffer.clear();
-        memberBuffer.clear();
         historySlots.clear();
     }
 
     private record HistorySlot(int membershipIndex, MembershipHistory history) {}
 
-    private Long pickEmployee(List<Long> employeeIds, Random random) {
-        if (employeeIds == null || employeeIds.isEmpty()) return 1L;
-        return employeeIds.get(random.nextInt(employeeIds.size()));
+    private Long pickEmployeeCode(
+            Long hotelGroupCode,
+            Map<Long, List<Long>> employeeByHotelGroup,
+            List<Long> fallbackEmployees,
+            Random random
+    ) {
+        List<Long> scoped = employeeByHotelGroup.get(hotelGroupCode);
+        if (scoped != null && !scoped.isEmpty()) return scoped.get(random.nextInt(scoped.size()));
+        return fallbackEmployees.get(random.nextInt(fallbackEmployees.size()));
     }
 
     private List<Object[]> loadCustomerHotelGroupRows() {
@@ -169,16 +161,23 @@ public class DummyMembershipDataTest {
         return rows;
     }
 
-    private List<Long> loadIds(String sql) {
+    private Map<Long, List<Long>> loadActiveEmployeeCodesByHotelGroup() {
         @SuppressWarnings("unchecked")
-        List<Object> rows = em.createNativeQuery(sql).getResultList();
+        List<Object[]> rows = em.createNativeQuery("""
+                select hotel_group_code, employee_code
+                  from employee
+                 where employee_status = 'ACTIVE'
+                   and hotel_group_code is not null
+                """).getResultList();
 
-        List<Long> ids = new ArrayList<>(rows.size());
-        for (Object o : rows) {
-            if (o instanceof Number n) ids.add(n.longValue());
-            else if (o instanceof String s) ids.add(Long.parseLong(s));
+        Map<Long, List<Long>> map = new HashMap<>();
+        for (Object[] r : rows) {
+            Long hg = ((Number) r[0]).longValue();
+            Long ec = ((Number) r[1]).longValue();
+            map.computeIfAbsent(hg, k -> new ArrayList<>()).add(ec);
         }
-        return ids;
+        map.values().forEach(list -> list.sort(Comparator.naturalOrder()));
+        return map;
     }
 
     private static LocalDateTime randomDateTimeBetween(LocalDateTime start, LocalDateTime end, Random random) {
