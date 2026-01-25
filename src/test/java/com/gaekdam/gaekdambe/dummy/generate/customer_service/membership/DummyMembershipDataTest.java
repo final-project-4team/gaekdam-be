@@ -24,9 +24,12 @@ public class DummyMembershipDataTest {
     private static final int BATCH = 500;
 
     private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
-    private static final LocalDateTime END = LocalDateTime.of(2026, 12, 31, 23, 59);
+    private static final LocalDateTime END   = LocalDateTime.of(2026, 12, 31, 23, 59);
 
     private static final int MEMBERSHIP_RATE_PERCENT = 35;
+
+    // 정책: 산정기간 12개월 고정 (관리자 설정으로 바꾸려면 grade.getCalculationTermMonth() 사용)
+    private static final int DEFAULT_TERM_MONTHS = 12;
 
     @Autowired MembershipRepository membershipRepository;
     @Autowired MembershipGradeRepository membershipGradeRepository;
@@ -38,11 +41,12 @@ public class DummyMembershipDataTest {
     @Transactional
     public void generate() {
 
-        // ✅ memberRepository 체크 제거 (member는 별도 후처리 더미에서 생성)
         if (membershipRepository.count() > 0) return;
 
         List<MembershipGrade> grades = membershipGradeRepository.findAll();
         if (grades.isEmpty()) return;
+
+        Map<Long, List<MembershipGrade>> gradesByHotelGroup = groupGradesByHotelGroup(grades);
 
         List<Object[]> customerRows = loadCustomerHotelGroupRows();
         if (customerRows.isEmpty()) return;
@@ -65,25 +69,40 @@ public class DummyMembershipDataTest {
 
             if (random.nextInt(100) >= MEMBERSHIP_RATE_PERCENT) continue;
 
-            LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(30), random);
-            LocalDateTime now = joinedAt;
+            List<MembershipGrade> scopedGrades = gradesByHotelGroup.get(hotelGroupCode);
+            if (scopedGrades == null || scopedGrades.isEmpty()) continue;
 
-            MembershipGrade grade = grades.get(random.nextInt(grades.size()));
+            MembershipGrade grade = scopedGrades.get(random.nextInt(scopedGrades.size()));
+
+            LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(30), random);
+
+            // 정책: calculatedAt = joinedAt(=승급/변경일로 취급), expiredAt = calculatedAt + 12개월
+            LocalDateTime calculatedAt = joinedAt;
+            LocalDateTime expiredAt = calculatedAt.plusMonths(DEFAULT_TERM_MONTHS);
 
             Membership membership = Membership.registerMembership(
                     customerCode,
                     hotelGroupCode,
                     grade.getMembershipGradeCode(),
                     joinedAt,
-                    now
+                    joinedAt
+            );
+
+            // 여기서 DB에 박히도록 세팅 (calculated_at, expired_at)
+            membership.changeMembership(
+                    grade.getMembershipGradeCode(),
+                    MembershipStatus.ACTIVE,
+                    expiredAt,
+                    calculatedAt
             );
 
             int idxInBatch = membershipBuffer.size();
             membershipBuffer.add(membership);
 
-            // 히스토리 20%
+            // 이력 20% (등급/상태 변경 발생)
             if (random.nextInt(100) < 20) {
-                MembershipGrade afterGrade = grades.get(random.nextInt(grades.size()));
+                MembershipGrade afterGrade = scopedGrades.get(random.nextInt(scopedGrades.size()));
+
                 MembershipStatus beforeStatus = MembershipStatus.ACTIVE;
                 MembershipStatus afterStatus =
                         (random.nextInt(100) < 10) ? MembershipStatus.SUSPENDED : MembershipStatus.ACTIVE;
@@ -92,6 +111,10 @@ public class DummyMembershipDataTest {
                 if (changedAt.isAfter(END)) changedAt = END;
 
                 Long employeeCode = pickEmployeeCode(hotelGroupCode, employeeByHotelGroup, fallbackEmployees, random);
+
+                // after 변경 기준으로 산정/만료도 같이 이동한다고 보면 (원하면 유지로 바꿔도 됨)
+                LocalDateTime afterCalculatedAt = changedAt;
+                LocalDateTime afterExpiredAt = afterCalculatedAt.plusMonths(DEFAULT_TERM_MONTHS);
 
                 MembershipHistory history = MembershipHistory.recordMembershipChange(
                         customerCode,
@@ -103,8 +126,8 @@ public class DummyMembershipDataTest {
                         afterGrade.getGradeName(),
                         beforeStatus,
                         afterStatus,
-                        null,
-                        null,
+                        expiredAt,
+                        afterExpiredAt,
                         changedAt,
                         afterGrade.getMembershipGradeCode()
                 );
@@ -177,6 +200,15 @@ public class DummyMembershipDataTest {
             map.computeIfAbsent(hg, k -> new ArrayList<>()).add(ec);
         }
         map.values().forEach(list -> list.sort(Comparator.naturalOrder()));
+        return map;
+    }
+
+    private Map<Long, List<MembershipGrade>> groupGradesByHotelGroup(List<MembershipGrade> grades) {
+        Map<Long, List<MembershipGrade>> map = new HashMap<>();
+        for (MembershipGrade g : grades) {
+            if (g == null || g.getHotelGroup() == null || g.getHotelGroup().getHotelGroupCode() == null) continue;
+            map.computeIfAbsent(g.getHotelGroup().getHotelGroupCode(), k -> new ArrayList<>()).add(g);
+        }
         return map;
     }
 
