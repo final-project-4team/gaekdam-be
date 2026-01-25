@@ -18,7 +18,11 @@ public class InquiryListResponse {
     private String inquiryStatus;
 
     private Long customerCode;
+
     private Long employeeCode;
+
+    private String employeeLoginId; // 담당자 로그인ID
+    private String employeeName; // 담당자명(복호화된 값)
 
     private Long propertyCode;
 

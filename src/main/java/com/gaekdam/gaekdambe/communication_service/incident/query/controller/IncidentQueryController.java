@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.communication_service.incident.query.controller;
 
 import com.gaekdam.gaekdambe.communication_service.incident.query.dto.request.IncidentListSearchRequest;
+import com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentActionHistoryResponse;
 import com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentDetailResponse;
 import com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentListResponse;
 import com.gaekdam.gaekdambe.communication_service.incident.query.service.IncidentQueryService;
@@ -12,6 +13,8 @@ import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,7 +30,6 @@ public class IncidentQueryController {
             IncidentListSearchRequest search,
             SortRequest sort
     ) {
-        // SaaS 스코프 강제 (다른 호텔그룹 데이터 차단)
         search.setHotelGroupCode(user.getHotelGroupCode());
 
         if (sort == null || sort.getSortBy() == null) {
@@ -48,6 +50,17 @@ public class IncidentQueryController {
     ) {
         return ApiResponse.success(
                 incidentQueryService.getIncidentDetail(user.getHotelGroupCode(), incidentCode)
+        );
+    }
+
+    // 조치 이력 조회
+    @GetMapping("/{incidentCode}/actions")
+    public ApiResponse<List<IncidentActionHistoryResponse>> getIncidentActions(
+            @AuthenticationPrincipal CustomUser user,
+            @PathVariable Long incidentCode
+    ) {
+        return ApiResponse.success(
+                incidentQueryService.getIncidentActionHistories(user.getHotelGroupCode(), incidentCode)
         );
     }
 }

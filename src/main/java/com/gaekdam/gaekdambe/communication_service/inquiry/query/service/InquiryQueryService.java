@@ -4,8 +4,8 @@ import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.request.Inq
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.response.InquiryDetailResponse;
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.response.InquiryListResponse;
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.mapper.InquiryMapper;
-import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryDetailRow;
-import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryListRow;
+import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryDetailRow;
+import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryListRow;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
@@ -53,6 +53,12 @@ public class InquiryQueryService {
                 detailRow.customerNameEnc()
         );
 
+        String employeeName = decryptEmployeeName(
+                detailRow.employeeCode(),
+                detailRow.employeeDekEnc(),
+                detailRow.employeeNameEnc()
+        );
+
         return new InquiryDetailResponse(
                 detailRow.inquiryCode(),
                 detailRow.inquiryStatus(),
@@ -63,6 +69,10 @@ public class InquiryQueryService {
                 detailRow.updatedAt(),
                 detailRow.customerCode(),
                 detailRow.employeeCode(),
+
+                detailRow.employeeLoginId(),
+                employeeName,
+
                 detailRow.propertyCode(),
                 detailRow.inquiryCategoryCode(),
                 detailRow.inquiryCategoryName(),
@@ -78,6 +88,12 @@ public class InquiryQueryService {
                 listRow.customerNameEnc()
         );
 
+        String employeeName = decryptEmployeeName(
+                listRow.employeeCode(),
+                listRow.employeeDekEnc(),
+                listRow.employeeNameEnc()
+        );
+
         return new InquiryListResponse(
                 listRow.inquiryCode(),
                 listRow.createdAt(),
@@ -85,6 +101,8 @@ public class InquiryQueryService {
                 listRow.inquiryStatus(),
                 listRow.customerCode(),
                 listRow.employeeCode(),
+                listRow.employeeLoginId(),
+                employeeName,
                 listRow.propertyCode(),
                 listRow.inquiryCategoryCode(),
                 listRow.inquiryCategoryName(),
@@ -94,7 +112,13 @@ public class InquiryQueryService {
     }
 
     private String decryptCustomerName(Long customerCode, byte[] dekEnc, byte[] customerNameEnc) {
-        // cacheCode = customerCode (Customer 테이블 DEK 캐시 키로 사용)
+        if (customerNameEnc == null || dekEnc == null) return null;
         return decryptionService.decrypt(customerCode, dekEnc, customerNameEnc);
+    }
+
+    private String decryptEmployeeName(Long employeeCode, byte[] employeeDekEnc, byte[] employeeNameEnc) {
+        if (employeeNameEnc == null || employeeDekEnc == null) return null;
+        // cacheCode = employeeCode 로 잡아도 됨(직원 DEK 캐시 키)
+        return decryptionService.decrypt(employeeCode, employeeDekEnc, employeeNameEnc);
     }
 }

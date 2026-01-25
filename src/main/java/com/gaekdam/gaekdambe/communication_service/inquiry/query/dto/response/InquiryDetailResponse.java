@@ -23,6 +23,8 @@ public class InquiryDetailResponse {
 
     private Long customerCode;
     private Long employeeCode;
+    private String employeeLoginId;
+    private String employeeName;
 
     private Long propertyCode;
 

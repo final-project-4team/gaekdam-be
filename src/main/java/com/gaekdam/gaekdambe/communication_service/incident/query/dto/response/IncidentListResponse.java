@@ -22,5 +22,8 @@ public class IncidentListResponse {
     private Long propertyCode;
     private Long employeeCode;
 
-    private Long inquiryCode; // 연결된 문의(없으면 null)
+    private Long inquiryCode;
+
+    private String employeeLoginId;
+    private String employeeName;
 }

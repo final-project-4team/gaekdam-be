@@ -21,13 +21,7 @@ public class IncidentCommandService {
 
         Inquiry inquiry = null;
         if (request.getInquiryCode() != null) {
-            // 존재 검증 없이 FK만 연결 (프록시)
             inquiry = entityManager.getReference(Inquiry.class, request.getInquiryCode());
-
-            // ✅ 존재 검증까지 하고 싶으면 이 방식으로 변경
-            // Inquiry found = entityManager.find(Inquiry.class, request.getInquiryCode());
-            // if (found == null) throw new CustomException(ErrorCode.INQUIRY_NOT_FOUND);
-            // inquiry = found;
         }
 
         Incident incident = Incident.create(

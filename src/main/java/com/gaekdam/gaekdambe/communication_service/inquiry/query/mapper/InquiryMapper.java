@@ -1,8 +1,8 @@
 package com.gaekdam.gaekdambe.communication_service.inquiry.query.mapper;
 
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.dto.request.InquiryListSearchRequest;
-import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryDetailRow;
-import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryListRow;
+import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryDetailRow;
+import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryListRow;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import org.apache.ibatis.annotations.Mapper;

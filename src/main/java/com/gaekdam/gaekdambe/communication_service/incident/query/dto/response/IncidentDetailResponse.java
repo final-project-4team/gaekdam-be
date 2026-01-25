@@ -28,5 +28,8 @@ public class IncidentDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Long inquiryCode; // 연결된 문의(없으면 null)
+    private Long inquiryCode;
+
+    private String employeeLoginId;
+    private String employeeName;
 }

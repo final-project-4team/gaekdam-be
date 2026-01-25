@@ -6,7 +6,7 @@
 <mapper namespace="com.gaekdam.gaekdambe.communication_service.inquiry.query.mapper.InquiryMapper">
 
     <resultMap id="InquiryListRowMap"
-               type="com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryListRow">
+               type="com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryListRow">
         <constructor>
             <idArg column="inquiryCode" javaType="java.lang.Long"/>
             <arg column="createdAt" javaType="java.time.LocalDateTime"/>
@@ -14,6 +14,15 @@
             <arg column="inquiryStatus" javaType="java.lang.String"/>
             <arg column="customerCode" javaType="java.lang.Long"/>
             <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc"
+                 javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc"
+                 javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
             <arg column="propertyCode" javaType="java.lang.Long"/>
             <arg column="inquiryCategoryCode" javaType="java.lang.Long"/>
             <arg column="inquiryCategoryName" javaType="java.lang.String"/>
@@ -30,7 +39,7 @@
     </resultMap>
 
     <resultMap id="InquiryDetailRowMap"
-               type="com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.row.InquiryDetailRow">
+               type="com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryDetailRow">
         <constructor>
             <idArg column="inquiryCode" javaType="java.lang.Long"/>
             <arg column="inquiryStatus" javaType="java.lang.String"/>
@@ -41,6 +50,15 @@
             <arg column="updatedAt" javaType="java.time.LocalDateTime"/>
             <arg column="customerCode" javaType="java.lang.Long"/>
             <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc"
+                 javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc"
+                 javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
             <arg column="propertyCode" javaType="java.lang.Long"/>
             <arg column="inquiryCategoryCode" javaType="java.lang.Long"/>
             <arg column="inquiryCategoryName" javaType="java.lang.String"/>
@@ -62,11 +80,17 @@
         JOIN property p ON p.property_code = i.property_code
         JOIN customer cu ON cu.customer_code = i.customer_code
         LEFT JOIN incident inc ON inc.inquiry_code = i.inquiry_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
     </sql>
 
     <sql id="InquiryWhere">
         <where>
             p.hotel_group_code = #{search.hotelGroupCode}
+
+            <!-- 추가: 고객코드 필터 -->
+            <if test="search.customerCode != null">
+                AND i.customer_code = #{search.customerCode}
+            </if>
 
             <if test="search.propertyCode != null">
                 AND i.property_code = #{search.propertyCode}
@@ -106,10 +130,16 @@
         i.inquiry_status         AS inquiryStatus,
         i.customer_code          AS customerCode,
         i.employee_code          AS employeeCode,
+
+        e.login_id               AS employeeLoginId,
+        e.employee_name_enc      AS employeeNameEnc,
+        e.dek_enc                AS employeeDekEnc,
+
         i.property_code          AS propertyCode,
         c.inquiry_category_code  AS inquiryCategoryCode,
         c.inquiry_category_name  AS inquiryCategoryName,
         MAX(inc.incident_code)   AS linkedIncidentCode,
+
         cu.customer_name_enc     AS customerNameEnc,
         cu.dek_enc               AS dekEnc
         <include refid="InquiryBaseFrom"/>
@@ -117,7 +147,9 @@
 
         GROUP BY
         i.inquiry_code, i.created_at, i.inquiry_title, i.inquiry_status,
-        i.customer_code, i.employee_code, i.property_code,
+        i.customer_code, i.employee_code,
+        e.login_id, e.employee_name_enc, e.dek_enc,
+        i.property_code,
         c.inquiry_category_code, c.inquiry_category_name,
         cu.customer_name_enc, cu.dek_enc
 
@@ -136,11 +168,17 @@
         LIMIT #{page.size} OFFSET #{page.offset}
     </select>
 
+    <!-- COUNT -->
     <select id="countInquiries" resultType="long">
         SELECT COUNT(DISTINCT i.inquiry_code)
         FROM inquiry i
         JOIN property p ON p.property_code = i.property_code
         WHERE p.hotel_group_code = #{search.hotelGroupCode}
+
+        <!-- 추가: 고객코드 필터 -->
+        <if test="search.customerCode != null">
+            AND i.customer_code = #{search.customerCode}
+        </if>
 
         <if test="search.propertyCode != null">
             AND i.property_code = #{search.propertyCode}
@@ -177,6 +215,11 @@
         i.updated_at             AS updatedAt,
         i.customer_code          AS customerCode,
         i.employee_code          AS employeeCode,
+
+        e.login_id               AS employeeLoginId,
+        e.employee_name_enc      AS employeeNameEnc,
+        e.dek_enc                AS employeeDekEnc,
+
         i.property_code          AS propertyCode,
         c.inquiry_category_code  AS inquiryCategoryCode,
         c.inquiry_category_name  AS inquiryCategoryName,
@@ -185,12 +228,15 @@
         FROM incident inc2
         WHERE inc2.inquiry_code = i.inquiry_code
         ) AS linkedIncidentCode,
+
         cu.customer_name_enc     AS customerNameEnc,
         cu.dek_enc               AS dekEnc
+
         FROM inquiry i
         JOIN inquiry_category c ON c.inquiry_category_code = i.inquiry_category_code
         JOIN property p ON p.property_code = i.property_code
         JOIN customer cu ON cu.customer_code = i.customer_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
         WHERE i.inquiry_code = #{inquiryCode}
         AND p.hotel_group_code = #{hotelGroupCode}
     </select>
