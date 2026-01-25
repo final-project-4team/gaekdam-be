@@ -8,10 +8,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportTemplateWidget;
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.infrastructure.repository.ReportTemplateRepository;
+import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportTemplateWidgetResponseDto;
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.repository.ReportTemplateWidgetQueryRepository;
 import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service.MetricQueryService;
 import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service.MetricResult;
-import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportTemplateWidgetResponseDto;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 
