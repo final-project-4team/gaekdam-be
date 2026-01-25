@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class InquiryListSearchRequest {
 
+    private Long customerCode;
     private Long hotelGroupCode; // 컨트롤러에서 세팅
 
     private Long propertyCode;

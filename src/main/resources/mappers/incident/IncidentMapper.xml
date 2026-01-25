@@ -5,26 +5,82 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.communication_service.incident.query.mapper.IncidentMapper">
 
-    <sql id="IncidentListSelectColumns">
-        i.incident_code     AS incidentCode,
-        i.created_at        AS createdAt,
-        i.incident_title    AS incidentTitle,
-        i.incident_status   AS incidentStatus,
-        i.severity          AS severity,
-        i.incident_type     AS incidentType,
-        i.property_code     AS propertyCode,
-        i.employee_code     AS employeeCode,
-        i.inquiry_code      AS inquiryCode
-    </sql>
+    <resultMap id="IncidentListEncMap"
+               type="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentListEncResponse">
+        <constructor>
+            <idArg column="incidentCode" javaType="java.lang.Long"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="incidentTitle" javaType="java.lang.String"/>
+            <arg column="incidentStatus" javaType="java.lang.String"/>
+            <arg column="severity" javaType="java.lang.String"/>
+            <arg column="incidentType" javaType="java.lang.String"/>
+            <arg column="propertyCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+            <arg column="inquiryCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="IncidentDetailEncMap"
+               type="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentDetailEncResponse">
+        <constructor>
+            <idArg column="incidentCode" javaType="java.lang.Long"/>
+            <arg column="propertyCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="incidentTitle" javaType="java.lang.String"/>
+            <arg column="incidentSummary" javaType="java.lang.String"/>
+            <arg column="incidentContent" javaType="java.lang.String"/>
+
+            <arg column="severity" javaType="java.lang.String"/>
+            <arg column="incidentType" javaType="java.lang.String"/>
+            <arg column="incidentStatus" javaType="java.lang.String"/>
+
+            <arg column="occurredAt" javaType="java.time.LocalDateTime"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="updatedAt" javaType="java.time.LocalDateTime"/>
+
+            <arg column="inquiryCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <!-- ✅ 조치 이력 Enc resultMap (추가) -->
+    <resultMap id="IncidentActionHistoryEncMap"
+               type="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentActionHistoryEncResponse">
+        <constructor>
+            <idArg column="incidentActionHistoryCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="actionContent" javaType="java.lang.String"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
 
     <sql id="IncidentBaseFrom">
         FROM incident i
         JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
     </sql>
 
     <sql id="IncidentWhere">
         <where>
-            <!-- SaaS 스코프 강제 -->
             p.hotel_group_code = #{search.hotelGroupCode}
 
             <if test="search.propertyCode != null">
@@ -56,11 +112,23 @@
         </where>
     </sql>
 
-    <!-- 리스트 -->
-    <select id="findIncidents"
-            resultType="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentListResponse">
+    <!-- LIST -->
+    <select id="findIncidents" resultMap="IncidentListEncMap">
         SELECT
-        <include refid="IncidentListSelectColumns" />
+        i.incident_code     AS incidentCode,
+        i.created_at        AS createdAt,
+        i.incident_title    AS incidentTitle,
+        i.incident_status   AS incidentStatus,
+        i.severity          AS severity,
+        i.incident_type     AS incidentType,
+        i.property_code     AS propertyCode,
+        i.employee_code     AS employeeCode,
+        i.inquiry_code      AS inquiryCode,
+
+        e.login_id          AS employeeLoginId,
+        e.employee_name_enc AS employeeNameEnc,
+        e.dek_enc           AS employeeDekEnc
+
         <include refid="IncidentBaseFrom" />
         <include refid="IncidentWhere" />
 
@@ -87,9 +155,8 @@
         <include refid="IncidentWhere" />
     </select>
 
-    <!-- 상세 -->
-    <select id="findIncidentDetail"
-            resultType="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentDetailResponse">
+    <!-- DETAIL -->
+    <select id="findIncidentDetail" resultMap="IncidentDetailEncMap">
         SELECT
         i.incident_code     AS incidentCode,
         i.property_code     AS propertyCode,
@@ -100,14 +167,39 @@
         i.severity          AS severity,
         i.incident_type     AS incidentType,
         i.incident_status   AS incidentStatus,
-        i.occurred_at        AS occurredAt,
+        i.occurred_at       AS occurredAt,
         i.created_at        AS createdAt,
         i.updated_at        AS updatedAt,
-        i.inquiry_code      AS inquiryCode
+        i.inquiry_code      AS inquiryCode,
+
+        e.login_id          AS employeeLoginId,
+        e.employee_name_enc AS employeeNameEnc,
+        e.dek_enc           AS employeeDekEnc
+
         FROM incident i
         JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
         WHERE i.incident_code = #{incidentCode}
         AND p.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+    <!-- ✅ 조치 이력 조회 (추가) -->
+    <select id="findIncidentActionHistories" resultMap="IncidentActionHistoryEncMap">
+        SELECT
+        iah.incident_action_history_code AS incidentActionHistoryCode,
+        iah.employee_code                AS employeeCode,
+        e.login_id                       AS employeeLoginId,
+        e.employee_name_enc              AS employeeNameEnc,
+        e.dek_enc                        AS employeeDekEnc,
+        iah.action_content               AS actionContent,
+        iah.created_at                   AS createdAt
+        FROM incident_action_history iah
+        JOIN incident i ON i.incident_code = iah.incident_code
+        JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN employee e ON e.employee_code = iah.employee_code
+        WHERE iah.incident_code = #{incidentCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+        ORDER BY iah.created_at DESC
     </select>
 
 </mapper>

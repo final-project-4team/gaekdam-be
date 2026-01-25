@@ -4,4 +4,6 @@ import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Mem
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
+
+    boolean existsByCustomerCode(Long customerCode);
 }

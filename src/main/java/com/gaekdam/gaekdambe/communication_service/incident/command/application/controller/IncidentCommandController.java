@@ -6,11 +6,14 @@ import com.gaekdam.gaekdambe.communication_service.incident.command.application.
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/incidents")
+@RequestMapping("/api/v1/incidents")
 public class IncidentCommandController {
 
     private final IncidentCommandService incidentCommandService;

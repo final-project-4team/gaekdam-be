@@ -2,7 +2,9 @@ package com.gaekdam.gaekdambe.dummy.generate.customer_service.membership;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
+import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Member;
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
+import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.MemberRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.Membership;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.MembershipGrade;
@@ -27,6 +29,7 @@ public class DummyMembershipDataTest {
     @Autowired private MembershipGradeRepository membershipGradeRepository;
     @Autowired private MembershipRepository membershipRepository;
     @Autowired private MembershipHistoryRepository membershipHistoryRepository;
+    @Autowired private MemberRepository memberRepository;
 
     @Autowired private HotelGroupRepository hotelGroupRepository;
 
@@ -80,7 +83,7 @@ public class DummyMembershipDataTest {
 
             for (GradeSeed seed : GRADE_SEEDS) {
                 if (!existing.containsKey(seed.gradeName())) {
-                    HotelGroup hotelGroup =hotelGroupRepository.findById(hg).orElseThrow();
+                    HotelGroup hotelGroup = hotelGroupRepository.findById(hg).orElseThrow();
                     MembershipGrade saved = membershipGradeRepository.save(
                             MembershipGrade.registerMembershipGrade(
                                     hotelGroup,
@@ -125,6 +128,10 @@ public class DummyMembershipDataTest {
                 now
         );
         membershipRepository.save(membership);
+
+        if (!memberRepository.existsByCustomerCode(customerCode)) {
+            memberRepository.save(Member.registerMember(customerCode, joinedAt));
+        }
 
         membershipHistoryRepository.save(
                 MembershipHistory.recordMembershipChange(

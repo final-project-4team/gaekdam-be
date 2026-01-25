@@ -25,7 +25,6 @@ public class DummyCustomerDataTest {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private CustomerContactRepository customerContactRepository;
     @Autowired private CustomerMemoRepository customerMemoRepository;
-    @Autowired private MemberRepository memberRepository;
 
     @Autowired(required = false)
     private CustomerStatusHistoryRepository customerStatusHistoryRepository;
@@ -116,10 +115,6 @@ public class DummyCustomerDataTest {
         }
 
         createContacts(customer.getCustomerCode(), seq, plaintextDek, createdAt);
-
-        if (chance(0.60)) {
-            memberRepository.save(Member.registerMember(customer.getCustomerCode(), createdAt));
-        }
 
         if (chance(0.30)) {
             int memoCount = randomInt(1, 3);

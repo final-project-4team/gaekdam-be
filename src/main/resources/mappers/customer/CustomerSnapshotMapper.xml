@@ -18,7 +18,7 @@
                   AND s.stay_status = 'COMPLETED'
             ) AS totalStayCount,
 
-            /* ✅ LTV: COMPLETED 기준 (숙박 예약금액 + 부대시설 이용금액) */
+            /* LTV: COMPLETED 기준 (숙박 예약금액 + 부대시설 이용금액) */
             (
                 /* 숙박 예약금액 합 */
                 COALESCE((
@@ -34,7 +34,7 @@
 
                     +
 
-                    /* 부대시설 이용금액 합 (FacilityUsage) */
+                    /* 부대시설 이용금액 합 */
                 COALESCE((
                              SELECT SUM(fu.usage_price)
                              FROM facility_usage fu
@@ -45,7 +45,7 @@
                          ), 0)
                 ) AS ltvAmount,
 
-            /* 최근 이용일: checkout > checkin > created */
+            /* 최근 이용일 */
             (
                 SELECT COALESCE(
                                MAX(s3.actual_checkout_at),
@@ -56,12 +56,12 @@
                 WHERE s3.customer_code = c.customer_code
             ) AS lastUsedAt,
 
-            /* 미해결 이슈: inquiry_status = IN_PROGRESS */
+            /* ✅ 미해결 이슈: inquiry_status = IN_PROGRESS */
             (
                 SELECT COUNT(*)
                 FROM inquiry i
                 WHERE i.customer_code = c.customer_code
-                  AND i.hotel_group_code = c.hotel_group_code
+                  AND c.hotel_group_code = #{hotelGroupCode}
                   AND i.inquiry_status = 'IN_PROGRESS'
             ) AS unresolvedInquiryCount
 

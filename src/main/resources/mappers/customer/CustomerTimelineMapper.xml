@@ -7,7 +7,6 @@
 
     <select id="findCustomerTimeline"
             resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerTimelineRow">
-
         SELECT *
         FROM (
                  /* ===================== */
@@ -41,7 +40,6 @@
                    AND c.hotel_group_code = #{hotelGroupCode}
                    AND r.reservation_status != 'CANCELED'
 
-
                  UNION ALL
 
                  /* ===================== */
@@ -54,7 +52,7 @@
                      '예약 취소' AS title,
                      CONCAT('예약 취소 / ', r.checkin_date, ' ~ ', r.checkout_date) AS summary
                  FROM reservation r
-                          JOIN customer c ON c.customer_code = r.customer_code
+                     JOIN customer c ON c.customer_code = r.customer_code
                  WHERE r.customer_code = #{customerCode}
                    AND c.hotel_group_code = #{hotelGroupCode}
                    AND r.reservation_status = 'CANCELED'
@@ -72,14 +70,14 @@
                      '투숙' AS title,
                      CONCAT('투숙 상태: ', s.stay_status) AS summary
                  FROM stay s
-                          JOIN customer c ON c.customer_code = s.customer_code
+                     JOIN customer c ON c.customer_code = s.customer_code
                  WHERE s.customer_code = #{customerCode}
                    AND c.hotel_group_code = #{hotelGroupCode}
 
                  UNION ALL
 
                  /* ===================== */
-                 /* 5) INQUIRY CREATED */
+                 /* 5) INQUIRY CREATED (FIX) */
                  /* ===================== */
                  SELECT
                      'INQUIRY_CREATED' AS eventType,
@@ -88,13 +86,14 @@
                      '문의' AS title,
                      CONCAT('문의 등록 (', i.inquiry_status, '): ', LEFT(i.inquiry_title, 50)) AS summary
                  FROM inquiry i
+                     JOIN customer c ON c.customer_code = i.customer_code
                  WHERE i.customer_code = #{customerCode}
-                   AND i.hotel_group_code = #{hotelGroupCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
 
                  UNION ALL
 
                  /* ===================== */
-                 /* 6) INQUIRY ANSWERED */
+                 /* 6) INQUIRY ANSWERED (FIX) */
                  /* ===================== */
                  SELECT
                      'INQUIRY_ANSWERED' AS eventType,
@@ -103,8 +102,9 @@
                      '문의 답변완료' AS title,
                      CONCAT('답변 완료: ', LEFT(i.inquiry_title, 50)) AS summary
                  FROM inquiry i
+                     JOIN customer c ON c.customer_code = i.customer_code
                  WHERE i.customer_code = #{customerCode}
-                   AND i.hotel_group_code = #{hotelGroupCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
                    AND i.inquiry_status = 'ANSWERED'
                    AND i.answer_content IS NOT NULL
                    AND i.updated_at IS NOT NULL
@@ -121,14 +121,14 @@
                      '멤버십' AS title,
                      CONCAT('등급 변경: ', IFNULL(mh.before_grade, '-'), ' -> ', mh.after_grade) AS summary
                  FROM membership_history mh
-                          JOIN customer c ON c.customer_code = mh.customer_code
+                     JOIN customer c ON c.customer_code = mh.customer_code
                  WHERE mh.customer_code = #{customerCode}
                    AND c.hotel_group_code = #{hotelGroupCode}
 
                  UNION ALL
 
                  /* ===================== */
-                 /* 8) LOYALTY HISTORY (FIXED) */
+                 /* 8) LOYALTY HISTORY */
                  /* ===================== */
                  SELECT
                      'LOYALTY' AS eventType,
@@ -136,19 +136,19 @@
                      lh.loyalty_history_code AS refId,
                      '로열티' AS title,
                      CONCAT(
-                             '등급 변경: ',
-                             IFNULL(bg.loyalty_grade_name, '-'),
-                             ' -> ',
-                             IFNULL(ag.loyalty_grade_name, CONCAT('#', lh.after_loyalty_grade_code))
+                     '등급 변경: ',
+                     IFNULL(bg.loyalty_grade_name, '-'),
+                     ' -> ',
+                     IFNULL(ag.loyalty_grade_name, CONCAT('#', lh.after_loyalty_grade_code))
                      ) AS summary
                  FROM loyalty_history lh
-                          JOIN customer c ON c.customer_code = lh.customer_code
-                          LEFT JOIN loyalty_grade bg
-                                    ON bg.loyalty_grade_code = lh.before_loyalty_grade_code
-                                        AND bg.hotel_group_code = c.hotel_group_code
-                          LEFT JOIN loyalty_grade ag
-                                    ON ag.loyalty_grade_code = lh.after_loyalty_grade_code
-                                        AND ag.hotel_group_code = c.hotel_group_code
+                     JOIN customer c ON c.customer_code = lh.customer_code
+                     LEFT JOIN loyalty_grade bg
+                     ON bg.loyalty_grade_code = lh.before_loyalty_grade_code
+                     AND bg.hotel_group_code = c.hotel_group_code
+                     LEFT JOIN loyalty_grade ag
+                     ON ag.loyalty_grade_code = lh.after_loyalty_grade_code
+                     AND ag.hotel_group_code = c.hotel_group_code
                  WHERE lh.customer_code = #{customerCode}
                    AND c.hotel_group_code = #{hotelGroupCode}
 
@@ -164,15 +164,13 @@
                      '고객 상태' AS title,
                      CONCAT('상태 변경: ', csh.before_status, ' -> ', csh.after_status) AS summary
                  FROM customer_status_history csh
-                          JOIN customer c ON c.customer_code = csh.customer_code
+                     JOIN customer c ON c.customer_code = csh.customer_code
                  WHERE csh.customer_code = #{customerCode}
                    AND c.hotel_group_code = #{hotelGroupCode}
-
              ) t
         WHERE t.occurredAt IS NOT NULL
         ORDER BY t.occurredAt DESC
             LIMIT #{limit}
-
     </select>
 
 </mapper>
