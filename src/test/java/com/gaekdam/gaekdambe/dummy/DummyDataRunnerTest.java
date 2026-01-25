@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyCustomerStatusPostProcess;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -78,6 +79,8 @@ class DummyDataRunnerTest {
     DummyMembershipDataTest membershipDataTest;
     @Autowired
     DummyLoyaltyDataTest loyaltyDataTest;
+    @Autowired
+    DummyCustomerStatusPostProcess customerStatusPostProcess;
 
     // 예약 서비스
     @Autowired
@@ -86,6 +89,7 @@ class DummyDataRunnerTest {
     DummyStayDataTest stayDataTest;
     @Autowired
     DummyCheckInOutDataTest checkInOutDataTest;
+
 
     @Autowired
     DummyFacilityUsageDataTest facilityUsageDataTest;
@@ -156,13 +160,16 @@ class DummyDataRunnerTest {
         run(sw, "stay", stayDataTest::generate);
         run(sw, "checkInOut", checkInOutDataTest::generate);
 
+        // 고객 상태 후처리 (StayStatus : 마지막 COMPLETED 기준)
+        run(sw, "customerStatusPostProcess", customerStatusPostProcess::generate);
+
         // 부대시설 이용
         run(sw, "facilityUsage", facilityUsageDataTest::generate);
 
         // 커뮤니케이션 서비스
-        run(sw, "incident", incidentDataTest::generate);
         run(sw, "inquiryCategory", inquiryCategoryDataTest::generate);
         run(sw, "inquiry", inquiryDataTest::generate);
+        run(sw, "incident", incidentDataTest::generate);
         run(sw, "messageStage", messageJourneyStageSetupTest::generate);
         run(sw, "messageTemplate", messageTemplateSetupTest::generate);
         run(sw, "messageRule", messageRuleSetupTest::generate);
