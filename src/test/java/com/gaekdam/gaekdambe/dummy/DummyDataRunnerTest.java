@@ -34,6 +34,7 @@ import com.gaekdam.gaekdambe.dummy.generate.operation_service.room.DummyRoomType
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation.DummyReservationDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyCheckInOutDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDataTest;
+import org.springframework.util.StopWatch;
 
 @SpringBootTest
 @Rollback(value = false)
@@ -111,60 +112,68 @@ class DummyDataRunnerTest {
     @Autowired ReportTemplateWidgetGenerator reportTemplateWidgetGenerator;
 
 
-
-
+    // 시간측정위한 메서드
+    private void run(StopWatch sw, String name, Runnable task) {
+        sw.start(name);
+        try {
+            task.run();
+        } finally {
+            sw.stop();
+        }
+    }
 
     @Test
     void generateAll() {
+        StopWatch sw = new StopWatch("DummyDataGenerate");
+
         System.out.println(">>> generateAll called");
 
-        // 호텔서비스
-        hotelGroupDataTest.generate();
-        propertyDataTest.generate();
-        departmentDataTest.generate();
-        positionDataTest.generate();
+        // 호텔 서비스
+        run(sw, "hotelGroup", hotelGroupDataTest::generate);
+        run(sw, "property", propertyDataTest::generate);
+        run(sw, "department", departmentDataTest::generate);
+        run(sw, "position", positionDataTest::generate);
 
-        // iam서비스
-        permissionTypeDataTest.generate();
-        permissionDataTest.generate();
-        permissionMappingDataTest.generate();
-        employeeDataTest.generate();
+        // IAM 서비스
+        run(sw, "permissionType", permissionTypeDataTest::generate);
+        run(sw, "permission", permissionDataTest::generate);
+        run(sw, "permissionMapping", permissionMappingDataTest::generate);
+        run(sw, "employee", employeeDataTest::generate);
 
         // 오퍼레이션 서비스
-        facilityDataTest.generate();
-        reservationPackageDataTest.generate();
-        roomDataTest.generate();
-        roomTypeDataTest.generate();
+        run(sw, "facility", facilityDataTest::generate);
+        run(sw, "reservationPackage", reservationPackageDataTest::generate);
+        run(sw, "room", roomDataTest::generate);
+        run(sw, "roomType", roomTypeDataTest::generate);
 
         // 고객 서비스
-        customerDataTest.generate();
-        membershipDataTest.generate();
-        loyaltyDataTest.generate();
+        run(sw, "customer", customerDataTest::generate);
+        run(sw, "membership", membershipDataTest::generate);
+        run(sw, "loyalty", loyaltyDataTest::generate);
 
         // 예약 서비스
-        reservationDataTest.generate();
-        stayDataTest.generate();
-        checkInOutDataTest.generate();
+        run(sw, "reservation(100k)", reservationDataTest::generate);
+        run(sw, "stay", stayDataTest::generate);
+        run(sw, "checkInOut", checkInOutDataTest::generate);
 
-        // 부대시설이용
-        facilityUsageDataTest.generate();
+        // 부대시설 이용
+        run(sw, "facilityUsage", facilityUsageDataTest::generate);
 
+        // 커뮤니케이션 서비스
+        run(sw, "incident", incidentDataTest::generate);
+        run(sw, "inquiryCategory", inquiryCategoryDataTest::generate);
+        run(sw, "inquiry", inquiryDataTest::generate);
+        run(sw, "messageStage", messageJourneyStageSetupTest::generate);
+        run(sw, "messageTemplate", messageTemplateSetupTest::generate);
+        run(sw, "messageRule", messageRuleSetupTest::generate);
+        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
 
-        // communication_service (문의, 사건, 메세지 더미데이터 생성)
-        incidentDataTest.generate();
-        inquiryCategoryDataTest.generate();
-        inquiryDataTest.generate();
-        messageJourneyStageSetupTest.generate();
-        messageTemplateSetupTest.generate();
-        messageRuleSetupTest.generate();
-        messageSendHistoryDataTest.generate();
+        // 분석 서비스
+        run(sw, "reportKpiDataset", reportKpiDatasetGenerator::generate);
+        run(sw, "reportTemplate", reportTemplateGenerator::generate);
+        run(sw, "reportTemplateWidget", reportTemplateWidgetGenerator::generate);
 
-        // analytics_service (dashboard/report dummy data)
-        reportKpiDatasetGenerator.generate();
-        reportTemplateGenerator.generate();
-        reportTemplateWidgetGenerator.generate();
-
-
-
+        System.out.println(sw.prettyPrint());
     }
+
 }

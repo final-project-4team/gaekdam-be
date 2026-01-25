@@ -17,4 +17,11 @@ public interface ReservationRepository extends JpaRepository<Reservation,Long> {
         where r.reservationCode = :reservationCode
     """)
     Long findPropertyCodeByReservationCode(Long reservationCode);;
+
+    @Query("""
+        select r.propertyCode
+        from Reservation r
+        where r.reservationCode = :reservationCode
+    """)
+    Long findPackageCodeByReservationCode(Long reservationCode);
 }
