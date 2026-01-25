@@ -45,12 +45,14 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             end = start.plusMonths(1);
         }
 
-        // 2) actual 집계
-        BigDecimal actual = queryActualFromDb(metricKey, start, end, filter);
-
-        // 3) target 조회
+        // Normalize metric key to the internal aggregation key (so aliases like CHECKIN_COUNT, CHECKIN both work)
         String kpiCode = normalizeToKpiCode(metricKey);         // target lookup
         String internalKey = normalizeToInternalKey(metricKey); // DB aggregation key
+
+        // 2) actual 집계 (use internalKey so switch-case matches)
+        BigDecimal actual = queryActualFromDb(internalKey, start, end, filter);
+
+        // 3) target 조회
 
         // target 조회: 먼저 필터에 hotelGroupCode가 있으면 해당 그룹의 목표값을 우선 조회하고, 없거나 없을 경우 기존 repo 폴백
         Object hotelGroupFilter = filter != null ? filter.get("hotelGroupCode") : null;
@@ -160,18 +162,34 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 return BigDecimal.valueOf(cnt2 != null ? cnt2 : 0);
             }
             // 3. 평균객실단가
-            case "adr" -> {
-                BigDecimal totalRevenue = jdbc.queryForObject(
-                    "SELECT COALESCE(SUM(reservation_room_price),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL",
-                    BigDecimal.class, dEnd, dStart);
+            case "adr", "avg_daily_rate", "average_daily_rate" -> {
+                // Use a single-query with two subqueries (total_revenue, occupied_nights) then compute adr safely
+                // Respect hotelId (property_code) and hotelGroup (hotel_group_code) filters when provided
+                String sql;
+                BigDecimal adrResult;
+                if (hotelId != null) {
+                    sql = "SELECT CASE WHEN occupied_nights = 0 THEN 0 ELSE ROUND(total_revenue / occupied_nights, 2) END FROM ("
+                        + " SELECT (SELECT COALESCE(SUM(r.reservation_room_price),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?) AS total_revenue,"
+                        + " (SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?) AS occupied_nights"
+                        + " ) t";
+                    adrResult = jdbc.queryForObject(sql, BigDecimal.class, dEnd, dStart, hotelId, dEnd, dStart, dEnd, dStart, hotelId);
+                } else if (hotelGroup != null) {
+                    sql = "SELECT CASE WHEN occupied_nights = 0 THEN 0 ELSE ROUND(total_revenue / occupied_nights, 2) END FROM ("
+                        + " SELECT (SELECT COALESCE(SUM(r.reservation_room_price),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?) AS total_revenue,"
+                        + " (SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?) AS occupied_nights"
+                        + " ) t";
+                    adrResult = jdbc.queryForObject(sql, BigDecimal.class, dEnd, dStart, hotelGroup, dEnd, dStart, dEnd, dStart, hotelGroup);
+                } else {
+                    sql = "SELECT CASE WHEN occupied_nights = 0 THEN 0 ELSE ROUND(total_revenue / occupied_nights, 2) END FROM ("
+                        + " SELECT (SELECT COALESCE(SUM(reservation_room_price),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL) AS total_revenue,"
+                        + " (SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(checkout_date, ?), GREATEST(checkin_date, ?)),0)),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL) AS occupied_nights"
+                        + " ) t";
+                    adrResult = jdbc.queryForObject(sql, BigDecimal.class, dEnd, dStart, dEnd, dStart, dEnd, dStart);
+                }
 
-                Integer occupiedNights = jdbc.queryForObject(
-                    "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(checkout_date, ?), GREATEST(checkin_date, ?)),0)),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL",
-                    Integer.class, dEnd, dStart, dEnd, dStart);
-
-                if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
-                if (occupiedNights == null || occupiedNights == 0) return BigDecimal.ZERO;
-                return totalRevenue.divide(BigDecimal.valueOf(occupiedNights.longValue()), 2, RoundingMode.HALF_UP);
+                if (adrResult == null) return BigDecimal.ZERO;
+                // ensure scale 2
+                return adrResult.setScale(2, RoundingMode.HALF_UP);
             }
             // 4. 객실점유율
             case "occ_rate" -> {
@@ -360,13 +378,13 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                     BigDecimal secs = jdbc.queryForObject(
                         "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND, i.created_at, i.updated_at)),0) FROM inquiry i JOIN property p ON i.property_code = p.property_code WHERE i.created_at >= ? AND i.created_at < ? AND i.answer_content IS NOT NULL AND p.hotel_group_code = ?",
                         BigDecimal.class, tsStart, tsEnd, hotelGroup);
-                    if (secs == null) secs = BigDecimal.ZERO;
+                    secs = secs == null ? BigDecimal.ZERO : secs;
                     return secs.divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
                 } else {
                     BigDecimal secs = jdbc.queryForObject(
                         "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND, i.created_at, i.updated_at)),0) FROM inquiry i WHERE i.created_at >= ? AND i.created_at < ? AND i.answer_content IS NOT NULL",
                         BigDecimal.class, tsStart, tsEnd);
-                    if (secs == null) secs = BigDecimal.ZERO;
+                    secs = secs == null ? BigDecimal.ZERO : secs;
                     return secs.divide(BigDecimal.valueOf(3600), 2, RoundingMode.HALF_UP);
                 }
             }
@@ -397,7 +415,6 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 } else {
                     totalSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.created_at >= ? AND r.created_at < ?";
                     canceledSql = "SELECT COALESCE(COUNT(r.reservation_code),0) FROM reservation r WHERE r.created_at >= ? AND r.created_at < ? AND r.canceled_at IS NOT NULL";
-
                     BigDecimal total = jdbc.queryForObject(totalSql, BigDecimal.class, tsStart, tsEnd);
                     BigDecimal canceled = jdbc.queryForObject(canceledSql, BigDecimal.class, tsStart, tsEnd);
                     if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
@@ -464,9 +481,31 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         if (value == null) return "-";
         String key = metricKey == null ? "" : metricKey.toLowerCase(Locale.ROOT);
         return switch (key) {
-            case "avg_daily_rate", "adr" -> String.format("%,d원", value.setScale(0, RoundingMode.HALF_UP).longValue());
-            case "occupancy", "occ_rate", "repeat_rate" -> String.format("%s%%", value.setScale(1, RoundingMode.HALF_UP).toPlainString());
-            default -> String.format("%s", value.setScale(0, RoundingMode.HALF_UP).toPlainString());
+            // count metrics (display as whole number + '회')
+            case "checkin", "checkout", "stay_guest_count", "guest_count", "inquiry_count", "claim_count", "reservation_count" ->
+                String.format("%,d회", value.setScale(0, RoundingMode.HALF_UP).longValue());
+
+            // currency (ADR) - keep two decimal places
+            case "avg_daily_rate", "adr" ->
+                String.format("%,.2f원", value.setScale(2, RoundingMode.HALF_UP).doubleValue());
+
+            // average response time (hours) - two decimals
+            case "avg_response_time" ->
+                String.format("%,.2f시간", value.setScale(2, RoundingMode.HALF_UP).doubleValue());
+
+            // percentage metrics (one decimal + '%')
+            case "occ_rate", "repeat_rate", "unresolved_rate", "membership_rate", "foreign_rate", "cancellation_rate", "no_show_rate", "non_room_revenue" ->
+                value.setScale(1, RoundingMode.HALF_UP).toPlainString() + "%";
+
+            // fallback: show 2 decimal places if fractional, otherwise integer with grouping
+            default -> {
+                int scale = value.stripTrailingZeros().scale();
+                if (scale > 0) {
+                    yield String.format("%,.2f", value.setScale(2, RoundingMode.HALF_UP).doubleValue());
+                } else {
+                    yield String.format("%,d", value.setScale(0, RoundingMode.HALF_UP).longValue());
+                }
+            }
         };
     }
 
@@ -475,17 +514,17 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         // Map common widget keys / aliases to the canonical KPI codes stored in reportkpitarget.kpi_code
         return switch(widgetKey.toUpperCase(Locale.ROOT)) {
             case "STAY_GUEST_COUNT", "GUEST_COUNT", "STAY_GUESTS", "GUESTS" -> "GUEST_COUNT";
-            case "REPEAT_RATE", "REPEAT" -> "REPEAT_RATE";
+            case "REPEAT_RATE", "REPEAT", "REPEAT_CUSTOMER_RATE" -> "REPEAT_RATE";
             case "ADR", "AVG_DAILY_RATE", "AVERAGE_DAILY_RATE" -> "ADR";
             case "AVG_RESPONSE_TIME", "AVERAGE_RESPONSE_TIME", "RESPONSE_TIME" -> "AVG_RESPONSE_TIME";
             case "CANCELLATION_RATE", "CANCEL_RATE", "CANCELLED_RATE", "CANCELLATION" -> "CANCELLATION_RATE";
             case "CHECKIN", "CHECKIN_COUNT" -> "CHECKIN";
             case "CHECKOUT", "CHECKOUT_COUNT" -> "CHECKOUT";
             case "CLAIM_COUNT", "CLAIMS" -> "CLAIM_COUNT";
-            case "FOREIGN_RATE", "FOREIGN" -> "FOREIGN_RATE";
-            case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY" -> "INQUIRY_COUNT";
+            case "FOREIGN_RATE", "FOREIGN", "FOREIGN_CUSTOMER_RATE" -> "FOREIGN_RATE";
+            case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY", "TOTAL_INQUIRY_COUNT" -> "INQUIRY_COUNT";
             case "MEMBERSHIP_RATE", "MEMBERSHIP" -> "MEMBERSHIP_RATE";
-            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM" -> "NON_ROOM_REVENUE";
+            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO" -> "NON_ROOM_REVENUE";
             case "NO_SHOW_RATE", "NOSHOW_RATE", "NO_SHOW" -> "NO_SHOW_RATE";
             case "OCC_RATE", "OCCUPANCY", "OCCUPANCY_RATE" -> "OCC_RATE";
             case "RESERVATION_COUNT", "RESERVATIONS", "RESERVATION" -> "RESERVATION_COUNT";
@@ -509,7 +548,7 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             // Guest count
             case "GUEST_COUNT", "STAY_GUEST_COUNT", "STAY_GUESTS", "GUESTS" -> "stay_guest_count";
             // Repeat
-            case "REPEAT_RATE", "REPEAT" -> "repeat_rate";
+            case "REPEAT_RATE", "REPEAT", "REPEAT_CUSTOMER_RATE" -> "repeat_rate";
             // Reservation count
             case "RESERVATION_COUNT", "RESERVATIONS", "RESERVATION" -> "reservation_count";
             // Cancellation
@@ -517,17 +556,17 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             // No-show
             case "NO_SHOW_RATE", "NOSHOW_RATE", "NO_SHOW" -> "no_show_rate";
             // Inquiry
-            case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY" -> "inquiry_count";
+            case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY", "TOTAL_INQUIRY_COUNT" -> "inquiry_count";
             // Unresolved
             case "UNRESOLVED_RATE", "UNRESOLVED" -> "unresolved_rate";
             // Claim
             case "CLAIM_COUNT", "CLAIMS" -> "claim_count";
             // Foreign rate
-            case "FOREIGN_RATE", "FOREIGN" -> "foreign_rate";
+            case "FOREIGN_RATE", "FOREIGN", "FOREIGN_CUSTOMER_RATE" -> "foreign_rate";
             // Membership rate
             case "MEMBERSHIP_RATE", "MEMBERSHIP" -> "membership_rate";
             // Non-room revenue
-            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM" -> "non_room_revenue";
+            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO" -> "non_room_revenue";
             default -> widgetKey.toLowerCase(Locale.ROOT);
         };
     }
