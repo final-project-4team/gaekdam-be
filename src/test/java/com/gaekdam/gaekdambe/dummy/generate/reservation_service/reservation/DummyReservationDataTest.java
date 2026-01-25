@@ -184,7 +184,7 @@ public class DummyReservationDataTest {
                                 .propertyCode(roomType.getPropertyCode())
                                 .roomCode(room.getRoomCode())
                                 .packageCode(packageCode)
-                                .customerCode((long) (random.nextInt(20_000) + 1))
+                                .customerCode((long) (random.nextInt(50_000) + 1))
                                 .build()
                 );
 

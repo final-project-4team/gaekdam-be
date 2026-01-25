@@ -1,10 +1,6 @@
 package com.gaekdam.gaekdambe.dummy.generate.customer_service.membership;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
-import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
-import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Member;
-import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
-import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.MemberRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.MembershipStatus;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.Membership;
 import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.MembershipGrade;
@@ -12,172 +8,224 @@ import com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.M
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipGradeRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipHistoryRepository;
 import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.repository.MembershipRepository;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 public class DummyMembershipDataTest {
 
-    @Autowired private CustomerRepository customerRepository;
-    @Autowired private MembershipGradeRepository membershipGradeRepository;
-    @Autowired private MembershipRepository membershipRepository;
-    @Autowired private MembershipHistoryRepository membershipHistoryRepository;
-    @Autowired private MemberRepository memberRepository;
+    private static final int BATCH = 500;
 
-    @Autowired private HotelGroupRepository hotelGroupRepository;
+    private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
+    private static final LocalDateTime END   = LocalDateTime.of(2026, 12, 31, 23, 59);
 
-    private final Map<Long, List<MembershipGrade>> gradeCache = new HashMap<>();
-    private static final double MEMBERSHIP_RATE = 0.70;
+    private static final int MEMBERSHIP_RATE_PERCENT = 35;
 
-    //  변경: 멤버십 산정 기준(임시 JSON)
-    private static final String STANDARD = "{\"windowMonths\":12}";
+    // 정책: 산정기간 12개월 고정 (관리자 설정으로 바꾸려면 grade.getCalculationTermMonth() 사용)
+    private static final int DEFAULT_TERM_MONTHS = 12;
 
-    private static final List<GradeSeed> GRADE_SEEDS = List.of(
-            new GradeSeed("BASIC",  1L, "기본"),
-            new GradeSeed("BRONZE", 2L, "브론즈"),
-            new GradeSeed("SILVER", 3L, "실버"),
-            new GradeSeed("GOLD",   4L, "골드"),
-            new GradeSeed("VIP",    5L, "VIP")
-    );
+    @Autowired MembershipRepository membershipRepository;
+    @Autowired MembershipGradeRepository membershipGradeRepository;
+    @Autowired MembershipHistoryRepository membershipHistoryRepository;
+
+    @PersistenceContext
+    EntityManager em;
 
     @Transactional
     public void generate() {
 
-        List<Customer> customers = customerRepository.findAll();
-        if (customers.isEmpty()) return;
+        if (membershipRepository.count() > 0) return;
 
-        LocalDateTime now = LocalDateTime.now();
+        List<MembershipGrade> grades = membershipGradeRepository.findAll();
+        if (grades.isEmpty()) return;
 
-        List<Long> hotelGroupCodes = hotelGroupRepository.findAll().stream()
-                .map(HotelGroup::getHotelGroupCode)
+        Map<Long, List<MembershipGrade>> gradesByHotelGroup = groupGradesByHotelGroup(grades);
+
+        List<Object[]> customerRows = loadCustomerHotelGroupRows();
+        if (customerRows.isEmpty()) return;
+
+        Map<Long, List<Long>> employeeByHotelGroup = loadActiveEmployeeCodesByHotelGroup();
+        List<Long> fallbackEmployees = employeeByHotelGroup.values().stream()
+                .flatMap(List::stream)
+                .distinct()
                 .toList();
+        if (fallbackEmployees.isEmpty()) return;
 
-        if (hotelGroupCodes.isEmpty()) return;
+        Random random = new Random();
 
-        seedMembershipGradesIfNeeded(hotelGroupCodes, now);
+        List<Membership> membershipBuffer = new ArrayList<>(BATCH);
+        List<HistorySlot> historySlots = new ArrayList<>(BATCH);
 
-        for (Customer customer : customers) {
-            createMembershipIfNeeded(customer, now);
-        }
-    }
+        for (Object[] row : customerRows) {
+            long customerCode = ((Number) row[0]).longValue();
+            long hotelGroupCode = ((Number) row[1]).longValue();
 
-    private void seedMembershipGradesIfNeeded(List<Long> hotelGroupCodes, LocalDateTime now) {
+            if (random.nextInt(100) >= MEMBERSHIP_RATE_PERCENT) continue;
 
-        List<MembershipGrade> all = membershipGradeRepository.findAll();
+            List<MembershipGrade> scopedGrades = gradesByHotelGroup.get(hotelGroupCode);
+            if (scopedGrades == null || scopedGrades.isEmpty()) continue;
 
-        Map<Long, Map<String, MembershipGrade>> byHg = new HashMap<>();
-        for (MembershipGrade g : all) {
-            byHg.computeIfAbsent(g.getHotelGroup().getHotelGroupCode(), k -> new HashMap<>())
-                    .putIfAbsent(g.getGradeName(), g);
-        }
+            MembershipGrade grade = scopedGrades.get(random.nextInt(scopedGrades.size()));
 
-        for (Long hg : hotelGroupCodes) {
-            Map<String, MembershipGrade> existing = byHg.computeIfAbsent(hg, k -> new HashMap<>());
+            LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(30), random);
 
-            for (GradeSeed seed : GRADE_SEEDS) {
-                if (!existing.containsKey(seed.gradeName())) {
-                    HotelGroup hotelGroup = hotelGroupRepository.findById(hg).orElseThrow();
-                    MembershipGrade saved = membershipGradeRepository.save(
-                            MembershipGrade.registerMembershipGrade(
-                                    hotelGroup,
-                                    seed.gradeName(),
-                                    seed.tierLevel(),
-                                    seed.tierComment(),
-                                    1000000L,
-                                    3,
-                                    12,
-                                    1
-                            )
-                    );
-                    existing.put(saved.getGradeName(), saved);
-                }
+            // 정책: calculatedAt = joinedAt(=승급/변경일로 취급), expiredAt = calculatedAt + 12개월
+            LocalDateTime calculatedAt = joinedAt;
+            LocalDateTime expiredAt = calculatedAt.plusMonths(DEFAULT_TERM_MONTHS);
+
+            Membership membership = Membership.registerMembership(
+                    customerCode,
+                    hotelGroupCode,
+                    grade.getMembershipGradeCode(),
+                    joinedAt,
+                    joinedAt
+            );
+
+            // 여기서 DB에 박히도록 세팅 (calculated_at, expired_at)
+            membership.changeMembership(
+                    grade.getMembershipGradeCode(),
+                    MembershipStatus.ACTIVE,
+                    expiredAt,
+                    calculatedAt
+            );
+
+            int idxInBatch = membershipBuffer.size();
+            membershipBuffer.add(membership);
+
+            // 이력 20% (등급/상태 변경 발생)
+            if (random.nextInt(100) < 20) {
+                MembershipGrade afterGrade = scopedGrades.get(random.nextInt(scopedGrades.size()));
+
+                MembershipStatus beforeStatus = MembershipStatus.ACTIVE;
+                MembershipStatus afterStatus =
+                        (random.nextInt(100) < 10) ? MembershipStatus.SUSPENDED : MembershipStatus.ACTIVE;
+
+                LocalDateTime changedAt = joinedAt.plusDays(10 + random.nextInt(200));
+                if (changedAt.isAfter(END)) changedAt = END;
+
+                Long employeeCode = pickEmployeeCode(hotelGroupCode, employeeByHotelGroup, fallbackEmployees, random);
+
+                // after 변경 기준으로 산정/만료도 같이 이동한다고 보면 (원하면 유지로 바꿔도 됨)
+                LocalDateTime afterCalculatedAt = changedAt;
+                LocalDateTime afterExpiredAt = afterCalculatedAt.plusMonths(DEFAULT_TERM_MONTHS);
+
+                MembershipHistory history = MembershipHistory.recordMembershipChange(
+                        customerCode,
+                        0L, // flush 후 주입
+                        ChangeSource.SYSTEM,
+                        employeeCode,
+                        "dummy membership change",
+                        grade.getGradeName(),
+                        afterGrade.getGradeName(),
+                        beforeStatus,
+                        afterStatus,
+                        expiredAt,
+                        afterExpiredAt,
+                        changedAt,
+                        afterGrade.getMembershipGradeCode()
+                );
+
+                historySlots.add(new HistorySlot(idxInBatch, history));
             }
 
-            List<MembershipGrade> grades = new ArrayList<>(existing.values());
-            grades.sort(Comparator.comparing(MembershipGrade::getTierLevel));
-            gradeCache.put(hg, grades);
+            if (membershipBuffer.size() == BATCH) {
+                flushBatch(membershipBuffer, historySlots);
+            }
+        }
+
+        if (!membershipBuffer.isEmpty()) {
+            flushBatch(membershipBuffer, historySlots);
         }
     }
 
-    private void createMembershipIfNeeded(Customer customer, LocalDateTime now) {
-        if (!chance(MEMBERSHIP_RATE)) return;
+    private void flushBatch(List<Membership> membershipBuffer, List<HistorySlot> historySlots) {
+        membershipRepository.saveAll(membershipBuffer);
+        em.flush();
 
-        Long customerCode = customer.getCustomerCode();
-        Long hg = customer.getHotelGroupCode();
-
-        if (membershipRepository.existsByHotelGroupCodeAndCustomerCode(hg, customerCode)) return;
-
-        List<MembershipGrade> grades = gradeCache.get(hg);
-        if (grades == null || grades.isEmpty()) return;
-
-        MembershipGrade picked = pickMembershipGrade(grades);
-        LocalDateTime joinedAt = now.minusDays(randomInt(0, 30));
-
-        Membership membership = Membership.registerMembership(
-                customerCode,
-                hg,
-                picked.getMembershipGradeCode(),
-                joinedAt,
-                now
-        );
-        membershipRepository.save(membership);
-
-        if (!memberRepository.existsByCustomerCode(customerCode)) {
-            memberRepository.save(Member.registerMember(customerCode, joinedAt));
+        List<MembershipHistory> historyBuffer = new ArrayList<>(historySlots.size());
+        for (HistorySlot slot : historySlots) {
+            Membership saved = membershipBuffer.get(slot.membershipIndex);
+            setMembershipCode(slot.history, saved.getMembershipCode());
+            historyBuffer.add(slot.history);
         }
 
-        membershipHistoryRepository.save(
-                MembershipHistory.recordMembershipChange(
-                        customerCode,
-                        membership.getMembershipCode(),
-                        ChangeSource.SYSTEM,
-                        null,
-                        "더미 등급 부여",
-                        null,
-                        picked.getGradeName(),
-                        null,
-                        MembershipStatus.ACTIVE,
-                        null,
-                        null,
-                        joinedAt,
-                        picked.getMembershipGradeCode()
-                )
-        );
+        if (!historyBuffer.isEmpty()) membershipHistoryRepository.saveAll(historyBuffer);
 
-        if (chance(0.10)) membership.changeMembershipStatus(MembershipStatus.SUSPENDED, now.plusDays(3));
-        if (chance(0.05)) membership.changeMembershipStatus(MembershipStatus.EXPIRED, now.plusDays(10));
+        em.flush();
+        em.clear();
+
+        membershipBuffer.clear();
+        historySlots.clear();
     }
 
-    private MembershipGrade pickMembershipGrade(List<MembershipGrade> grades) {
-        double r = ThreadLocalRandom.current().nextDouble();
-        if (r < 0.55) return findGrade(grades, "BASIC");
-        if (r < 0.75) return findGrade(grades, "BRONZE");
-        if (r < 0.90) return findGrade(grades, "SILVER");
-        if (r < 0.98) return findGrade(grades, "GOLD");
-        return findGrade(grades, "VIP");
+    private record HistorySlot(int membershipIndex, MembershipHistory history) {}
+
+    private Long pickEmployeeCode(
+            Long hotelGroupCode,
+            Map<Long, List<Long>> employeeByHotelGroup,
+            List<Long> fallbackEmployees,
+            Random random
+    ) {
+        List<Long> scoped = employeeByHotelGroup.get(hotelGroupCode);
+        if (scoped != null && !scoped.isEmpty()) return scoped.get(random.nextInt(scoped.size()));
+        return fallbackEmployees.get(random.nextInt(fallbackEmployees.size()));
     }
 
-    private MembershipGrade findGrade(List<MembershipGrade> grades, String gradeName) {
-        return grades.stream()
-                .filter(g -> gradeName.equals(g.getGradeName()))
-                .findFirst()
-                .orElseGet(() -> grades.get(ThreadLocalRandom.current().nextInt(grades.size())));
+    private List<Object[]> loadCustomerHotelGroupRows() {
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("select customer_code, hotel_group_code from customer").getResultList();
+        return rows;
     }
 
-    private boolean chance(double probability) {
-        return ThreadLocalRandom.current().nextDouble() < probability;
+    private Map<Long, List<Long>> loadActiveEmployeeCodesByHotelGroup() {
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("""
+                select hotel_group_code, employee_code
+                  from employee
+                 where employee_status = 'ACTIVE'
+                   and hotel_group_code is not null
+                """).getResultList();
+
+        Map<Long, List<Long>> map = new HashMap<>();
+        for (Object[] r : rows) {
+            Long hg = ((Number) r[0]).longValue();
+            Long ec = ((Number) r[1]).longValue();
+            map.computeIfAbsent(hg, k -> new ArrayList<>()).add(ec);
+        }
+        map.values().forEach(list -> list.sort(Comparator.naturalOrder()));
+        return map;
     }
 
-    private int randomInt(int minInclusive, int maxExclusive) {
-        return ThreadLocalRandom.current().nextInt(minInclusive, maxExclusive);
+    private Map<Long, List<MembershipGrade>> groupGradesByHotelGroup(List<MembershipGrade> grades) {
+        Map<Long, List<MembershipGrade>> map = new HashMap<>();
+        for (MembershipGrade g : grades) {
+            if (g == null || g.getHotelGroup() == null || g.getHotelGroup().getHotelGroupCode() == null) continue;
+            map.computeIfAbsent(g.getHotelGroup().getHotelGroupCode(), k -> new ArrayList<>()).add(g);
+        }
+        return map;
     }
 
-    private record GradeSeed(String gradeName, Long tierLevel, String tierComment) {}
+    private static LocalDateTime randomDateTimeBetween(LocalDateTime start, LocalDateTime end, Random random) {
+        long seconds = Duration.between(start, end).getSeconds();
+        if (seconds <= 0) return start;
+        long add = (random.nextLong() & Long.MAX_VALUE) % seconds;
+        return start.plusSeconds(add);
+    }
+
+    private static void setMembershipCode(MembershipHistory h, long membershipCode) {
+        try {
+            var f = MembershipHistory.class.getDeclaredField("membershipCode");
+            f.setAccessible(true);
+            f.set(h, membershipCode);
+        } catch (Exception e) {
+            throw new RuntimeException("MembershipHistory.membershipCode set failed", e);
+        }
+    }
 }

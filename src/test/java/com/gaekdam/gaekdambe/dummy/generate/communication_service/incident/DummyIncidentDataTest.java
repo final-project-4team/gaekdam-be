@@ -7,116 +7,179 @@ import com.gaekdam.gaekdambe.communication_service.incident.command.domain.entit
 import com.gaekdam.gaekdambe.communication_service.incident.command.infrastructure.repository.IncidentActionHistoryRepository;
 import com.gaekdam.gaekdambe.communication_service.incident.command.infrastructure.repository.IncidentRepository;
 import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity.Inquiry;
-import com.gaekdam.gaekdambe.communication_service.inquiry.command.infrastructure.repository.InquiryRepository;
-import com.gaekdam.gaekdambe.hotel_service.property.command.domain.entity.Property;
-import com.gaekdam.gaekdambe.hotel_service.property.command.infrastructure.PropertyRepository;
-import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Component
-@Transactional
 public class DummyIncidentDataTest {
 
-    private final IncidentRepository incidentRepository;
-    private final IncidentActionHistoryRepository incidentActionHistoryRepository;
-    private final PropertyRepository propertyRepository;
-    private final EmployeeRepository employeeRepository;
-    private final InquiryRepository inquiryRepository;
+    private static final int TOTAL_INCIDENTS = 30_000;
+    private static final int BATCH = 500;
 
-    private static final int TOTAL = 100;
-    private static final long SEED = 20260110L;
+    private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
+    private static final LocalDateTime END = LocalDateTime.of(2026, 12, 31, 23, 59);
 
-    public DummyIncidentDataTest(
-            IncidentRepository incidentRepository,
-            IncidentActionHistoryRepository incidentActionHistoryRepository,
-            PropertyRepository propertyRepository,
-            EmployeeRepository employeeRepository,
-            InquiryRepository inquiryRepository
-    ) {
-        this.incidentRepository = incidentRepository;
-        this.incidentActionHistoryRepository = incidentActionHistoryRepository;
-        this.propertyRepository = propertyRepository;
-        this.employeeRepository = employeeRepository;
-        this.inquiryRepository = inquiryRepository;
-    }
+    @Autowired IncidentRepository incidentRepository;
+    @Autowired IncidentActionHistoryRepository actionHistoryRepository;
 
+    @Autowired EmployeeRepository employeeRepository;
+
+    @PersistenceContext
+    EntityManager em;
+
+    @Transactional
     public void generate() {
 
-        // 이미 데이터 있으면 스킵
         if (incidentRepository.count() > 0) return;
 
-        //  실제 PK 목록을 DB에서 가져와서 사용
-        List<Long> propertyCodes = propertyRepository.findAll().stream()
-                .map(Property::getPropertyCode)
-                .toList();
+        Random random = new Random();
 
-        List<Long> employeeCodes = employeeRepository.findAll().stream()
-                .map(Employee::getEmployeeCode)
-                .toList();
+        // inquiry_code는 연속 ID가 아닐 수 있으니 DB에서 실제 id 목록을 가져와서 사용
+        List<Long> inquiryIds = loadIds("select inquiry_code from inquiry");
 
-        List<Inquiry> inquiries = inquiryRepository.findAll(); // 일부만 연결 (없으면 null)
+        // employee_code도 1L 고정 금지: 실제 직원 id에서 랜덤 선택
+        List<Long> employeeIds = loadIds("select employee_code from employee");
+        if (employeeIds.isEmpty() && employeeRepository.count() == 0) return;
 
-        if (propertyCodes.isEmpty()) throw new IllegalStateException("property 데이터가 없어서 incident 더미 생성 불가");
-        if (employeeCodes.isEmpty()) throw new IllegalStateException("employee 데이터가 없어서 incident 더미 생성 불가");
+        // property_code도 실제 목록에서 랜덤 선택 (없으면 1L fallback)
+        List<Long> propertyIds = loadIds("select property_code from property");
+        if (propertyIds.isEmpty()) propertyIds = List.of(1L);
 
-        Random rnd = new Random(SEED);
+        List<Incident> incidentBuffer = new ArrayList<>(BATCH);
+        List<IncidentActionHistory> actionBuffer = new ArrayList<>(BATCH * 2);
 
-        IncidentType[] types = IncidentType.values();
-        IncidentSeverity[] severities = IncidentSeverity.values();
+        for (int i = 1; i <= TOTAL_INCIDENTS; i++) {
 
-        for (int i = 1; i <= TOTAL; i++) {
+            LocalDateTime occurredAt = randomDateTimeBetween(START, END, random);
 
-            Long propertyCode = propertyCodes.get(rnd.nextInt(propertyCodes.size()));
-            Long employeeCode = employeeCodes.get(rnd.nextInt(employeeCodes.size()));
+            IncidentType type = IncidentType.values()[random.nextInt(IncidentType.values().length)];
+            IncidentSeverity severity = IncidentSeverity.values()[random.nextInt(IncidentSeverity.values().length)];
 
-            IncidentType type = types[rnd.nextInt(types.length)];
-            IncidentSeverity severity = severities[rnd.nextInt(severities.length)];
+            Long propertyCode = propertyIds.get(random.nextInt(propertyIds.size()));
+            Long employeeCode = pickEmployee(employeeIds, random);
 
-            LocalDateTime occurredAt = LocalDateTime.now()
-                    .minusDays(rnd.nextInt(60))
-                    .minusHours(rnd.nextInt(24));
+            Inquiry inquiryRef = null;
 
-            //  20%만 inquiry 연결 (그리고 "실제로 존재하는 inquiry"만)
-            Inquiry inquiry = null;
-            if (!inquiries.isEmpty() && rnd.nextInt(10) < 2) {
-                inquiry = inquiries.get(rnd.nextInt(inquiries.size()));
+            // 문의 연결 비율 50%
+            if (!inquiryIds.isEmpty() && random.nextInt(100) < 50) {
+                Long inquiryCode = inquiryIds.get(random.nextInt(inquiryIds.size()));
+                inquiryRef = em.getReference(Inquiry.class, inquiryCode);
             }
 
             Incident incident = Incident.create(
                     propertyCode,
                     employeeCode,
-                    String.format("사건 보고 #%03d - %s", i, type.name()),
-                    String.format("간단 요약입니다. 사건번호=%03d", i),
-                    String.format("상세 보고 내용 (샘플) - 사건번호=%03d.", i),
+                    "사건/사고 제목 " + i,
+                    "사건 요약 " + i,
+                    "사건 상세 내용 " + i,
                     type,
                     severity,
                     occurredAt,
-                    inquiry
+                    inquiryRef
             );
 
-            // 일부는 close
-            if (rnd.nextInt(10) < 3) incident.close();
+            // create()가 now 찍는 값 덮어서 기간 분포 맞춤
+            setCreatedAt(incident, occurredAt);
+            setUpdatedAt(incident, occurredAt.plusHours(random.nextInt(72)));
 
-            Incident saved = incidentRepository.save(incident);
+            incidentBuffer.add(incident);
 
-            //  ActionHistory 1~3개 생성
-            int historyCount = 1 + rnd.nextInt(3);
-            for (int h = 1; h <= historyCount; h++) {
-                Long actionEmp = employeeCodes.get(rnd.nextInt(employeeCodes.size()));
-                incidentActionHistoryRepository.save(
+            if (incidentBuffer.size() == BATCH) {
+                flushBatch(incidentBuffer, actionBuffer, employeeIds, random);
+            }
+        }
+
+        if (!incidentBuffer.isEmpty()) {
+            flushBatch(incidentBuffer, actionBuffer, employeeIds, random);
+        }
+    }
+
+    private void flushBatch(
+            List<Incident> incidentBuffer,
+            List<IncidentActionHistory> actionBuffer,
+            List<Long> employeeIds,
+            Random random
+    ) {
+        incidentRepository.saveAll(incidentBuffer);
+        em.flush();
+
+        for (Incident saved : incidentBuffer) {
+
+            // 조치 이력 생성 비율 50%면 1~2건, 아니면 0건
+            int actionCount = (random.nextInt(100) < 50) ? (random.nextInt(2) + 1) : 0;
+
+            for (int a = 0; a < actionCount; a++) {
+                Long employeeCode = pickEmployee(employeeIds, random);
+                actionBuffer.add(
                         IncidentActionHistory.create(
                                 saved,
-                                actionEmp,
-                                String.format("조치 이력 #%d (incident=%d)", h, saved.getIncidentCode())
+                                employeeCode,
+                                "조치 내용 " + saved.getIncidentCode() + "-" + (a + 1)
                         )
                 );
             }
+        }
+
+        if (!actionBuffer.isEmpty()) {
+            actionHistoryRepository.saveAll(actionBuffer);
+        }
+
+        em.flush();
+        em.clear();
+
+        incidentBuffer.clear();
+        actionBuffer.clear();
+    }
+
+    private Long pickEmployee(List<Long> employeeIds, Random random) {
+        if (employeeIds == null || employeeIds.isEmpty()) return 1L;
+        return employeeIds.get(random.nextInt(employeeIds.size()));
+    }
+
+    private List<Long> loadIds(String sql) {
+        @SuppressWarnings("unchecked")
+        List<Object> rows = em.createNativeQuery(sql).getResultList();
+
+        List<Long> ids = new ArrayList<>(rows.size());
+        for (Object o : rows) {
+            if (o instanceof Number n) ids.add(n.longValue());
+            else if (o instanceof String s) ids.add(Long.parseLong(s));
+        }
+        return ids;
+    }
+
+    private static LocalDateTime randomDateTimeBetween(LocalDateTime start, LocalDateTime end, Random random) {
+        long seconds = Duration.between(start, end).getSeconds();
+        if (seconds <= 0) return start;
+        long add = (random.nextLong() & Long.MAX_VALUE) % seconds;
+        return start.plusSeconds(add);
+    }
+
+    private static void setCreatedAt(Incident incident, LocalDateTime createdAt) {
+        try {
+            var f = Incident.class.getDeclaredField("createdAt");
+            f.setAccessible(true);
+            f.set(incident, createdAt);
+        } catch (Exception e) {
+            throw new RuntimeException("Incident.createdAt set failed", e);
+        }
+    }
+
+    private static void setUpdatedAt(Incident incident, LocalDateTime updatedAt) {
+        try {
+            var f = Incident.class.getDeclaredField("updatedAt");
+            f.setAccessible(true);
+            f.set(incident, updatedAt);
+        } catch (Exception e) {
+            throw new RuntimeException("Incident.updatedAt set failed", e);
         }
     }
 }

@@ -1,5 +1,9 @@
 package com.gaekdam.gaekdambe.dummy;
 
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyCustomerStatusPostProcess;
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyMemberDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.loyalty.DummyLoyaltyGradeDataTest;
+import com.gaekdam.gaekdambe.dummy.generate.customer_service.membership.DummyMembershipGradeDataTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -78,6 +82,14 @@ class DummyDataRunnerTest {
     DummyMembershipDataTest membershipDataTest;
     @Autowired
     DummyLoyaltyDataTest loyaltyDataTest;
+    @Autowired
+    DummyCustomerStatusPostProcess customerStatusPostProcess;
+    @Autowired
+    DummyMemberDataTest memberDataTest;
+    @Autowired
+    DummyMembershipGradeDataTest membershipGradeDataTest;
+    @Autowired
+    DummyLoyaltyGradeDataTest loyaltyGradeDataTest;
 
     // 예약 서비스
     @Autowired
@@ -86,6 +98,7 @@ class DummyDataRunnerTest {
     DummyStayDataTest stayDataTest;
     @Autowired
     DummyCheckInOutDataTest checkInOutDataTest;
+
 
     @Autowired
     DummyFacilityUsageDataTest facilityUsageDataTest;
@@ -148,21 +161,28 @@ class DummyDataRunnerTest {
 
         // 고객 서비스
         run(sw, "customer", customerDataTest::generate);
+        run(sw, "membershipGrade", membershipGradeDataTest::generate);
+        run(sw, "loyaltyGrade", loyaltyGradeDataTest::generate);
         run(sw, "membership", membershipDataTest::generate);
+        run(sw, "member", memberDataTest::generate);
         run(sw, "loyalty", loyaltyDataTest::generate);
+
 
         // 예약 서비스
         run(sw, "reservation(100k)", reservationDataTest::generate);
         run(sw, "stay", stayDataTest::generate);
         run(sw, "checkInOut", checkInOutDataTest::generate);
 
+        // 고객 상태 후처리 (StayStatus : 마지막 COMPLETED 기준)
+        run(sw, "customerStatusPostProcess", customerStatusPostProcess::generate);
+
         // 부대시설 이용
         run(sw, "facilityUsage", facilityUsageDataTest::generate);
 
         // 커뮤니케이션 서비스
-        run(sw, "incident", incidentDataTest::generate);
         run(sw, "inquiryCategory", inquiryCategoryDataTest::generate);
         run(sw, "inquiry", inquiryDataTest::generate);
+        run(sw, "incident", incidentDataTest::generate);
         run(sw, "messageStage", messageJourneyStageSetupTest::generate);
         run(sw, "messageTemplate", messageTemplateSetupTest::generate);
         run(sw, "messageRule", messageRuleSetupTest::generate);

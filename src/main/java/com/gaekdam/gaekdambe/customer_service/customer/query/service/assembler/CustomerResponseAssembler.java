@@ -10,6 +10,7 @@ import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.C
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.item.CustomerStatusHistoryItem;
 import com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.*;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,9 @@ public class CustomerResponseAssembler {
         String customerName = decryptionService.decrypt(customerCode, dekEnc, customerNameEnc);
         String primaryContact = decryptionService.decrypt(customerCode, dekEnc, primaryContactEnc);
 
+        customerName = MaskingUtils.maskName(customerName);
+        primaryContact = maskContact(primaryContact);
+
         return new CustomerListItem(
                 row.customerCode(),
                 customerName,
@@ -62,6 +66,10 @@ public class CustomerResponseAssembler {
         String customerName = decryptionService.decrypt(customerCode, dekEnc, row.customerNameEnc());
         String primaryPhone = decryptionService.decrypt(customerCode, dekEnc, row.primaryPhoneEnc());
         String primaryEmail = decryptionService.decrypt(customerCode, dekEnc, row.primaryEmailEnc());
+
+        customerName = MaskingUtils.maskName(customerName);
+        primaryPhone = MaskingUtils.maskPhone(primaryPhone);
+        primaryEmail = MaskingUtils.maskEmail(primaryEmail);
 
         CustomerDetailResponse.MemberInfo memberInfo = null;
         if (row.memberCode() != null) {
@@ -203,5 +211,12 @@ public class CustomerResponseAssembler {
                 row.marketingOptIn(),
                 row.consentAt()
         );
+    }
+    private String maskContact(String value) {
+        if (value == null || value.isBlank()) return value;
+
+        return value.contains("@")
+                ? MaskingUtils.maskEmail(value)
+                : MaskingUtils.maskPhone(value);
     }
 }

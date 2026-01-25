@@ -10,24 +10,25 @@
         lh.changed_at AS changedAt,
 
         CASE
-        WHEN lh.before_grade IS NULL THEN '가입'
-        WHEN lh.before_grade != lh.after_grade THEN '등급 변경'
+        WHEN lh.before_loyalty_grade_code IS NULL THEN '가입'
+        WHEN lh.before_loyalty_grade_code != lh.after_loyalty_grade_code THEN '등급 변경'
         ELSE '변경'
         END AS changeType,
 
         CASE
-        WHEN lh.before_grade IS NULL
-        THEN lh.after_grade
-        ELSE CONCAT(lh.before_grade, ' => ', lh.after_grade)
+        WHEN lh.before_loyalty_grade_code IS NULL
+        THEN COALESCE(ag.loyalty_grade_name, CONCAT('#', lh.after_loyalty_grade_code))
+        ELSE CONCAT(
+        COALESCE(bg.loyalty_grade_name, CONCAT('#', lh.before_loyalty_grade_code)),
+        ' => ',
+        COALESCE(ag.loyalty_grade_name, CONCAT('#', lh.after_loyalty_grade_code))
+        )
         END AS content,
 
-        CASE
-        WHEN lh.change_source = 'AUTO' THEN 'SYSTEM'
-        ELSE 'MANUAL'
-        END AS changeSource,
+        lh.change_source AS changeSource,
 
         CASE
-        WHEN lh.change_source = 'AUTO' THEN NULL
+        WHEN lh.change_source = 'SYSTEM' THEN NULL
         ELSE lh.employee_code
         END AS changedByEmployeeCode
 
@@ -36,6 +37,14 @@
         ON l.loyalty_code = lh.loyalty_code
         AND l.hotel_group_code = #{hotelGroupCode}
         AND l.customer_code = #{customerCode}
+
+        LEFT JOIN loyalty_grade bg
+        ON bg.loyalty_grade_code = lh.before_loyalty_grade_code
+        AND bg.hotel_group_code = l.hotel_group_code
+
+        LEFT JOIN loyalty_grade ag
+        ON ag.loyalty_grade_code = lh.after_loyalty_grade_code
+        AND ag.hotel_group_code = l.hotel_group_code
 
         WHERE lh.changed_at <![CDATA[ >= ]]> #{from}
         AND lh.changed_at <![CDATA[ <= ]]> #{to}

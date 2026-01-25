@@ -1,123 +1,148 @@
 package com.gaekdam.gaekdambe.dummy.generate.communication_service.inquiry;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Random;
-
+import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity.Inquiry;
+import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity.InquiryCategory;
+import com.gaekdam.gaekdambe.communication_service.inquiry.command.infrastructure.repository.InquiryCategoryRepository;
 import com.gaekdam.gaekdambe.communication_service.inquiry.command.infrastructure.repository.InquiryRepository;
+import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import jakarta.transaction.Transactional;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Component
-@Transactional
 public class DummyInquiryDataTest {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private static final int TOTAL_INQUIRIES = 60_000;
+    private static final int BATCH = 500;
 
-    @Autowired
-    private InquiryRepository inquiryRepository;
+    private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
+    private static final LocalDateTime END = LocalDateTime.of(2026, 12, 31, 23, 59);
 
+    @Autowired InquiryRepository inquiryRepository;
+    @Autowired InquiryCategoryRepository inquiryCategoryRepository;
+
+    @Autowired EmployeeRepository employeeRepository;
+
+    @PersistenceContext
+    EntityManager em;
+
+    @Transactional
     public void generate() {
+
         if (inquiryRepository.count() > 0) return;
 
-        // property_code만 사용
-        List<Long> propertyCodes = jdbcTemplate.query("""
-            SELECT property_code
-            FROM property
-        """, (rs, rowNum) -> rs.getLong(1));
+        List<InquiryCategory> categories = inquiryCategoryRepository.findAll();
+        if (categories.isEmpty()) return;
 
-        if (propertyCodes.isEmpty()) return;
+        // customer_code 연속 가정 제거: 실제 고객 id 로드
+        List<Long> customerIds = loadIds("select customer_code from customer");
+        if (customerIds.isEmpty()) return;
 
-        // category PK
-        List<Long> categoryIds = jdbcTemplate.query("""
-            SELECT inquiry_category_code
-            FROM inquiry_category
-            WHERE is_active = 1
-        """, (rs, rowNum) -> rs.getLong(1));
+        // employee_code도 실제 직원 id에서 랜덤 선택
+        List<Long> employeeIds = loadIds("select employee_code from employee");
+        if (employeeIds.isEmpty() && employeeRepository.count() == 0) return;
 
-        if (categoryIds.isEmpty()) return;
+        // property_code도 실제 목록에서 랜덤 선택 (없으면 1L fallback)
+        List<Long> propertyIds = loadIds("select property_code from property");
+        if (propertyIds.isEmpty()) propertyIds = List.of(1L);
 
-        // customer_code
-        List<Long> customerCodes = jdbcTemplate.query("""
-            SELECT customer_code
-            FROM customer
-        """, (rs, rowNum) -> rs.getLong(1));
+        Random random = new Random();
+        List<Inquiry> buffer = new ArrayList<>(BATCH);
 
-        if (customerCodes.isEmpty()) return;
+        for (int i = 1; i <= TOTAL_INQUIRIES; i++) {
 
-        // employee_code (nullable이면 비어도 OK)
-        List<Long> employeeCodes = jdbcTemplate.query("""
-            SELECT employee_code
-            FROM employee
-        """, (rs, rowNum) -> rs.getLong(1));
+            long customerCode = customerIds.get(random.nextInt(customerIds.size()));
+            long propertyCode = propertyIds.get(random.nextInt(propertyIds.size()));
 
-        // hotel_group_code 제거
-        String insertSql = """
-            INSERT INTO inquiry (
-                inquiry_status,
-                inquiry_title,
-                inquiry_content,
-                answer_content,
-                created_at,
-                updated_at,
-                customer_code,
-                employee_code,
-                inquiry_category_code,
-                property_code
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+            InquiryCategory category = categories.get(random.nextInt(categories.size()));
+            LocalDateTime createdAt = randomDateTimeBetween(START, END, random);
 
-        Random rnd = new Random(1234);
-        int total = 1000;
+            Inquiry inquiry = Inquiry.create(
+                    propertyCode,
+                    customerCode,
+                    category,
+                    "문의 제목 " + i,
+                    "문의 내용 " + i
+            );
 
-        for (int i = 1; i <= total; i++) {
-            String title = String.format("테스트 문의 #%04d", i);
-            String content = """
-                더미 문의 내용입니다.
-                - 번호: %04d
-                - 설명: sample inquiry content
-                """.formatted(i);
-
-            LocalDateTime createdAt = LocalDateTime.now()
-                    .minusDays(rnd.nextInt(30))
-                    .minusMinutes(rnd.nextInt(24 * 60));
-
-            Timestamp createdTs = Timestamp.valueOf(createdAt);
-            Timestamp updatedTs = Timestamp.valueOf(createdAt.plusMinutes(rnd.nextInt(180)));
-
-            Long customerCode = customerCodes.get(rnd.nextInt(customerCodes.size()));
-
-            Long employeeCode = null;
-            if (!employeeCodes.isEmpty() && rnd.nextInt(10) < 3) {
-                employeeCode = employeeCodes.get(rnd.nextInt(employeeCodes.size()));
+            // 담당자 배정 55%
+            if (random.nextInt(100) < 55) {
+                inquiry.assignManager(pickEmployee(employeeIds, random));
             }
 
-            Long propertyCode = propertyCodes.get(rnd.nextInt(propertyCodes.size()));
-            Long inquiryCategoryCode = categoryIds.get(rnd.nextInt(categoryIds.size()));
+            // 답변 완료 45%
+            if (random.nextInt(100) < 45) {
+                inquiry.answer("답변 내용 " + i);
+            }
 
-            boolean answered = rnd.nextInt(10) < 3;
-            String status = answered ? "ANSWERED" : "IN_PROGRESS";
-            String answerContent = answered ? "외부 시스템 답변 수신(더미) - 안내 완료되었습니다." : null;
+            // create()가 now로 찍으니 더미 기간 분포 맞추기 위해 강제 세팅
+            setCreatedAt(inquiry, createdAt);
+            setUpdatedAt(inquiry, createdAt.plusHours(random.nextInt(72)));
 
-            jdbcTemplate.update(
-                    insertSql,
-                    status,
-                    title,
-                    content,
-                    answerContent,
-                    createdTs,
-                    updatedTs,
-                    customerCode,
-                    employeeCode,
-                    inquiryCategoryCode,
-                    propertyCode
-            );
+            buffer.add(inquiry);
+
+            if (buffer.size() == BATCH) {
+                inquiryRepository.saveAll(buffer);
+                em.flush();
+                em.clear();
+                buffer.clear();
+            }
+        }
+
+        if (!buffer.isEmpty()) {
+            inquiryRepository.saveAll(buffer);
+            em.flush();
+            em.clear();
+        }
+    }
+
+    private Long pickEmployee(List<Long> employeeIds, Random random) {
+        if (employeeIds == null || employeeIds.isEmpty()) return 1L;
+        return employeeIds.get(random.nextInt(employeeIds.size()));
+    }
+
+    private List<Long> loadIds(String sql) {
+        @SuppressWarnings("unchecked")
+        List<Object> rows = em.createNativeQuery(sql).getResultList();
+
+        List<Long> ids = new ArrayList<>(rows.size());
+        for (Object o : rows) {
+            if (o instanceof Number n) ids.add(n.longValue());
+            else if (o instanceof String s) ids.add(Long.parseLong(s));
+        }
+        return ids;
+    }
+
+    private static LocalDateTime randomDateTimeBetween(LocalDateTime start, LocalDateTime end, Random random) {
+        long seconds = Duration.between(start, end).getSeconds();
+        if (seconds <= 0) return start;
+        long add = (random.nextLong() & Long.MAX_VALUE) % seconds;
+        return start.plusSeconds(add);
+    }
+
+    private static void setCreatedAt(Inquiry inquiry, LocalDateTime createdAt) {
+        try {
+            var f = Inquiry.class.getDeclaredField("createdAt");
+            f.setAccessible(true);
+            f.set(inquiry, createdAt);
+        } catch (Exception e) {
+            throw new RuntimeException("Inquiry.createdAt set failed", e);
+        }
+    }
+
+    private static void setUpdatedAt(Inquiry inquiry, LocalDateTime updatedAt) {
+        try {
+            var f = Inquiry.class.getDeclaredField("updatedAt");
+            f.setAccessible(true);
+            f.set(inquiry, updatedAt);
+        } catch (Exception e) {
+            throw new RuntimeException("Inquiry.updatedAt set failed", e);
         }
     }
 }
