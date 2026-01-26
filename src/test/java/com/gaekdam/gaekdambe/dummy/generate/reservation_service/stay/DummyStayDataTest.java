@@ -45,6 +45,13 @@ public class DummyStayDataTest {
             // [미래 예약] 체크인일이 오늘 이후면 아직 투숙 시작 전 → stay 생성 안 함
             if (r.getCheckinDate().isAfter(today)) continue;
 
+            // 오늘 체크인 예약 → 70%는 stay 생성 X (체크인 예정)
+            if (r.getCheckinDate().isEqual(today)) {
+                if (random.nextDouble() < 0.7) {
+                    continue;
+                }
+            }
+
 
             // [체크인/아웃] 체크인은 15시 고정, 체크아웃은 과거면 10시로 생성
             LocalDateTime checkinAt = r.getCheckinDate().atTime(15, 0);
