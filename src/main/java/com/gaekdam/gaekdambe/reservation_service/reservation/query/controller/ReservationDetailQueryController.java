@@ -18,6 +18,7 @@ public class ReservationDetailQueryController {
 
     private final ReservationDetailQueryService reservationDetailQueryService;
 
+    // 통합예약정보 상세보기
     @GetMapping("/detail/{reservationCode}")
     public ApiResponse<ReservationDetailResponse> getReservationDetail(
             @PathVariable Long reservationCode

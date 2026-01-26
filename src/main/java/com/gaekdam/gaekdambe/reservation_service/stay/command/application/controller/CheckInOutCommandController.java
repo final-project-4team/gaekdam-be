@@ -17,6 +17,7 @@ public class CheckInOutCommandController {
 
     private final CheckInOutCommandService checkInOutCommandService;
 
+    // 오늘 예약정보 안에 체크인 등록
     @PostMapping("/checkin")
     public ApiResponse<Void> checkIn(
             @RequestBody CheckInRequest request
@@ -25,6 +26,7 @@ public class CheckInOutCommandController {
         return ApiResponse.success();
     }
 
+    // 오늘 예약정보 안에 체크아웃 등록
     @PostMapping("/checkout")
     public ApiResponse<Void> checkOut(
             @RequestBody CheckOutRequest request

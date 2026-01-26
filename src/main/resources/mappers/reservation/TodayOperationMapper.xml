@@ -65,6 +65,7 @@
 
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
 
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
@@ -136,6 +137,7 @@
         AND p.hotel_group_code = #{hotelGroupCode}
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
         WHERE r.reservation_status = 'RESERVED'
@@ -155,6 +157,7 @@
         AND p.hotel_group_code = #{hotelGroupCode}
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
         WHERE r.reservation_status = 'RESERVED'
@@ -175,6 +178,7 @@
         AND p.hotel_group_code = #{hotelGroupCode}
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
         WHERE r.reservation_status = 'RESERVED'
