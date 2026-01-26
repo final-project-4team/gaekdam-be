@@ -47,7 +47,7 @@
         -- 체크인 예정
         WHEN r.reservation_status = 'RESERVED'
         AND r.checkin_date = #{today}
-        AND s.actual_checkin_at IS NULL
+        AND s.stay_code IS NULL
         THEN 'CHECKIN_PLANNED'
 
         -- 투숙중
@@ -65,7 +65,6 @@
 
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
-        AND c.hotel_group_code = #{hotelGroupCode}
 
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
@@ -137,13 +136,12 @@
         AND p.hotel_group_code = #{hotelGroupCode}
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
-        AND c.hotel_group_code = #{hotelGroupCode}
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
         WHERE r.reservation_status = 'RESERVED'
         AND r.canceled_at IS NULL
         AND r.checkin_date = #{today}
-        AND s.actual_checkin_at IS NULL
+        AND s.stay_code IS NULL
         <if test="propertyCode != null">
             AND p.property_code = #{propertyCode}
         </if>
@@ -157,7 +155,6 @@
         AND p.hotel_group_code = #{hotelGroupCode}
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
-        AND c.hotel_group_code = #{hotelGroupCode}
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
         WHERE r.reservation_status = 'RESERVED'
@@ -178,7 +175,6 @@
         AND p.hotel_group_code = #{hotelGroupCode}
         INNER JOIN customer c
         ON r.customer_code = c.customer_code
-        AND c.hotel_group_code = #{hotelGroupCode}
         LEFT JOIN stay s
         ON r.reservation_code = s.reservation_code
         WHERE r.reservation_status = 'RESERVED'
