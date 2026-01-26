@@ -12,13 +12,15 @@ public interface ReservationMessagingQueryMapper {
      * 오늘 체크인 예정 (아직 체크인 안 됨)
      */
     List<Long> findTodayCheckinPlannedReservationCodes(
-            @Param("today") String today
+            @Param("today") String today,
+            @Param("stageCode") Long stageCode
     );
 
     /**
      * 오늘 체크아웃 예정 (체크인 완료, 체크아웃 전)
      */
     List<Long> findTodayCheckoutPlannedStayCodes(
-            @Param("today") String today
+            @Param("today") String today,
+            @Param("stageCode") Long stageCode
     );
 }

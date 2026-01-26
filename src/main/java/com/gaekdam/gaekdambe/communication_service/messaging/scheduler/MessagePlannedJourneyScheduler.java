@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.reso
 import com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.ReservationMessagingQueryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!test")
 public class MessagePlannedJourneyScheduler {
 
     private final ReservationMessagingQueryMapper queryMapper;
@@ -34,38 +36,28 @@ public class MessagePlannedJourneyScheduler {
 
     private void publishCheckinPlanned(String today) {
 
-        Long stageCode =
-                stageResolver.resolveStageCode("CHECKIN_PLANNED");
+        Long stageCode = stageResolver.resolveStageCode("CHECKIN_PLANNED");
 
         List<Long> reservationCodes =
-                queryMapper.findTodayCheckinPlannedReservationCodes(today);
+                queryMapper.findTodayCheckinPlannedReservationCodes(today, stageCode);
 
         for (Long reservationCode : reservationCodes) {
             eventPublisher.publishEvent(
-                    new MessageJourneyEvent(
-                            stageCode,
-                            reservationCode,
-                            null
-                    )
+                    new MessageJourneyEvent(stageCode, reservationCode, null)
             );
         }
     }
 
     private void publishCheckoutPlanned(String today) {
 
-        Long stageCode =
-                stageResolver.resolveStageCode("CHECKOUT_PLANNED");
+        Long stageCode = stageResolver.resolveStageCode("CHECKOUT_PLANNED");
 
         List<Long> stayCodes =
-                queryMapper.findTodayCheckoutPlannedStayCodes(today);
+                queryMapper.findTodayCheckoutPlannedStayCodes(today, stageCode);
 
         for (Long stayCode : stayCodes) {
             eventPublisher.publishEvent(
-                    new MessageJourneyEvent(
-                            stageCode,
-                            null,
-                            stayCode
-                    )
+                    new MessageJourneyEvent(stageCode, null, stayCode)
             );
         }
     }

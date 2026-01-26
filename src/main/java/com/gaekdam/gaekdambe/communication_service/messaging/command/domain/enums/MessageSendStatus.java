@@ -1,7 +1,6 @@
 package com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums;
 
 public enum MessageSendStatus {
-
     SCHEDULED,    // 발송 대기
     PROCESSING,   // 워커가 선점하여 처리 중
     SENT,         // 발송 성공

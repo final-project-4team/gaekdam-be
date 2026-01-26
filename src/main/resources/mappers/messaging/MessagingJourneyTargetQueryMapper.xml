@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingJourneyTargetQueryMapper">
+
+    <!-- 예약 확정 -->
+    <select id="findReservationConfirmedTargets" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+        WHERE r.reservation_status = 'RESERVED'
+          AND r.canceled_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.reservation_code = r.reservation_code
+        )
+    </select>
+
+    <!-- 예약 취소 -->
+    <select id="findReservationCancelledTargets" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+        WHERE r.reservation_status = 'CANCELED'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.reservation_code = r.reservation_code
+        )
+    </select>
+
+    <!-- 노쇼 -->
+    <select id="findNoShowTargets" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+        WHERE r.reservation_status = 'NO_SHOW'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.reservation_code = r.reservation_code
+        )
+    </select>
+
+    <!-- 체크인 등록 -->
+    <select id="findCheckInConfirmedStayTargets" resultType="long">
+        SELECT s.stay_code
+        FROM stay s
+        WHERE s.actual_checkin_at IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.stay_code = s.stay_code
+        )
+    </select>
+
+    <!-- 체크아웃 등록 -->
+    <select id="findCheckOutConfirmedStayTargets" resultType="long">
+        SELECT s.stay_code
+        FROM stay s
+        WHERE s.actual_checkout_at IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.stay_code = s.stay_code
+        )
+    </select>
+
+</mapper>

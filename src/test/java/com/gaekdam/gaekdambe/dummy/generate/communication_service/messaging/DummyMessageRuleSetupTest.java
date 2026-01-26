@@ -37,38 +37,37 @@ public class DummyMessageRuleSetupTest {
         if (ruleRepository.count() > 0) return;
 
         LocalDateTime now = LocalDateTime.now();
-        int priority = 1;
 
-        List<MessageJourneyStage> stages =
-                stageRepository.findAll();
+        for (MessageJourneyStage stage : stageRepository.findAll()) {
 
-        for (MessageJourneyStage stage : stages) {
             if (!stage.isActive()) continue;
+
+            ReferenceEntityType refType =
+                    switch (stage.getStageNameEng()) {
+                        case "CHECKIN_CONFIRMED",
+                             "CHECKOUT_PLANNED",
+                             "CHECKOUT_CONFIRMED" -> ReferenceEntityType.STAY;
+                        default -> ReferenceEntityType.RESERVATION;
+                    };
 
             List<MessageTemplate> templates =
                     templateRepository.findByStageCode(stage.getStageCode());
+
+            int priority = 1;
 
             for (MessageTemplate template : templates) {
 
                 MessageRule rule = MessageRule.builder()
                         .stageCode(stage.getStageCode())
                         .templateCode(template.getTemplateCode())
-                        .referenceEntityType(
-                                stage.getStageNameEng().contains("CHECKIN")
-                                        ? ReferenceEntityType.STAY
-                                        : ReferenceEntityType.RESERVATION
-                        )
+                        .referenceEntityType(refType)
                         .offsetMinutes(0)
                         .visitorType(template.getVisitorType())
                         .channel(MessageChannel.SMS)
                         .isEnabled(true)
                         .priority(priority++)
-                        .description(
-                                "자동발송 룰 - " + stage.getStageNameKor()
-                        )
-                        .membershipGradeCode(
-                                template.getMembershipGradeCode()
-                        )
+                        .description("자동발송 룰 - " + stage.getStageNameKor())
+                        .membershipGradeCode(template.getMembershipGradeCode())
                         .createdAt(now)
                         .updatedAt(now)
                         .build();

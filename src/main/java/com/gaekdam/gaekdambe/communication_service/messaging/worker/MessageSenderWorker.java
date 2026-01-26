@@ -20,7 +20,7 @@ public class MessageSenderWorker {
     private final Map<String, MessageSender> senderMap;
 
     /**
-     * SCHEDULED 상태이며 scheduledAt 이 지난 메시지 발송
+     * SCHEDULED 상태 메시지 발송
      */
     @Scheduled(fixedDelay = 10000)
     @Transactional
@@ -34,7 +34,7 @@ public class MessageSenderWorker {
 
         for (MessageSendHistory history : targets) {
             try {
-                // 선점 처리 (중복 발송 방지)
+                // 선점 (트랜잭션 내 엔티티 상태 변경)
                 history.markProcessing();
 
                 MessageSender sender =

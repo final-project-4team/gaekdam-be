@@ -19,16 +19,20 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+
 @Component
 @Transactional
 public class DummyMessageSendHistoryDataTest {
 
     @Autowired
     private MessageSendHistoryRepository historyRepository;
+
     @Autowired
     private MessageRuleRepository ruleRepository;
+
     @Autowired
     private ReservationRepository reservationRepository;
+
     @Autowired
     private StayRepository stayRepository;
 
@@ -40,62 +44,56 @@ public class DummyMessageSendHistoryDataTest {
         List<Reservation> reservations = reservationRepository.findAll();
         List<Stay> stays = stayRepository.findAll();
 
-        Random random = new Random();
-
         /* =========================
-           예약 기반 메시지
+           예약 기반 메시지 (SCHEDULED 위주)
            ========================= */
-        for (Reservation reservation : reservations.subList(0, Math.min(1000, reservations.size()))) {
+        for (Reservation reservation : reservations) {
 
-            MessageRule rule = rules.get(random.nextInt(rules.size()));
-            if (rule.getReferenceEntityType() != ReferenceEntityType.RESERVATION) continue;
+            for (MessageRule rule : rules) {
 
-            LocalDateTime scheduledAt =
-                    reservation.getReservedAt().plusMinutes(rule.getOffsetMinutes());
+                if (rule.getReferenceEntityType() != ReferenceEntityType.RESERVATION) continue;
 
-            historyRepository.save(
-                    MessageSendHistory.builder()
-                            .stageCode(rule.getStageCode())
-                            .reservationCode(reservation.getReservationCode())
-                            .stayCode(null)
-                            .ruleCode(rule.getRuleCode())
-                            .templateCode(rule.getTemplateCode())
-                            .channel(rule.getChannel())          // 중요
-                            .scheduledAt(scheduledAt)
-                            .sentAt(scheduledAt.plusSeconds(5))
-                            .status(MessageSendStatus.SENT)
-                            .externalMessageId("MSG-" + UUID.randomUUID())
-                            .build()
-            );
+                historyRepository.save(
+                        MessageSendHistory.builder()
+                                .stageCode(rule.getStageCode())
+                                .reservationCode(reservation.getReservationCode())
+                                .stayCode(null)
+                                .ruleCode(rule.getRuleCode())
+                                .templateCode(rule.getTemplateCode())
+                                .channel(rule.getChannel())
+                                .scheduledAt(reservation.getReservedAt())
+                                .status(MessageSendStatus.SCHEDULED)
+                                .build()
+                );
+            }
         }
 
         /* =========================
-           투숙 기반 메시지
+           투숙 기반 메시지 (이미 발송된 데이터)
            ========================= */
-        for (Stay stay : stays.subList(0, Math.min(1000, stays.size()))) {
+        for (Stay stay : stays) {
 
             if (stay.getActualCheckinAt() == null) continue;
 
-            MessageRule rule = rules.get(random.nextInt(rules.size()));
-            if (rule.getReferenceEntityType() != ReferenceEntityType.STAY) continue;
+            for (MessageRule rule : rules) {
 
-            LocalDateTime scheduledAt =
-                    stay.getActualCheckinAt().plusMinutes(rule.getOffsetMinutes());
+                if (rule.getReferenceEntityType() != ReferenceEntityType.STAY) continue;
 
-            historyRepository.save(
-                    MessageSendHistory.builder()
-                            .stageCode(rule.getStageCode())
-                            .reservationCode(stay.getReservationCode())
-                            .stayCode(stay.getStayCode())
-                            .ruleCode(rule.getRuleCode())
-                            .templateCode(rule.getTemplateCode())
-                            .channel(rule.getChannel())          // 중요
-                            .scheduledAt(scheduledAt)
-                            .sentAt(scheduledAt.plusMinutes(1))
-                            .status(MessageSendStatus.SENT)
-                            .externalMessageId("MSG-" + UUID.randomUUID())
-                            .build()
-            );
+                historyRepository.save(
+                        MessageSendHistory.builder()
+                                .stageCode(rule.getStageCode())
+                                .reservationCode(stay.getReservationCode())
+                                .stayCode(stay.getStayCode())
+                                .ruleCode(rule.getRuleCode())
+                                .templateCode(rule.getTemplateCode())
+                                .channel(rule.getChannel())
+                                .scheduledAt(stay.getActualCheckinAt())
+                                .sentAt(stay.getActualCheckinAt().plusMinutes(1))
+                                .status(MessageSendStatus.SENT)
+                                .externalMessageId("MSG-DUMMY")
+                                .build()
+                );
+            }
         }
     }
 }

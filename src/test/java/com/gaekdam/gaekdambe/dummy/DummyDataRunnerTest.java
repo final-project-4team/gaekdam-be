@@ -38,10 +38,12 @@ import com.gaekdam.gaekdambe.dummy.generate.operation_service.room.DummyRoomType
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation.DummyReservationDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyCheckInOutDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDataTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.StopWatch;
 
 @SpringBootTest
 @Rollback(value = false)
+@ActiveProfiles("test")
 class DummyDataRunnerTest {
 
     // 호텔서비스
@@ -113,9 +115,9 @@ class DummyDataRunnerTest {
     @Autowired
     DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
     @Autowired
-    DummyMessageRuleSetupTest messageRuleSetupTest;
-    @Autowired
     DummyMessageTemplateSetupTest messageTemplateSetupTest;
+    @Autowired
+    DummyMessageRuleSetupTest messageRuleSetupTest;
     @Autowired
     DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
 

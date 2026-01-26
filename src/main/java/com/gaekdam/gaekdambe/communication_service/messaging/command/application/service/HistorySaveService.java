@@ -2,9 +2,13 @@ package com.gaekdam.gaekdambe.communication_service.messaging.command.applicatio
 
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageRule;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageSendHistory;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageTemplate;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums.MessageSendStatus;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.event.MessageJourneyEvent;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.infrastructure.repository.MessageSendHistoryRepository;
+import com.gaekdam.gaekdambe.communication_service.messaging.command.infrastructure.repository.MessageTemplateRepository;
+import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessagingConditionContext;
+import com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingConditionContextQueryMapper;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity.Stay;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.infrastructure.repository.StayRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +18,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +27,10 @@ public class HistorySaveService {
 
     private final MessageSendHistoryRepository historyRepository;
     private final StayRepository stayRepository;
+
+    private final MessageTemplateRepository templateRepository;
+    private final MessagingConditionContextQueryMapper contextQueryMapper;
+    private final ConditionExprEvaluator conditionExprEvaluator;
 
     /**
      * MessageSendHistory 단건 저장
@@ -32,10 +42,47 @@ public class HistorySaveService {
         Long reservationCode = event.getReservationCode();
         Long stayCode = event.getStayCode();
 
+        // stay 기반 이벤트는 reservationCode 보정
         if (reservationCode == null && stayCode != null) {
-            Stay stay = stayRepository.findById(stayCode)
-                    .orElseThrow();
+            Stay stay = stayRepository.findById(stayCode).orElseThrow();
             reservationCode = stay.getReservationCode();
+        }
+
+        MessageTemplate template = templateRepository.findById(rule.getTemplateCode())
+                .orElseThrow(() -> new IllegalArgumentException("Template not found: " + rule.getTemplateCode()));
+
+        LocalDateTime scheduledAt = LocalDateTime.now().plusMinutes(rule.getOffsetMinutes());
+
+        // 템플릿 inactive면 SKIPPED 기록
+        if (!template.isActive()) {
+            saveSkipped(event, rule, reservationCode, stayCode, scheduledAt, "template inactive");
+            return;
+        }
+
+        // conditionExpr 평가용 컨텍스트 조회 (MyBatis)
+        MessagingConditionContext ctx =
+                (stayCode != null)
+                        ? contextQueryMapper.findByStayCode(stayCode)
+                        : contextQueryMapper.findByReservationCode(reservationCode);
+
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("reservationCode", ctx.getReservationCode());
+        vars.put("stayCode", ctx.getStayCode());
+        vars.put("customerCode", ctx.getCustomerCode());
+        vars.put("guestCount", ctx.getGuestCount());
+        vars.put("membershipGradeCode", ctx.getMembershipGradeCode());
+        vars.put("propertyCode", ctx.getPropertyCode());
+        vars.put("reservationStatus", ctx.getReservationStatus());
+        vars.put("checkinDate", ctx.getCheckinDate());
+        vars.put("checkoutDate", ctx.getCheckoutDate());
+        vars.put("actualCheckinAt", ctx.getActualCheckinAt());
+        vars.put("actualCheckoutAt", ctx.getActualCheckoutAt());
+
+        boolean ok = conditionExprEvaluator.evaluate(template.getConditionExpr(), vars);
+
+        if (!ok) {
+            saveSkipped(event, rule, reservationCode, stayCode, scheduledAt, "condition_expr=false");
+            return;
         }
 
         MessageSendHistory history = MessageSendHistory.builder()
@@ -45,10 +92,36 @@ public class HistorySaveService {
                 .ruleCode(rule.getRuleCode())
                 .templateCode(rule.getTemplateCode())
                 .channel(rule.getChannel())
-                .scheduledAt(
-                        LocalDateTime.now().plusMinutes(rule.getOffsetMinutes())
-                )
+                .scheduledAt(scheduledAt)
                 .status(MessageSendStatus.SCHEDULED)
+                .build();
+
+        try {
+            historyRepository.save(history);
+        } catch (DataIntegrityViolationException e) {
+            // 중복 → 정상 스킵
+        }
+    }
+
+    private void saveSkipped(
+            MessageJourneyEvent event,
+            MessageRule rule,
+            Long reservationCode,
+            Long stayCode,
+            LocalDateTime scheduledAt,
+            String reason
+    ) {
+
+        MessageSendHistory history = MessageSendHistory.builder()
+                .stageCode(event.getStageCode())
+                .reservationCode(reservationCode)
+                .stayCode(stayCode)
+                .ruleCode(rule.getRuleCode())
+                .templateCode(rule.getTemplateCode())
+                .channel(rule.getChannel())
+                .scheduledAt(scheduledAt)
+                .status(MessageSendStatus.SKIPPED)
+                .failReason(reason)
                 .build();
 
         try {
