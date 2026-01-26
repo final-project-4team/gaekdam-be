@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.ReservationMessagingQueryMapper">
+
+    <!-- =========================
+         CHECKIN_PLANNED
+         ========================= -->
+    <select id="findTodayCheckinPlannedReservationCodes" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+                 LEFT JOIN stay s
+                           ON r.reservation_code = s.reservation_code
+        WHERE r.checkin_date = #{today}
+          AND r.reservation_status = 'RESERVED'
+          AND r.canceled_at IS NULL
+          AND s.stay_code IS NULL
+    </select>
+
+    <!-- =========================
+         CHECKOUT_PLANNED
+         ========================= -->
+    <select id="findTodayCheckoutPlannedStayCodes" resultType="long">
+        SELECT s.stay_code
+        FROM stay s
+                 INNER JOIN reservation r
+                            ON s.reservation_code = r.reservation_code
+        WHERE r.checkout_date = #{today}
+          AND r.reservation_status = 'RESERVED'
+          AND s.actual_checkin_at IS NOT NULL
+          AND s.actual_checkout_at IS NULL
+    </select>
+
+</mapper>
