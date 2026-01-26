@@ -10,6 +10,7 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.request.R
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.ReservationResponse;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.OperationBoardQueryService;
+import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.TodayOperationQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +26,29 @@ public class ReservationQueryController {
 
     private final OperationBoardQueryService operationBoardQueryService;
     private final TodayOperationQueryService todayOperationQueryService;
+    private final ReservationQueryService reservationQueryService;
+
+
+    @GetMapping
+    public ApiResponse<PageResponse<ReservationResponse>> getReservations(
+            @AuthenticationPrincipal CustomUser customUser,
+            PageRequest page,
+            ReservationSearchRequest search,
+            SortRequest sort
+    ) {
+        search.setHotelGroupCode(customUser.getHotelGroupCode());
+
+        if (sort == null || sort.getSortBy() == null) {
+            sort = new SortRequest();
+            sort.setSortBy("created_at");
+            sort.setDirection("DESC");
+        }
+
+        return ApiResponse.success(
+                reservationQueryService.getReservations(page, search, sort)
+        );
+    }
+
 
     // 통합 예약 조회 (리스트)
     @GetMapping("/operations")
