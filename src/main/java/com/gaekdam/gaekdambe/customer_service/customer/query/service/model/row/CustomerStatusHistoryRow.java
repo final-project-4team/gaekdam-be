@@ -12,6 +12,9 @@ public record CustomerStatusHistoryRow(
         ChangeSource changeSource,
         String changeReason,
         LocalDateTime changedAt,
-        Long employeeCode
-) {
-}
+        Long employeeCode,
+
+        byte[] employeeNameEnc,
+        byte[] employeeDekEnc
+) {}
+

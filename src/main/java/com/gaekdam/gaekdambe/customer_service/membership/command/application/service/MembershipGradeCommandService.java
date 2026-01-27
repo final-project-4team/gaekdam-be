@@ -21,13 +21,13 @@ public class MembershipGradeCommandService {
   // 멤버십 생성
   @Transactional
   public String createMembershipGrade(MembershipGradeRequest request, Long hotelGroupCode) {
-    if (request.gradeName() == null || request.gradeName().isEmpty()) {
+    if (request.gradeName() == null || request.gradeName().isBlank()) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
     }
     if (request.tierLevel() == null) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
     }
-    if (request.tierComment() == null || request.tierComment().isEmpty()) {
+    if (request.tierComment() == null || request.tierComment().isBlank()) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
     }
     if (request.calculationTermMonth() == null) {
@@ -76,13 +76,13 @@ public class MembershipGradeCommandService {
 
   @Transactional
   public String updateMembershipGrade(Long hotelGroupCode, Long membershipGradeCode, MembershipGradeRequest request) {
-    if (request.gradeName() == null || request.gradeName().isEmpty()) {
+    if (request.gradeName() == null || request.gradeName().isBlank()) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
     }
     if (request.tierLevel() == null) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
     }
-    if (request.tierComment() == null || request.tierComment().isEmpty()) {
+    if (request.tierComment() == null || request.tierComment().isBlank()) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
     }
     if (request.calculationTermMonth() == null) {

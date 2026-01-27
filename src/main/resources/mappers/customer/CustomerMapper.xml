@@ -494,33 +494,51 @@
                type="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerStatusHistoryRow">
         <constructor>
             <idArg column="customerStatusHistoryCode" javaType="java.lang.Long"/>
+
             <arg column="beforeStatus"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+
             <arg column="afterStatus"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus"/>
+
             <arg column="changeSource"
                  javaType="com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource"/>
+
             <arg column="changeReason" javaType="java.lang.String"/>
             <arg column="changedAt" javaType="java.time.LocalDateTime"/>
             <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeNameEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="employeeDekEnc"
+                 javaType="[B"
+                 jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
         </constructor>
     </resultMap>
 
     <select id="findCustomerStatusHistories" resultMap="CustomerStatusHistoryRowMap">
         SELECT
-        h.customer_status_history_code  AS customerStatusHistoryCode,
-        h.before_status                 AS beforeStatus,
-        h.after_status                  AS afterStatus,
-        h.change_source                 AS changeSource,
-        h.change_reason                 AS changeReason,
-        h.changed_at                    AS changedAt,
-        h.employee_code                 AS employeeCode
+        h.customer_status_history_code AS customerStatusHistoryCode,
+        h.before_status                AS beforeStatus,
+        h.after_status                 AS afterStatus,
+        h.change_source                AS changeSource,
+        h.change_reason                AS changeReason,
+        h.changed_at                   AS changedAt,
+        h.employee_code                AS employeeCode,
+        e.employee_name_enc            AS employeeNameEnc,
+        e.dek_enc                      AS employeeDekEnc
         FROM customer_status_history h
         JOIN customer c
         ON c.customer_code = h.customer_code
         AND c.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN employee e
+        ON e.employee_code = h.employee_code
+        AND e.hotel_group_code = #{hotelGroupCode}
         WHERE h.customer_code = #{customerCode}
-
         ORDER BY
         <choose>
             <when test="sort != null and sort.sortBy == 'changed_at'">h.changed_at</when>
@@ -532,7 +550,6 @@
             <otherwise>DESC</otherwise>
         </choose>
         , h.customer_status_history_code DESC
-
         LIMIT #{page.size}
         OFFSET #{page.offset}
     </select>
@@ -545,6 +562,7 @@
         AND c.hotel_group_code = #{hotelGroupCode}
         WHERE h.customer_code = #{customerCode}
     </select>
+
 
     <!-- =========================
          Marketing Consents
