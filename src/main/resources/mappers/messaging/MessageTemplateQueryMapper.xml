@@ -5,9 +5,9 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageTemplateQueryMapper">
 
-    <!-- =========================
-         메시지 템플릿 조회
-         ========================= -->
+    <!-- =================================================
+         기존: 메시지 템플릿 리스트
+         ================================================= -->
     <select id="findTemplates"
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateResponse">
 
@@ -20,9 +20,7 @@
         is_active               AS isActive,
         membership_grade_code   AS membershipGradeCode
         FROM message_template
-
         <where>
-            <!-- 호텔(지점) 스코프 -->
             AND property_code = #{search.propertyCode}
 
             <if test="search.stageCode != null">
@@ -41,9 +39,6 @@
         LIMIT #{page.size} OFFSET #{page.offset}
     </select>
 
-    <!-- =========================
-         메시지 템플릿 개수
-         ========================= -->
     <select id="countTemplates" resultType="long">
         SELECT COUNT(*)
         FROM message_template
@@ -58,6 +53,58 @@
                 AND is_active = #{search.isActive}
             </if>
         </where>
+    </select>
+
+    <!-- =================================================
+          설정 화면 전용 (여정 기준)
+         ================================================= -->
+    <select id="findSettingTemplates"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateSettingResponse">
+
+        SELECT
+            s.stage_code        AS stageCode,
+            s.stage_name_eng    AS stageNameEng,
+            s.stage_name_kor    AS stageNameKor,
+
+            t.template_code     AS templateCode,
+            t.visitor_type      AS visitorType,
+            t.is_active         AS isActive,
+            t.title             AS title
+        FROM message_journey_stage s
+                 LEFT JOIN message_template t
+                           ON t.stage_code = s.stage_code
+                               AND t.property_code = #{propertyCode}
+
+        WHERE s.is_active = true
+
+        ORDER BY
+            s.stage_code ASC,
+            t.visitor_type ASC
+    </select>
+
+
+
+    <select id="findTemplateDetail"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateDetailResponse">
+
+        SELECT
+            mt.template_code      AS templateCode,
+            mt.stage_code         AS stageCode,
+            st.stage_name_kor     AS stageNameKor,
+
+            mt.visitor_type       AS visitorType,
+            mt.language_code      AS languageCode,
+
+            mt.title              AS title,
+            mt.content            AS content,
+            mt.condition_expr     AS conditionExpr,
+
+            mt.is_active          AS isActive
+        FROM message_template mt
+                 JOIN message_journey_stage st
+                      ON mt.stage_code = st.stage_code
+        WHERE mt.template_code = #{templateCode}
+
     </select>
 
 </mapper>

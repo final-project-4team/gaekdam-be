@@ -50,7 +50,7 @@ public class MessageRuleCommandService {
                 req.getOffsetMinutes(),
                 req.getVisitorType(),
                 req.getChannel(),
-                req.isEnabled(),
+                req.getIsEnabled(),
                 req.getPriority(),
                 req.getDescription()
         );

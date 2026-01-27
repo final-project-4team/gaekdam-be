@@ -11,7 +11,7 @@ public class MessageRuleUpdateRequest {
     private int offsetMinutes;
     private VisitorType visitorType; // nullable 가능
     private MessageChannel channel;
-    private boolean isEnabled;
+    private Boolean  isEnabled;
     private int priority;
     private String description;
 

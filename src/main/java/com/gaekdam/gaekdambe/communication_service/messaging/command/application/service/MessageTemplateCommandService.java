@@ -5,11 +5,14 @@ import com.gaekdam.gaekdambe.communication_service.messaging.command.application
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageTemplate;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.infrastructure.repository.MessageTemplateRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageTemplateCommandService {
@@ -17,7 +20,7 @@ public class MessageTemplateCommandService {
     private final MessageTemplateRepository repository;
 
     @Transactional
-    public Long createTemplate(MessageTemplateCreateRequest req,Long propertyCode) {
+    public Long createTemplate(MessageTemplateCreateRequest req, Long propertyCode) {
         LocalDateTime now = LocalDateTime.now();
 
         MessageTemplate template = MessageTemplate.builder()
@@ -40,25 +43,21 @@ public class MessageTemplateCommandService {
 
     @Transactional
     public void update(Long templateCode, MessageTemplateUpdateRequest req) {
+
         MessageTemplate template = repository.findById(templateCode)
-                .orElseThrow(() -> new IllegalArgumentException("Template not found: " + templateCode));
+                .orElseThrow(() -> new IllegalArgumentException("Template not found"));
+
+        log.info("BEFORE isActive = {}", template.isActive());
+        log.info("REQ isActive = {}", req.getIsActive());
 
         template.update(
                 req.getTitle(),
                 req.getContent(),
                 req.getLanguageCode(),
-                req.isActive(),
+                req.getIsActive(),
                 req.getConditionExpr()
         );
-    }
 
-
-    @Transactional
-    public void disableTemplate(Long templateCode) {
-
-        MessageTemplate template = repository.findById(templateCode)
-                .orElseThrow(() -> new IllegalArgumentException("템플릿 없음"));
-
-        template.disable();
+        log.info("AFTER isActive = {}", template.isActive());
     }
 }

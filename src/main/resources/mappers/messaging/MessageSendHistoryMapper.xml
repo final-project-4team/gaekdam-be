@@ -9,97 +9,100 @@
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryResponse">
 
         SELECT
-        h.send_code            AS sendCode,
-        h.stage_code           AS stageCode,
-        s.stage_name_kor       AS stageName,
-        h.reservation_code     AS reservationCode,
-        h.stay_code            AS stayCode,
-        h.rule_code            AS ruleCode,
-        h.template_code        AS templateCode,
+        t.sendCode,
+        t.stageCode,
+        t.stageNameKor,
+        t.templateCode,
+        t.templateTitle,
+        t.reservationCode,
+        t.stayCode,
+        t.status,
+        t.scheduledAt,
+        t.sentAt,
+        t.failReason,
+        t.externalMessageId
+        FROM (
+        SELECT
+        h.send_code        AS sendCode,
+        h.stage_code       AS stageCode,
+        s.stage_name_kor   AS stageNameKor,
 
-        t.title                AS messageTitle,
-        t.content              AS messageContent,
+        h.template_code    AS templateCode,
+        mt.title           AS templateTitle,
 
-        h.scheduled_at         AS scheduledAt,
-        h.sent_at              AS sentAt,
-        h.status               AS status,
-        h.fail_reason          AS failReason,
-        h.external_message_id  AS externalMessageId
+        h.reservation_code AS reservationCode,
+        h.stay_code        AS stayCode,
 
+        h.status           AS status,
+        h.scheduled_at     AS scheduledAt,
+        h.sent_at          AS sentAt,
+        h.fail_reason      AS failReason,
+        h.external_message_id AS externalMessageId,
+
+        p.property_code    AS propertyCode
         FROM message_send_history h
-        JOIN message_template t
-        ON h.template_code = t.template_code
         JOIN message_journey_stage s
         ON h.stage_code = s.stage_code
+        JOIN message_template mt
+        ON h.template_code = mt.template_code
+        JOIN property p
+        ON mt.property_code = p.property_code
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+        ) t
+        WHERE 1 = 1
 
-        <where>
-            <if test="search != null">
-
-                <if test="search.stageCode != null">
-                    AND h.stage_code = #{search.stageCode}
-                </if>
-
-                <if test="search.reservationCode != null">
-                    AND h.reservation_code = #{search.reservationCode}
-                </if>
-
-                <if test="search.stayCode != null">
-                    AND h.stay_code = #{search.stayCode}
-                </if>
-
-                <if test="search.status != null">
-                    AND h.status = #{search.status}
-                </if>
-
-                <if test="search.fromDate != null">
-                    AND h.scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
-                </if>
-
-                <if test="search.toDate != null">
-                    AND h.scheduled_at <![CDATA[ <= ]]> #{search.toDate}
-                </if>
-
-            </if>
-        </where>
-
-        <if test="sort != null and sort.sortBy != null">
-            ORDER BY ${sort.sortBy} ${sort.direction}
+        <if test="search.propertyCode != null">
+            AND t.propertyCode = #{search.propertyCode}
         </if>
 
-        LIMIT #{page.size} OFFSET #{page.offset}
+        <if test="search.stageCode != null">
+            AND t.stageCode = #{search.stageCode}
+        </if>
+
+        <if test="search.reservationCode != null">
+            AND t.reservationCode = #{search.reservationCode}
+        </if>
+
+        <if test="search.stayCode != null">
+            AND t.stayCode = #{search.stayCode}
+        </if>
+
+        <if test="search.status != null">
+            AND t.status = #{search.status}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND t.sentAt <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+
+        <if test="search.toDate != null">
+            AND t.sentAt <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+
+        ORDER BY ${sort.sortBy} ${sort.direction}
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
     </select>
+
+
     <select id="countHistories" resultType="long">
         SELECT COUNT(*)
-        FROM message_send_history
-        <where>
-            <if test="search != null">
+        FROM (
+        SELECT
+        h.send_code AS sendCode,
+        p.property_code AS propertyCode
+        FROM message_send_history h
+        JOIN message_template mt
+        ON h.template_code = mt.template_code
+        JOIN property p
+        ON mt.property_code = p.property_code
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+        ) t
+        WHERE 1 = 1
 
-                <if test="search.stageCode != null">
-                    AND stage_code = #{search.stageCode}
-                </if>
-
-                <if test="search.reservationCode != null">
-                    AND reservation_code = #{search.reservationCode}
-                </if>
-
-                <if test="search.stayCode != null">
-                    AND stay_code = #{search.stayCode}
-                </if>
-
-                <if test="search.status != null">
-                    AND status = #{search.status}
-                </if>
-
-                <if test="search.fromDate != null">
-                    AND scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
-                </if>
-
-                <if test="search.toDate != null">
-                    AND scheduled_at <![CDATA[ <= ]]> #{search.toDate}
-                </if>
-
-            </if>
-        </where>
+        <if test="search.propertyCode != null">
+            AND t.propertyCode = #{search.propertyCode}
+        </if>
     </select>
 
 </mapper>

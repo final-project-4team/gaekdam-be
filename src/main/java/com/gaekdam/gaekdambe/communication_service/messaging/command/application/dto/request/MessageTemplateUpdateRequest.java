@@ -11,5 +11,5 @@ public class MessageTemplateUpdateRequest {
     private String title;
     private String content;
     private String conditionExpr;
-    private boolean isActive;
+    private Boolean isActive;
 }

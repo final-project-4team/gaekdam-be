@@ -29,13 +29,14 @@ public class MessageSendHistoryQueryController {
             SortRequest sort,
             @AuthenticationPrincipal CustomUser customUser
     ) {
+        //  SaaS 스코프 주입
+        search.setHotelGroupCode(customUser.getHotelGroupCode());
 
         if (sort == null || sort.getSortBy() == null) {
             sort = new SortRequest();
-            sort.setSortBy("scheduled_at");
+            sort.setSortBy("sentAt");
             sort.setDirection("DESC");
         }
-
 
         return ApiResponse.success(
                 service.getHistories(page, search, sort)

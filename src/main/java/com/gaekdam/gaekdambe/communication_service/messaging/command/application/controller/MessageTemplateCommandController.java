@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/message-templates")
@@ -17,12 +19,12 @@ public class MessageTemplateCommandController {
     private final MessageTemplateCommandService service;
 
     @PostMapping
-    public ApiResponse<Long> create(@RequestBody MessageTemplateCreateRequest req,
-                                    @AuthenticationPrincipal CustomUser customUser) {
-
+    public ApiResponse<Long> create(
+            @RequestBody MessageTemplateCreateRequest req,
+            @AuthenticationPrincipal CustomUser customUser
+    ) {
         Long propertyCode = customUser.getPropertyCode();
-
-        return ApiResponse.success(service.createTemplate(req,propertyCode));
+        return ApiResponse.success(service.createTemplate(req, propertyCode));
     }
 
     @PutMapping("/{templateCode}")
@@ -34,11 +36,4 @@ public class MessageTemplateCommandController {
         return ApiResponse.success();
     }
 
-
-    @PatchMapping("/{templateCode}/disable")
-    public ApiResponse<Void> disable(@PathVariable Long templateCode) {
-
-        service.disableTemplate(templateCode);
-        return ApiResponse.success();
-    }
 }
