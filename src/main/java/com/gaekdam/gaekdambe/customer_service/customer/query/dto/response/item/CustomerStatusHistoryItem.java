@@ -23,4 +23,5 @@ public class CustomerStatusHistoryItem {
 
     private LocalDateTime changedAt;
     private Long employeeCode;
+    private String employeeName;
 }

@@ -175,6 +175,9 @@ public class CustomerResponseAssembler {
      * 고객 상태 이력 Row -> Item
      */
     public CustomerStatusHistoryItem toCustomerStatusHistoryItem(CustomerStatusHistoryRow row) {
+
+        String employeeName = resolveEmployeeName(row);
+
         return new CustomerStatusHistoryItem(
                 row.customerStatusHistoryCode(),
                 row.beforeStatus(),
@@ -182,7 +185,8 @@ public class CustomerResponseAssembler {
                 row.changeSource(),
                 row.changeReason(),
                 row.changedAt(),
-                row.employeeCode()
+                row.employeeCode(),
+                employeeName
         );
     }
 
@@ -218,5 +222,24 @@ public class CustomerResponseAssembler {
         return value.contains("@")
                 ? MaskingUtils.maskEmail(value)
                 : MaskingUtils.maskPhone(value);
+    }
+    private String resolveEmployeeName(CustomerStatusHistoryRow row) {
+        // SYSTEM이면 직원명 대신 SYSTEM
+        if (row.changeSource() != null && row.changeSource().name().equals("SYSTEM")) {
+            return "SYSTEM";
+        }
+
+        // 조인 값이 없으면 null
+        if (row.employeeCode() == null || row.employeeDekEnc() == null || row.employeeNameEnc() == null) {
+            return null;
+        }
+
+        String name = decryptionService.decrypt(
+                row.employeeCode(),
+                row.employeeDekEnc(),
+                row.employeeNameEnc()
+        );
+
+        return MaskingUtils.maskName(name);
     }
 }
