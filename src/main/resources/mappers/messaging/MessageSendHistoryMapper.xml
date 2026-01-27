@@ -9,44 +9,54 @@
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryResponse">
 
         SELECT
-        send_code AS sendCode,
-        stage_code AS stageCode,
-        reservation_code AS reservationCode,
-        stay_code AS stayCode,
-        rule_code AS ruleCode,
-        template_code AS templateCode,
-        scheduled_at AS scheduledAt,
-        sent_at AS sentAt,
-        status AS status,
-        fail_reason AS failReason,
-        external_message_id AS externalMessageId
-        FROM message_send_history
+        h.send_code            AS sendCode,
+        h.stage_code           AS stageCode,
+        s.stage_name_kor       AS stageName,
+        h.reservation_code     AS reservationCode,
+        h.stay_code            AS stayCode,
+        h.rule_code            AS ruleCode,
+        h.template_code        AS templateCode,
+
+        t.title                AS messageTitle,
+        t.content              AS messageContent,
+
+        h.scheduled_at         AS scheduledAt,
+        h.sent_at              AS sentAt,
+        h.status               AS status,
+        h.fail_reason          AS failReason,
+        h.external_message_id  AS externalMessageId
+
+        FROM message_send_history h
+        JOIN message_template t
+        ON h.template_code = t.template_code
+        JOIN message_journey_stage s
+        ON h.stage_code = s.stage_code
 
         <where>
             <if test="search != null">
 
                 <if test="search.stageCode != null">
-                    AND stage_code = #{search.stageCode}
+                    AND h.stage_code = #{search.stageCode}
                 </if>
 
                 <if test="search.reservationCode != null">
-                    AND reservation_code = #{search.reservationCode}
+                    AND h.reservation_code = #{search.reservationCode}
                 </if>
 
                 <if test="search.stayCode != null">
-                    AND stay_code = #{search.stayCode}
+                    AND h.stay_code = #{search.stayCode}
                 </if>
 
                 <if test="search.status != null">
-                    AND status = #{search.status}
+                    AND h.status = #{search.status}
                 </if>
 
                 <if test="search.fromDate != null">
-                    AND scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
+                    AND h.scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
                 </if>
 
                 <if test="search.toDate != null">
-                    AND scheduled_at <![CDATA[ <= ]]> #{search.toDate}
+                    AND h.scheduled_at <![CDATA[ <= ]]> #{search.toDate}
                 </if>
 
             </if>
@@ -58,7 +68,6 @@
 
         LIMIT #{page.size} OFFSET #{page.offset}
     </select>
-
     <select id="countHistories" resultType="long">
         SELECT COUNT(*)
         FROM message_send_history

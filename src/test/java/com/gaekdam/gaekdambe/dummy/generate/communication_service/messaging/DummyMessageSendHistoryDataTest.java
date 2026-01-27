@@ -10,50 +10,55 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enti
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity.Stay;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.infrastructure.repository.StayRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.UUID;
 
 
 @Component
-@Transactional
 public class DummyMessageSendHistoryDataTest {
 
-    @Autowired
-    private MessageSendHistoryRepository historyRepository;
+    private static final int BATCH = 500;
 
+    @Autowired MessageSendHistoryRepository historyRepository;
+    @Autowired MessageRuleRepository ruleRepository;
+    @Autowired ReservationRepository reservationRepository;
+    @Autowired StayRepository stayRepository;
     @Autowired
-    private MessageRuleRepository ruleRepository;
+    EntityManager em;
 
-    @Autowired
-    private ReservationRepository reservationRepository;
-
-    @Autowired
-    private StayRepository stayRepository;
-
+    @Transactional
     public void generate() {
 
         if (historyRepository.count() > 0) return;
 
         List<MessageRule> rules = ruleRepository.findAll();
-        List<Reservation> reservations = reservationRepository.findAll();
-        List<Stay> stays = stayRepository.findAll();
+
+        List<MessageRule> reservationRules =
+                rules.stream()
+                        .filter(r -> r.getReferenceEntityType() == ReferenceEntityType.RESERVATION)
+                        .toList();
+
+        List<MessageRule> stayRules =
+                rules.stream()
+                        .filter(r -> r.getReferenceEntityType() == ReferenceEntityType.STAY)
+                        .toList();
+
+        List<MessageSendHistory> buffer = new ArrayList<>(BATCH);
 
         /* =========================
-           예약 기반 메시지 (SCHEDULED 위주)
+           예약 기반 (샘플링!)
            ========================= */
-        for (Reservation reservation : reservations) {
+        for (Reservation reservation :
+                reservationRepository.findAll().stream().limit(10_000).toList()) {
 
-            for (MessageRule rule : rules) {
+            for (MessageRule rule : reservationRules) {
 
-                if (rule.getReferenceEntityType() != ReferenceEntityType.RESERVATION) continue;
-
-                historyRepository.save(
+                buffer.add(
                         MessageSendHistory.builder()
                                 .stageCode(rule.getStageCode())
                                 .reservationCode(reservation.getReservationCode())
@@ -65,21 +70,27 @@ public class DummyMessageSendHistoryDataTest {
                                 .status(MessageSendStatus.SCHEDULED)
                                 .build()
                 );
+
+                if (buffer.size() >= BATCH) {
+                    historyRepository.saveAll(buffer);
+                    em.flush();
+                    em.clear();
+                    buffer.clear();
+                }
             }
         }
 
         /* =========================
-           투숙 기반 메시지 (이미 발송된 데이터)
+           투숙 기반
            ========================= */
-        for (Stay stay : stays) {
+        for (Stay stay :
+                stayRepository.findAll().stream().limit(10_000).toList()) {
 
             if (stay.getActualCheckinAt() == null) continue;
 
-            for (MessageRule rule : rules) {
+            for (MessageRule rule : stayRules) {
 
-                if (rule.getReferenceEntityType() != ReferenceEntityType.STAY) continue;
-
-                historyRepository.save(
+                buffer.add(
                         MessageSendHistory.builder()
                                 .stageCode(rule.getStageCode())
                                 .reservationCode(stay.getReservationCode())
@@ -93,7 +104,20 @@ public class DummyMessageSendHistoryDataTest {
                                 .externalMessageId("MSG-DUMMY")
                                 .build()
                 );
+
+                if (buffer.size() >= BATCH) {
+                    historyRepository.saveAll(buffer);
+                    em.flush();
+                    em.clear();
+                    buffer.clear();
+                }
             }
+        }
+
+        if (!buffer.isEmpty()) {
+            historyRepository.saveAll(buffer);
+            em.flush();
+            em.clear();
         }
     }
 }

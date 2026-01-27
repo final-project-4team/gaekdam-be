@@ -12,7 +12,6 @@
             NULL AS stayCode,
             r.customer_code AS customerCode,
             r.guest_count AS guestCount,
-            r.membership_grade_code AS membershipGradeCode,
             r.property_code AS propertyCode,
             r.reservation_status AS reservationStatus,
             r.checkin_date AS checkinDate,
