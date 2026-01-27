@@ -9,12 +9,8 @@ import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,10 +20,8 @@ public class MembershipGradeQueryController {
   @GetMapping("")
   public ApiResponse<List<MembershipGradeListQueryResponse>> getMembershipGradeList(
       @AuthenticationPrincipal CustomUser employee,
-      /*@Param("sortBy")  String sortBy,
-      @Param("direction") String direction,*/
-      @Param("STATUS")  String status,
-      SortRequest sort
+      @RequestParam(value = "status", required = false) String status,
+      @ModelAttribute SortRequest sort
   ){
     Long hotelGroupCode= employee.getHotelGroupCode();
     return ApiResponse.success(membershipGradeQueryService.getMembershipGradeList(hotelGroupCode,sort,status));

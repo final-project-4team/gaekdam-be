@@ -38,7 +38,7 @@ public class MembershipGradeCommandService {
     }
 
     HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode)
-        .orElseThrow(() -> new IllegalArgumentException("Hotel code not found"));
+        .orElseThrow(() ->  new CustomException(ErrorCode.HOTEL_GROUP_NOT_FOUND));
 
     MembershipGrade membershipGrade = MembershipGrade.registerMembershipGrade(
         hotelGroup,
@@ -58,14 +58,14 @@ public class MembershipGradeCommandService {
   @Transactional
   public String deleteMembershipGrade(Long hotelGroupCode, Long membershipGradeCode) {
     MembershipGrade membershipGrade = membershipGradeRepository.findById(membershipGradeCode)
-        .orElseThrow(() -> new IllegalArgumentException("Hotel Group not found"));
+        .orElseThrow(() ->  new CustomException(ErrorCode.MEMBERSHIP_GRADE_NOT_FOUND));
 
     // 멤버십 등급의 호텔그룹 코드 일치 검사
     if (!membershipGrade.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {
       throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);
     }
     if (membershipGrade.getMembershipGradeStatus() == MembershipGradeStatus.INACTIVE) {
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.MEMBERSHIP_GRADE_ALREADY_INACTIVE);
     }
     membershipGrade.deleteMemberShipGradeStatus();
 
@@ -93,7 +93,7 @@ public class MembershipGradeCommandService {
     }
 
     MembershipGrade membershipGrade = membershipGradeRepository.findById(membershipGradeCode)
-        .orElseThrow(() -> new IllegalArgumentException("Membership Grade not found"));
+        .orElseThrow(() -> new CustomException(ErrorCode.MEMBERSHIP_GRADE_NOT_FOUND));
 
     if (!membershipGrade.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {
       throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);

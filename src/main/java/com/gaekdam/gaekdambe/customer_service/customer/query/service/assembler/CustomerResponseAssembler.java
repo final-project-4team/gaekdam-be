@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.customer_service.customer.query.service.assembler;
 
+import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ChangeSource;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerDetailResponse;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerMarketingConsentResponse;
 import com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerStatusHistoryResponse;
@@ -67,9 +68,10 @@ public class CustomerResponseAssembler {
         String primaryPhone = decryptionService.decrypt(customerCode, dekEnc, row.primaryPhoneEnc());
         String primaryEmail = decryptionService.decrypt(customerCode, dekEnc, row.primaryEmailEnc());
 
-        customerName = MaskingUtils.maskName(customerName);
-        primaryPhone = MaskingUtils.maskPhone(primaryPhone);
-        primaryEmail = MaskingUtils.maskEmail(primaryEmail);
+        // 상세에서 마스킹 필요 시 사용
+//        customerName = MaskingUtils.maskName(customerName);
+//        primaryPhone = MaskingUtils.maskPhone(primaryPhone);
+//        primaryEmail = MaskingUtils.maskEmail(primaryEmail);
 
         CustomerDetailResponse.MemberInfo memberInfo = null;
         if (row.memberCode() != null) {
@@ -224,12 +226,10 @@ public class CustomerResponseAssembler {
                 : MaskingUtils.maskPhone(value);
     }
     private String resolveEmployeeName(CustomerStatusHistoryRow row) {
-        // SYSTEM이면 직원명 대신 SYSTEM
-        if (row.changeSource() != null && row.changeSource().name().equals("SYSTEM")) {
+        if (row.changeSource() == ChangeSource.SYSTEM) {
             return "SYSTEM";
         }
 
-        // 조인 값이 없으면 null
         if (row.employeeCode() == null || row.employeeDekEnc() == null || row.employeeNameEnc() == null) {
             return null;
         }
@@ -240,6 +240,8 @@ public class CustomerResponseAssembler {
                 row.employeeNameEnc()
         );
 
+        if (name == null || name.isBlank()) return null;
         return MaskingUtils.maskName(name);
     }
+
 }
