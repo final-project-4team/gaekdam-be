@@ -28,7 +28,7 @@ public class LoyaltyGradeQueryService {
   public LoyaltyGradeDetailQueryResponse getLoyaltyGradeDetail(Long hotelGroupCode, Long loyaltyGradeCode) {
     LoyaltyGradeDetailQueryResponse loyaltyGradeDetail= loyaltyGradeMapper.findLoyaltyGradeDetail(hotelGroupCode,loyaltyGradeCode);
     if(loyaltyGradeDetail==null){
-      throw new CustomException(ErrorCode.NOT_FOUND_VALUE);
+      throw new CustomException(ErrorCode.LOYALTY_GRADE_NOT_FOUND);
     }
     return loyaltyGradeDetail;
   }

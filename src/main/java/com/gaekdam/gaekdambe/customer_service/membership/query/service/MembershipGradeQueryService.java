@@ -24,9 +24,11 @@ public class MembershipGradeQueryService {
 
   public MembershipGradeDetailQueryResponse getMembershipGradeDetail(Long hotelGroupCode, Long membershipGradeCode) {
     MembershipGradeDetailQueryResponse membershipGradeDetail= membershipGradeMapper.findMembershipGradeDetail(hotelGroupCode,membershipGradeCode);
-    if(membershipGradeDetail==null){
-      throw new CustomException(ErrorCode.NOT_FOUND_VALUE);
-    }
-    return membershipGradeDetail;
+
+
+      if (membershipGradeDetail == null) {
+          throw new CustomException(ErrorCode.MEMBERSHIP_GRADE_NOT_FOUND);
+      }
+      return membershipGradeDetail;
   }
 }
