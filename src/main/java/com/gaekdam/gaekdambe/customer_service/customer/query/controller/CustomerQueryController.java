@@ -14,6 +14,7 @@ import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,7 @@ public class CustomerQueryController {
      * - 상단 keyword + 상세검색(모달) + 필터
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('CUSTOMER_LIST')")
     @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_LIST)
     public ApiResponse<PageResponse<CustomerListItem>> getCustomerList(
             @AuthenticationPrincipal CustomUser user,
@@ -44,6 +46,7 @@ public class CustomerQueryController {
      * 고객 상세 조회
      */
     @GetMapping("/{customerCode}")
+    @PreAuthorize("hasAuthority('CUSTOMER_READ')")
     public ApiResponse<CustomerDetailResponse> getCustomerDetail(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode
@@ -57,6 +60,7 @@ public class CustomerQueryController {
      * 고객 상태 조회
      */
     @GetMapping("/{customerCode}/status")
+    @PreAuthorize("hasAuthority('CUSTOMER_LIST')")
     public ApiResponse<CustomerStatusResponse> getCustomerStatus(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode

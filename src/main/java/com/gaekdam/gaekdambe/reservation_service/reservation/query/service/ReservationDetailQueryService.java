@@ -2,6 +2,9 @@ package com.gaekdam.gaekdambe.reservation_service.reservation.query.service;
 
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 
+
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.LogPersonalInfo;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.*;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.ReservationDetailMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ public class ReservationDetailQueryService {
     private final ReservationDetailMapper mapper;
     private final DecryptionService decryptionService;
 
+    @LogPersonalInfo(type = PermissionTypeKey.CUSTOMER_READ, purpose = "고객 정보 조회")
     public ReservationDetailResponse getReservationDetail(Long reservationCode) {
 
         CustomerCryptoRow row = mapper.findCustomerCrypto(reservationCode);

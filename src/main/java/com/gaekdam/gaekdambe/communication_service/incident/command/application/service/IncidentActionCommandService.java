@@ -25,7 +25,7 @@ public class IncidentActionCommandService {
     private final EntityManager entityManager;
 
     @Transactional
-    @AuditLog(details = "조치 이력 등록", type = PermissionTypeKey.INCIDENT_ACTION_CREATE)
+    @AuditLog(details = "'조치 이력 내용 : '+#request.actionContent", type = PermissionTypeKey.INCIDENT_ACTION_CREATE)
     public Long createAction(Long hotelGroupCode, String loginId, Long incidentCode, IncidentActionCreateRequest request) {
 
         Long writerEmployeeCode = incidentActionMapper.findEmployeeCodeByLoginId(hotelGroupCode, loginId);

@@ -33,7 +33,7 @@ public class CheckInOutCommandService {
      * - CheckInOut 기록 생성
      */
     @Transactional
-    @AuditLog(details = "체크인 등록", type = PermissionTypeKey.CHECK_IN_CREATE)
+    @AuditLog(details = "'체크 인   예약 코드 : ' + #request.reservationCode", type = PermissionTypeKey.CHECK_IN_CREATE)
     public void checkIn(CheckInRequest request) {
 
         // 1. 예약 조회
@@ -76,7 +76,7 @@ public class CheckInOutCommandService {
      * - 기존 Stay 종료
      * - CheckInOut 기록
      */
-    @AuditLog(details = "체크아웃 등록", type = PermissionTypeKey.CHECK_OUT_CREATE)
+    @AuditLog(details = "'체크아웃   숙박 코드 : ' + #request.stayCode", type = PermissionTypeKey.CHECK_OUT_CREATE)
     public void checkOut(CheckOutRequest request) {
 
         Stay stay = stayRepository.findById(request.getStayCode())

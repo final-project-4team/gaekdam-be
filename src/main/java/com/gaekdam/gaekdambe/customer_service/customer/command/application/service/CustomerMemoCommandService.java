@@ -28,7 +28,7 @@ public class CustomerMemoCommandService {
     private final EmployeeRepository employeeRepository;
 
     @Transactional
-    @AuditLog(details = "고객 메모 생성", type = PermissionTypeKey.CUSTOMER_MEMO_CREATE)
+    @AuditLog(details = "'고객 코드: '+ #customerCode+'\n고객 메모 생성 내용 :' + #request.customerMemoContent", type = PermissionTypeKey.CUSTOMER_MEMO_CREATE)
     public CustomerMemoCommandResponse createCustomerMemo(CustomUser user, Long customerCode, CustomerMemoCreateRequest request) {
         validateCustomerScope(user, customerCode);
 
@@ -59,7 +59,7 @@ public class CustomerMemoCommandService {
     }
 
     @Transactional
-    @AuditLog(details = "고객 메모 삭제", type = PermissionTypeKey.CUSTOMER_MEMO_DELETE)
+    @AuditLog(details = "'고객 코드: '+ #customerCode", type = PermissionTypeKey.CUSTOMER_MEMO_DELETE)
     public void deleteCustomerMemo(CustomUser user, Long customerCode, Long memoCode) {
         validateCustomerScope(user, customerCode);
 

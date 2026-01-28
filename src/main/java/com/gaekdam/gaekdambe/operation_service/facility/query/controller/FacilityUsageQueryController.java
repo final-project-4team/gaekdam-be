@@ -15,6 +15,7 @@ import com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.Facil
 import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityUsageQueryService;
 import com.gaekdam.gaekdambe.operation_service.facility.query.service.FacilityUsageSummaryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,7 @@ public class FacilityUsageQueryController {
      * 부대시설 이용내역 조회 (검색 + 페이징)
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('TODAY_FACILITY_USAGE_LIST')")
     @AuditLog(details = "", type = PermissionTypeKey.TODAY_FACILITY_USAGE_LIST)
     public ApiResponse<PageResponse<FacilityUsageResponse>> getFacilityUsages(
             @AuthenticationPrincipal CustomUser customUser,
@@ -84,6 +86,7 @@ public class FacilityUsageQueryController {
      * 오늘 부대시설 이용 현황 (카드/요약)
      */
     @GetMapping("/today/summary")
+    @PreAuthorize("hasAuthority('TODAY_FACILITY_USAGE_LIST')")
     public ApiResponse<List<FacilityUsageSummaryResponse>> getTodayFacilityUsageSummary(
             @AuthenticationPrincipal CustomUser customUser,
             @RequestParam(required = false) Long propertyCode

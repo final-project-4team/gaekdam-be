@@ -8,6 +8,7 @@ import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class CustomerMemoCommandController {
     private final CustomerMemoCommandService customerMemoCommandService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_CREATE')")
     public ApiResponse<CustomerMemoCommandResponse> createMemo(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,
@@ -28,6 +30,7 @@ public class CustomerMemoCommandController {
     }
 
     @PutMapping("/{memoCode}")
+    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_UPDATE')")
     public ApiResponse<CustomerMemoCommandResponse> updateMemo(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,
@@ -38,6 +41,7 @@ public class CustomerMemoCommandController {
     }
 
     @DeleteMapping("/{memoCode}")
+    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_DELETE')")
     public ApiResponse<Void> deleteMemo(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,

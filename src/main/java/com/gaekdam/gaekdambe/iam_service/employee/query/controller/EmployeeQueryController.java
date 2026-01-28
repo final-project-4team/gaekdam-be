@@ -34,7 +34,6 @@ public class EmployeeQueryController {
 
   // 직원 리스트 조회
   @PreAuthorize("hasAuthority('EMPLOYEE_LIST')")
-
   @GetMapping("")
   public ApiResponse<PageResponse<EmployeeListResponse>> searchEmployee(
       @AuthenticationPrincipal CustomUser employee,

@@ -10,6 +10,7 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class LoyaltyGradeQueryController {
   private final LoyaltyGradeQueryService loyaltyGradeQueryService;
   @GetMapping("")
+  @PreAuthorize("hasAuthority('LOYALTY_POLICY_LIST')")
   @AuditLog(details = "", type = PermissionTypeKey.LOYALTY_POLICY_LIST)
   public ApiResponse<List<LoyaltyGradeListQueryResponse>> getLoyaltyGradeList(
       @AuthenticationPrincipal CustomUser employee,
@@ -34,6 +36,7 @@ public class LoyaltyGradeQueryController {
   }
 
   @GetMapping("/{loyaltyGradeCode}")
+  @PreAuthorize("hasAuthority('LOYALTY_POLICY_READ')")
   @AuditLog(details = "", type = PermissionTypeKey.LOYALTY_POLICY_READ)
   public ApiResponse<LoyaltyGradeDetailQueryResponse> getLoyaltyGradeDetail(
       @AuthenticationPrincipal CustomUser employee,
