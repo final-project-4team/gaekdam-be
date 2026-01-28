@@ -38,7 +38,7 @@ public class DummyReservationDataTest {
     @Autowired RoomTypeRepository roomTypeRepository;
     @Autowired ReservationPackageRepository packageRepository;
 
-    // ✅ 추가: customer/hotelGroup 매칭용
+    // 추가: customer/hotelGroup 매칭용
     @Autowired CustomerRepository customerRepository;
     @Autowired
     PropertyRepository propertyRepository;
