@@ -30,7 +30,7 @@ public class DummyLoyaltyGradeDataTest {
 
         for (HotelGroup hg : hotelGroups) {
 
-            // GENERAL
+            // 기본 등급
             loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
                     hg,
                     "GENERAL",
@@ -42,7 +42,7 @@ public class DummyLoyaltyGradeDataTest {
                     1
             ));
 
-            // EXCELLENT
+            // 상위 등급
             loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
                     hg,
                     "EXCELLENT",

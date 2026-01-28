@@ -23,6 +23,9 @@ public class DummyLoyaltyDataTest {
 
     private static final int BATCH = 500;
 
+    // EXCELLENT 승급 이력 비율 (원하는대로 조절)
+    private static final int EXCELLENT_PROMOTION_RATE = 15; // %
+
     private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
     private static final LocalDateTime END = LocalDateTime.of(2026, 12, 31, 23, 59);
 
@@ -40,6 +43,17 @@ public class DummyLoyaltyDataTest {
 
         List<LoyaltyGrade> grades = loyaltyGradeRepository.findAll();
         if (grades.isEmpty()) return;
+
+        // GENERAL = 가장 먼저 생성된 등급(보통 PK가 가장 작음)
+        LoyaltyGrade general = grades.stream()
+                .min(Comparator.comparing(LoyaltyGrade::getLoyaltyGradeCode))
+                .orElse(null);
+        if (general == null) return;
+
+        // EXCELLENT = 다음 등급(없으면 승급 이력 생성 안 함)
+        LoyaltyGrade excellent = (grades.size() >= 2)
+                ? grades.stream().max(Comparator.comparing(LoyaltyGrade::getLoyaltyGradeCode)).orElse(null)
+                : null;
 
         List<Object[]> customerRows = loadCustomerHotelGroupRows();
         if (customerRows.isEmpty()) return;
@@ -63,12 +77,11 @@ public class DummyLoyaltyDataTest {
             LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(10), random);
             LocalDateTime now = joinedAt;
 
-            LoyaltyGrade grade = grades.get(random.nextInt(grades.size()));
-
+            // 초기 등급은 무조건 GENERAL
             Loyalty loyalty = Loyalty.registerLoyalty(
                     customerCode,
                     hotelGroupCode,
-                    grade.getLoyaltyGradeCode(),
+                    general.getLoyaltyGradeCode(),
                     joinedAt,
                     now
             );
@@ -76,9 +89,10 @@ public class DummyLoyaltyDataTest {
             int idxInBatch = loyaltyBuffer.size();
             loyaltyBuffer.add(loyalty);
 
-            // 이력 15%
-            if (random.nextInt(100) < 15) {
-                LoyaltyGrade afterGrade = grades.get(random.nextInt(grades.size()));
+            // 일부만 EXCELLENT 승급 이력 생성
+            if (excellent != null && !Objects.equals(excellent.getLoyaltyGradeCode(), general.getLoyaltyGradeCode())
+                    && random.nextInt(100) < EXCELLENT_PROMOTION_RATE) {
+
                 LocalDateTime changedAt = joinedAt.plusDays(5 + random.nextInt(180));
                 if (changedAt.isAfter(END)) changedAt = END;
 
@@ -89,9 +103,9 @@ public class DummyLoyaltyDataTest {
                         0L, // flush 후 주입
                         ChangeSource.SYSTEM,
                         employeeCode,
-                        "dummy loyalty change",
-                        grade.getLoyaltyGradeCode(),
-                        afterGrade.getLoyaltyGradeCode(),
+                        "dummy loyalty promotion",
+                        general.getLoyaltyGradeCode(),
+                        excellent.getLoyaltyGradeCode(),
                         LoyaltyStatus.ACTIVE,
                         LoyaltyStatus.ACTIVE,
                         changedAt
@@ -116,7 +130,6 @@ public class DummyLoyaltyDataTest {
         em.flush();
 
         List<LoyaltyHistory> historyBuffer = new ArrayList<>(historySlots.size());
-
         for (HistorySlot slot : historySlots) {
             Loyalty saved = loyaltyBuffer.get(slot.loyaltyIndex);
             setLoyaltyCode(slot.history, saved.getLoyaltyCode());
