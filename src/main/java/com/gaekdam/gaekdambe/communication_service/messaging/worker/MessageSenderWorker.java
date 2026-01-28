@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.communication_service.messaging.command.infrastruct
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,16 @@ public class MessageSenderWorker {
     private final MessageSendHistoryRepository repository;
     private final MessageSendProcessor processor;
 
-    @Scheduled(fixedDelay = 10_000)
+    @Scheduled(cron = "0 */1 * * * *")
     public void work() {
 
         log.info("MessageSenderWorker tick");
 
         List<Long> targetIds =
-                repository.findTop100IdsByStatusAndScheduledAtBefore(
+                repository.findIdsByStatusAndScheduledAtBefore(
                         MessageSendStatus.SCHEDULED,
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        PageRequest.of(0, 100)
                 );
 
         log.info("targets size = {}", targetIds.size());

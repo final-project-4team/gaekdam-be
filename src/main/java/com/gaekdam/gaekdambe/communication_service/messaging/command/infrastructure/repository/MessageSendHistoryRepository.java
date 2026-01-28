@@ -2,6 +2,7 @@ package com.gaekdam.gaekdambe.communication_service.messaging.command.infrastruc
 
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageSendHistory;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums.MessageSendStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -23,15 +24,16 @@ public interface MessageSendHistoryRepository
      * 발송 예정(SCHEDULED) 이고 현재 시각 이전인 메시지 ID 조회
      */
     @Query("""
-        select h.sendCode
-        from MessageSendHistory h
-        where h.status = :status
-          and h.scheduledAt <= :now
-        order by h.sendCode
-    """)
-    List<Long> findTop100IdsByStatusAndScheduledAtBefore(
+    select h.sendCode
+    from MessageSendHistory h
+    where h.status = :status
+      and h.scheduledAt <= :now
+    order by h.sendCode
+""")
+    List<Long> findIdsByStatusAndScheduledAtBefore(
             @Param("status") MessageSendStatus status,
-            @Param("now") LocalDateTime now
+            @Param("now") LocalDateTime now,
+            Pageable pageable
     );
 
     /**
