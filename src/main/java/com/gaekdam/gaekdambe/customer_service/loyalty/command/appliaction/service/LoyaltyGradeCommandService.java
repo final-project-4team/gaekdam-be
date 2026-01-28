@@ -8,6 +8,8 @@ import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +20,13 @@ public class LoyaltyGradeCommandService {
   private final HotelGroupRepository hotelGroupRepository;
   private final LoyaltyGradeRepository loyaltyGradeRepository;
 
-  // 멤버십 생성
+
   @Transactional
+  @AuditLog(details = "로열티 등급 생성", type = PermissionTypeKey.LOYALTY_POLICY_CREATE)
   public String createLoyaltyGrade(LoyaltyGradeRequest request, Long hotelGroupCode) {
 
     HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode)
-        .orElseThrow(() -> new IllegalArgumentException("Hotel code not found"));
+        .orElseThrow(() -> new CustomException(ErrorCode.HOTEL_GROUP_NOT_FOUND));
 
     LoyaltyGrade loyaltyGrade = LoyaltyGrade.registerLoyaltyGrade(
         hotelGroup,
@@ -41,16 +44,16 @@ public class LoyaltyGradeCommandService {
   }
 
   @Transactional
+  @AuditLog(details = "로열티 등급 삭제", type = PermissionTypeKey.LOYALTY_POLICY_DELETE)
   public String deleteLoyaltyGrade(Long hotelGroupCode, Long loyaltyGradeCode) {
     LoyaltyGrade loyaltyGrade = loyaltyGradeRepository.findById(loyaltyGradeCode)
-        .orElseThrow(() -> new IllegalArgumentException("Hotel Group not found"));
+        .orElseThrow(() -> new CustomException(ErrorCode.LOYALTY_GRADE_NOT_FOUND));
 
-    // 멤버십 등급의 호텔그룹 코드 일치 검사
     if (!loyaltyGrade.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {
       throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);
     }
     if (loyaltyGrade.getLoyaltyGradeStatus() == LoyaltyGradeStatus.INACTIVE) {
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.LOYALTY_GRADE_ALREADY_INACTIVE);
     }
     loyaltyGrade.deleteLoyaltyGradeStatus();
 
@@ -63,7 +66,7 @@ public class LoyaltyGradeCommandService {
   public String updateLoyaltyGrade(Long hotelGroupCode, Long loyaltyGradeCode, LoyaltyGradeRequest request) {
 
     LoyaltyGrade loyaltyGrade = loyaltyGradeRepository.findById(loyaltyGradeCode)
-        .orElseThrow(() -> new IllegalArgumentException("Loyalty Grade not found"));
+        .orElseThrow(() -> new CustomException(ErrorCode.LOYALTY_GRADE_NOT_FOUND));
 
     if (!loyaltyGrade.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {
       throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);

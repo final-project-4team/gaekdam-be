@@ -21,25 +21,26 @@ public class EmployeeQueryController {
 
   private final EmployeeQueryService employeeQueryService;
 
-
+  // 다른 직원 상세 조회
   @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
   @GetMapping("/detail/{employeeCode}")
   public ApiResponse<EmployeeDetailResponse> getEmployee(
       @AuthenticationPrincipal CustomUser employee,
-      @PathVariable Long employeeCode
-      ) {
+      @PathVariable Long employeeCode,
+      @RequestParam(required = false) String reason) {
     Long hotelGroupCode = employee.getHotelGroupCode();
-    return ApiResponse.success(employeeQueryService.getEmployeeDetail(hotelGroupCode,employeeCode));
+    return ApiResponse.success(employeeQueryService.getEmployeeDetail(hotelGroupCode, employeeCode, reason));
   }
 
+  // 직원 리스트 조회
   @PreAuthorize("hasAuthority('EMPLOYEE_LIST')")
+
   @GetMapping("")
   public ApiResponse<PageResponse<EmployeeListResponse>> searchEmployee(
       @AuthenticationPrincipal CustomUser employee,
       PageRequest page,
       EmployeeQuerySearchRequest search,
-      SortRequest sort
-  ) {
+      SortRequest sort) {
 
     Long hotelGroupCode = employee.getHotelGroupCode();
     if (sort == null || sort.getSortBy() == null) {
@@ -51,6 +52,7 @@ public class EmployeeQueryController {
         employeeQueryService.searchEmployees(hotelGroupCode, search, page, sort));
   }
 
+  // 직원 상세 조회
   @GetMapping("/detail")
   public ApiResponse<EmployeeDetailResponse> getMyPage(
       @AuthenticationPrincipal CustomUser employee) {

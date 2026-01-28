@@ -26,7 +26,6 @@ public class OperationBoardQueryService {
     private final OperationBoardMapper mapper;
     private final DecryptionService decryptionService;
     private final SearchHashService searchHashService;
-
     public PageResponse<OperationBoardResponse> findOperationBoard(
             PageRequest page,
             OperationBoardSearchRequest search,

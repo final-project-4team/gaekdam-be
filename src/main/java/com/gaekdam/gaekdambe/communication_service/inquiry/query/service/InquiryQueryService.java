@@ -25,7 +25,6 @@ public class InquiryQueryService {
 
     private final InquiryMapper inquiryMapper;
     private final DecryptionService decryptionService;
-
     public PageResponse<InquiryListResponse> getInquiries(
             PageRequest page,
             InquiryListSearchRequest search,
@@ -40,6 +39,7 @@ public class InquiryQueryService {
 
         return new PageResponse<>(responses, page.getPage(), page.getSize(), total);
     }
+
 
     public InquiryDetailResponse getInquiryDetail(Long hotelGroupCode, Long inquiryCode) {
         InquiryDetailRow detailRow = inquiryMapper.findInquiryDetail(hotelGroupCode, inquiryCode);

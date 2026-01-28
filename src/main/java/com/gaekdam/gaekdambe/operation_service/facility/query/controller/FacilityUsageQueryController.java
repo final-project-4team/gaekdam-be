@@ -7,6 +7,8 @@ import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.operation_service.facility.query.dto.request.FacilityUsageSearchRequest;
 import com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageResponse;
 import com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageSummaryResponse;
@@ -35,6 +37,7 @@ public class FacilityUsageQueryController {
      * 부대시설 이용내역 조회 (검색 + 페이징)
      */
     @GetMapping
+    @AuditLog(details = "", type = PermissionTypeKey.TODAY_FACILITY_USAGE_LIST)
     public ApiResponse<PageResponse<FacilityUsageResponse>> getFacilityUsages(
             @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,

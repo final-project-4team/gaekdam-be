@@ -11,6 +11,8 @@ import com.gaekdam.gaekdambe.customer_service.customer.query.service.CustomerTim
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +31,7 @@ public class CustomerQueryController {
      * - 상단 keyword + 상세검색(모달) + 필터
      */
     @GetMapping
+    @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_LIST)
     public ApiResponse<PageResponse<CustomerListItem>> getCustomerList(
             @AuthenticationPrincipal CustomUser user,
             @ModelAttribute CustomerListSearchRequest request

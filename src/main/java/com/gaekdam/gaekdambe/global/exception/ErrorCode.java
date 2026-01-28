@@ -13,7 +13,7 @@ public enum ErrorCode {
   // 1000번대는 공통 오류 처리
   UNAUTHORIZED_ACCESS("1000", "관리자만 접근 가능합니다", HttpStatus.UNAUTHORIZED),
   INVALID_REQUEST("1001", "잘못된 요청입니다.", HttpStatus.BAD_REQUEST),
-  INVALID_USER_ID("1002", "해당 사용자가 없습니다", HttpStatus.BAD_REQUEST),
+  INVALID_USER_ID("1002", "유효하지 않은 아이디 혹은 비밀번호 입니다", HttpStatus.BAD_REQUEST),
   INVALID_ADMIN_ID("1003", "잘못된 관리자 ID입니다.", HttpStatus.BAD_REQUEST),
   INVALID_INCORRECT_FORMAT("1004", "잘못된 형식입니다.", HttpStatus.BAD_REQUEST),
   PASSWORD_NOT_MATCH("1005", "비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
@@ -25,6 +25,7 @@ public enum ErrorCode {
   HOTEL_GROUP_NOT_FOUND("1011", "호텔 그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   PERMISSION_TYPE_NOT_FOUND("1012", "존재하지 않는 권한 타입이 포함되어 있습니다.", HttpStatus.BAD_REQUEST),
   PERMISSION_NOT_FOUND("1013", "권한을 찾을 수 없거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
+  EMPLOYEE_NOT_FOUND("1014", "직원을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
 
   // 2000번대: Report / Dashboard 도메인 오류
 
@@ -47,6 +48,14 @@ public enum ErrorCode {
   MEMBERSHIP_GRADE_NOT_FOUND( "3003","멤버십 등급을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   MEMBERSHIP_GRADE_INACTIVE("3004","비활성화된 멤버십 등급입니다.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_MANUAL_REASON_REQUIRED("3005","수동 변경 사유는 필수입니다.", HttpStatus.BAD_REQUEST),
+    MEMBERSHIP_GRADE_ALREADY_INACTIVE("3006", "이미 비활성화된 멤버십 등급입니다.", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_CODE_REQUIRED("3007", "직원 코드(employeeCode)는 필수입니다.", HttpStatus.BAD_REQUEST),
+    MEMBERSHIP_GRADE_NAME_EMPTY("3008", "멤버십 등급명이 비어있습니다.", HttpStatus.BAD_REQUEST),
+    MEMBERSHIP_HISTORY_INVALID_PERIOD("3009", "조회 기간(from/to)이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
+    LOYALTY_GRADE_NOT_FOUND("3013", "로열티 등급을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    LOYALTY_GRADE_ALREADY_INACTIVE("3014", "이미 비활성화된 로열티 등급입니다.", HttpStatus.BAD_REQUEST),
+    LOYALTY_HISTORY_INVALID_PERIOD("3015", "조회 기간(from/to)이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
+
 
   REPORT_TEMPLATE_NOT_FOUND("2401", "존재하지 않는 템플릿입니다.", HttpStatus.BAD_REQUEST),
   REPORT_LAYOUT_TEMPLATE_DUPLICATE("2402", "이미 해당 레이아웃에 등록된 템플릿입니다.", HttpStatus.CONFLICT),

@@ -6,10 +6,7 @@ import com.gaekdam.gaekdambe.communication_service.incident.command.application.
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,4 +20,11 @@ public class IncidentCommandController {
         Long incidentCode = incidentCommandService.createIncident(request);
         return ApiResponse.success(new IncidentCreateResponse(incidentCode));
     }
+
+    @PatchMapping("/{incidentCode}/close")
+    public ApiResponse<Void> closeIncident(@PathVariable Long incidentCode) {
+        incidentCommandService.closeIncident(incidentCode);
+        return ApiResponse.success(null);
+    }
+
 }

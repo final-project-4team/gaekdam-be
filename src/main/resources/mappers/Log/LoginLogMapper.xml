@@ -79,8 +79,7 @@
     JOIN employee e ON ll.employee_code = e.employee_code
 
     <where>
-      <!-- SaaS 호텔 스코프 -->
-      AND ll.hotel_group_code = #{search.hotelGroupCode}
+      AND ll.hotel_group_code = #{hotelGroupCode}
 
       <if test="search.employeeCode != null">
         AND ll.employee_code = #{search.employeeCode}

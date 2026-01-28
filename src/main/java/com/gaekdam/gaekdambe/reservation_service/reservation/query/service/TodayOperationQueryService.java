@@ -22,6 +22,7 @@ public class TodayOperationQueryService {
     private final DecryptionService decryptionService;
     private final SearchHashService searchHashService;
 
+
     public PageResponse<OperationBoardResponse> findTodayOperations(
             PageRequest page,
             Long hotelGroupCode,

@@ -52,31 +52,32 @@ public class DummyPermissionMappingDataTest {
 
     // 2. 지원 (회계 등)
     if (roleName.contains("회계")) {
-      return key.name().startsWith("REPORT_") || key.name().startsWith("MEMBER_") || key.name().startsWith("LOYALTY_");
+      return key.name().startsWith(" REPORT_LAYOUT_") ||key.name().startsWith(" REPORT_LAYOUT_TEMPLATE_")
+          ||key.name().startsWith(" REPORT_LAYOUT_TEMPLATE_LIBRARY_") || key.name().startsWith("MEMBER_")
+          || key.name().startsWith("TODAY_RESERVATION_")|| key.name().startsWith("TODAY_FACILITY_USAGE_");
     }
 
     // 3. 객실 (하우스키핑)
     if (roleName.contains("객실") || roleName.contains("하우스") || roleName.contains("청소")) {
-      return key.name().contains("CHECK_IN_OUT") || key.name().contains("FACILITY_USAGE")
-          || key.name().contains("CUSTOMER_ACTIVITY") || key.name().contains("ACCIDENT");
+      return key.name().contains("CHECK_IN_") ||key.name().contains("CHECK_OUT_") || key.name().contains("TODAY_FACILITY_USAGE_")
+          || key.name().contains("TODAY_RESERVATION_") || key.name().contains(" INCIDENT_");
     }
 
     // 4. 식음/조리
     if (roleName.contains("식음") || roleName.contains("조리") || roleName.contains("레스토랑") || roleName.contains("연회")) {
-      return key.name().startsWith("CUSTOMER_") || key.name().contains("FACILITY_USAGE")
+      return key.name().startsWith("CUSTOMER_") || key.name().contains("TODAY_FACILITY_USAGE_")
           || key.name().startsWith("INQUIRY_");
     }
 
     // 5. 세일즈/홍보
     if (roleName.contains("세일즈") || roleName.contains("홍보") || roleName.contains("마케팅") || roleName.contains("브랜드")) {
-      return key.name().startsWith("CUSTOMER_") || key.name().startsWith("MEMBERSHIP_")
-          || key.name().startsWith("LOYALTY_") || key.name().startsWith("MESSAGE_")
-          || key.name().startsWith("REPORT_READ");
+      return key.name().startsWith("CUSTOMER_")
+           || key.name().startsWith("MESSAGE_") || key.name().startsWith("REPORT_READ");
     }
 
     // 6. 시설
     if (roleName.contains("시설") || roleName.contains("난방")) {
-      return key.name().contains("FACILITY_USAGE") || key.name().startsWith("ACCIDENT_")
+      return key.name().contains("FACILITY_USAGE") || key.name().startsWith("INCIDENT_")
           || key.name().startsWith("REPORT_READ");
     }
 

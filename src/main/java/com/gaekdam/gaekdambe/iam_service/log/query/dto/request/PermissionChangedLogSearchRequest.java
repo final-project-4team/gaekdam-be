@@ -6,6 +6,8 @@ public record PermissionChangedLogSearchRequest(
         Long hotelGroupCode,
         String accessorLoginId,
         String changedLoginId,
+        String beforePermissionName,
+        String afterPermissionName,
         LocalDateTime fromDate,
         LocalDateTime toDate) {
 }

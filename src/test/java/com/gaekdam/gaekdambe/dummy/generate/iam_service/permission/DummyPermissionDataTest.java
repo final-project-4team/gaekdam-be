@@ -24,38 +24,15 @@ public class DummyPermissionDataTest {
             return;
         }
 
-
-/*      Object[][] permissionsDummy={
-          {"경영-총지배인",hotel},
-          {"경영-부지배인",hotel},
-          {"경영-지점장",hotel},
-          {"지원-회계부장",hotel},
-          {"지원-회계부사원",hotel},
-          {"객실-하우스 키핑 매니저",hotel},
-          {"객실-청소 직원",hotel},
-          {"식음-레스토랑 매니저",hotel},
-          {"식음-연회 매니저",hotel},
-          {"식음-서빙",hotel},
-          {"조리-중방장",hotel},
-          {"조리-조리사",hotel},
-          {"세일즈-세일즈 매니저",hotel},
-          {"세일즈-세일즈 디렉터",hotel},
-          {"홍보-마케팅 매니저",hotel},
-          {"홍보-브랜드 매니저",hotel},
-          {"홍보-시설 팀장",hotel},
-          {"홍보-난방 기사",hotel},
-      };*/
       String []permissionDummy=
       {   "경영-총지배인",
           "경영-부지배인",
-        //  "경영-지점장",
           "지원-회계부장",
           "지원-회계부사원",
           "객실-하우스 키핑 매니저",
           "객실-청소 직원",
           "식음-레스토랑 매니저",
           "식음-연회 매니저",
-       //   "식음-서빙",
           "조리-중방장",
           "조리-조리사",
           "세일즈-세일즈 매니저",
@@ -63,7 +40,8 @@ public class DummyPermissionDataTest {
           "홍보-마케팅 매니저",
           "홍보-브랜드 매니저",
           "시설-시설 팀장",
-          "시설-난방 기사"};
+          "시설-난방 기사"
+      };
       for(String permissions:permissionDummy) {
       Permission permission = Permission.createPermission(
           permissions,

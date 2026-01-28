@@ -2,6 +2,7 @@ package com.gaekdam.gaekdambe.iam_service.log.command.application.service;
 
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
+import com.gaekdam.gaekdambe.iam_service.log.command.domain.LoginResult;
 import com.gaekdam.gaekdambe.iam_service.log.command.domain.entity.LoginLog;
 import com.gaekdam.gaekdambe.iam_service.log.command.domain.entity.PermissionChangedLog;
 import com.gaekdam.gaekdambe.iam_service.log.command.domain.entity.PersonalInformationLog;
@@ -32,11 +33,13 @@ public class AuditLogService {
         public void saveAuditLog(
                         Employee employee,
                         PermissionTypeKey type,
-                        String details) {
+                        String details,
+                        String previousValue,
+                        String newValue) {
                 try {
                         com.gaekdam.gaekdambe.iam_service.log.command.domain.entity.AuditLog log = com.gaekdam.gaekdambe.iam_service.log.command.domain.entity.AuditLog
                                         .createLog(
-                                                        employee, type, details);
+                                                        employee, type, details, previousValue, newValue);
 
                         auditLogRepository.save(log);
 
@@ -55,7 +58,7 @@ public class AuditLogService {
                                         employee,
                                         userIp,
                                         LocalDateTime.now(),
-                                        true,
+                                        LoginResult.SUCCESS,
                                         null,
                                         employee.getHotelGroup());
                         loginLogRepository.save(successLog);
@@ -73,6 +76,7 @@ public class AuditLogService {
         }
 
         // 로그인 실패 로그 저장
+
         @Transactional(propagation = Propagation.REQUIRES_NEW)
         public void logLoginFailed(Employee employee, String userIp, String failedReason) {
                 try {
@@ -81,7 +85,7 @@ public class AuditLogService {
                                         employee,
                                         userIp,
                                         LocalDateTime.now(),
-                                        false,
+                                        LoginResult.FAIL,
                                         failedReason,
                                         employee.getHotelGroup());
                         loginLogRepository.save(failedLog);
@@ -106,7 +110,7 @@ public class AuditLogService {
                                         employee,
                                         userIp,
                                         LocalDateTime.now(),
-                                        false,
+                                        LoginResult.FAIL,
                                         null,
                                         employee.getHotelGroup());
                         loginLogRepository.save(lockedLog);

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'org.example'
@@ -39,7 +40,7 @@ dependencies {
     testImplementation 'org.junit.platform:junit-platform-suite'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    
+
     // dek 캐싱
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 
@@ -61,10 +62,58 @@ dependencies {
     // csv
     implementation 'com.opencsv:opencsv:5.12.0'
 
-    //
+    //jakarta servlet
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+    //SMTP
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+    }
 }
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+
+    def includes = [
+            "com/gaekdam/gaekdambe/customer_service/membership/command/**/service/**",
+            "com/gaekdam/gaekdambe/customer_service/membership/query/**/service/**"
+    ]
+
+
+    def excludes = [
+            "**/*Application*",
+            "**/*Config*",
+            "**/*Dto*",
+            "**/*Request*",
+            "**/*Response*",
+            "**/*Mapper*",
+            "**/*Exception*",
+            "**/global/**",
+
+
+            "**/controller/**",
+            "**/repository/**",
+            "**/infrastructure/**",
+            "**/domain/**",
+            "**/entity/**"
+    ]
+
+    classDirectories.setFrom(files(classDirectories.files.collect { classesDir ->
+        fileTree(dir: classesDir, includes: includes, excludes: excludes)
+    }))
+
+    reports {
+        html.required = true
+        xml.required = false
+        csv.required = false
+    }
+}
+
+

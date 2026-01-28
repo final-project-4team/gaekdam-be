@@ -7,14 +7,12 @@ import com.gaekdam.gaekdambe.customer_service.membership.query.service.Membershi
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,18 +20,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class MembershipGradeQueryController {
   private final MembershipGradeQueryService membershipGradeQueryService;
   @GetMapping("")
+  @AuditLog(details = "", type = PermissionTypeKey.MEMBERSHIP_POLICY_LIST)
   public ApiResponse<List<MembershipGradeListQueryResponse>> getMembershipGradeList(
       @AuthenticationPrincipal CustomUser employee,
-      /*@Param("sortBy")  String sortBy,
-      @Param("direction") String direction,*/
-      @Param("STATUS")  String status,
-      SortRequest sort
+      @RequestParam(value = "status", required = false) String status,
+      @ModelAttribute SortRequest sort
   ){
     Long hotelGroupCode= employee.getHotelGroupCode();
     return ApiResponse.success(membershipGradeQueryService.getMembershipGradeList(hotelGroupCode,sort,status));
   }
 
   @GetMapping("/{membershipGradeCode}")
+  @AuditLog(details = "", type = PermissionTypeKey.MEMBERSHIP_POLICY_READ)
   public ApiResponse<MembershipGradeDetailQueryResponse> getMembershipGradeDetail(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long membershipGradeCode

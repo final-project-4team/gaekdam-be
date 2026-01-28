@@ -4,14 +4,14 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import java.time.LocalDateTime;
 
 public record PersonalInformationLogQueryResponse(
-        Long personalInformationLogCode,
-        LocalDateTime occurredAt,
-        PermissionTypeKey permissionTypeKey,
-        Long employeeAccessorCode,
-        String employeeAccessorName,
-        String employeeAccessorLoginId,
-        String targetType,
-        Long targetCode,
-        String targetName,
-        String purpose) {
+                Long personalInformationLogCode,
+                LocalDateTime occurredAt,
+                PermissionTypeKey permissionTypeKey,
+                Long employeeAccessorCode,
+                String employeeAccessorName,
+                String employeeAccessorLoginId,
+                String targetType,
+                Long targetCode,
+                String targetName,
+                String purpose) {
 }

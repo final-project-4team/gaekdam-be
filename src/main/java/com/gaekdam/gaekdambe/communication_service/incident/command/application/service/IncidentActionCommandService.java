@@ -8,6 +8,8 @@ import com.gaekdam.gaekdambe.communication_service.incident.command.infrastructu
 import com.gaekdam.gaekdambe.communication_service.incident.query.mapper.IncidentActionMapper;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ public class IncidentActionCommandService {
     private final EntityManager entityManager;
 
     @Transactional
+    @AuditLog(details = "조치 이력 등록", type = PermissionTypeKey.INCIDENT_ACTION_CREATE)
     public Long createAction(Long hotelGroupCode, String loginId, Long incidentCode, IncidentActionCreateRequest request) {
 
         Long writerEmployeeCode = incidentActionMapper.findEmployeeCodeByLoginId(hotelGroupCode, loginId);

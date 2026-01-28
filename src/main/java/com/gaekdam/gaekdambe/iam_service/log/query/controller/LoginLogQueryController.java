@@ -10,6 +10,7 @@ import com.gaekdam.gaekdambe.iam_service.log.query.dto.response.LoginLogQueryRes
 import com.gaekdam.gaekdambe.iam_service.log.query.service.LoginLogQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,20 +21,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/logs/login")
 public class LoginLogQueryController {
 
-    private final LoginLogQueryService loginLogQueryService;
+  private final LoginLogQueryService loginLogQueryService;
 
-    @GetMapping
-   // @PreAuthorize("hasAuthority('LOG_READ')")
-    public ResponseEntity<ApiResponse<PageResponse<LoginLogQueryResponse>>> getLoginLogs(
-            @AuthenticationPrincipal CustomUser customUser,
-            PageRequest page,
-            LoginLogSearchRequest search,
-            SortRequest sort) {
-        Long hotelGroupCode = customUser.getHotelGroupCode();
+  @PreAuthorize("hasAuthority('LOG_LOGIN_LIST')")
+  @GetMapping
 
-        PageResponse<LoginLogQueryResponse> response = loginLogQueryService.getLoginLogs(hotelGroupCode, page, search,
-                sort);
+  public ResponseEntity<ApiResponse<PageResponse<LoginLogQueryResponse>>> getLoginLogs(
+      @AuthenticationPrincipal CustomUser customUser,
+      PageRequest page,
+      LoginLogSearchRequest search,
+      SortRequest sort) {
+    Long hotelGroupCode = customUser.getHotelGroupCode();
 
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
+    PageResponse<LoginLogQueryResponse> response = loginLogQueryService.getLoginLogs(hotelGroupCode,
+        page, search,
+        sort);
+
+    return ResponseEntity.ok(ApiResponse.success(response));
+  }
 }

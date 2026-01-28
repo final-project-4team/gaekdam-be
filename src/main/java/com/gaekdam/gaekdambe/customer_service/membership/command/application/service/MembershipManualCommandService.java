@@ -41,7 +41,7 @@ public class MembershipManualCommandService {
 
         // employeeCode 필수
         if (employeeCode == null) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "employeeCode가 없습니다.");
+            throw new CustomException(ErrorCode.EMPLOYEE_CODE_REQUIRED);
         }
 
         // 수동 변경 사유 필수
@@ -89,7 +89,7 @@ public class MembershipManualCommandService {
 
         String afterGradeName = afterGrade.getGradeName();
         if (afterGradeName == null || afterGradeName.trim().isEmpty()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "멤버십 등급명이 비어있습니다.");
+            throw new CustomException(ErrorCode.MEMBERSHIP_GRADE_NAME_EMPTY);
         }
 
         MembershipStatus afterStatus = request.membershipStatus();

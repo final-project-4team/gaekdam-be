@@ -1,6 +1,5 @@
 package com.gaekdam.gaekdambe.iam_service.log.command.application.aop.aspect;
 
-
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
@@ -16,7 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-//개인정보 조회 로깅 Aspect
+import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
+
 @Slf4j
 @Aspect
 @Component
@@ -25,7 +25,7 @@ public class PersonalInfoLogAspect {
 
     private final AuditLogService auditLogService;
     private final EmployeeRepository employeeRepository;
-    // private final CustomerRepository customerRepository;
+    private final CustomerRepository customerRepository;
 
     @AfterReturning(value = "@annotation(logAnnotation)", returning = "result")
     // @LogPersonalInfo가 일치하는 함수 가져옴
@@ -57,14 +57,22 @@ public class PersonalInfoLogAspect {
     private void handleCustomerLog(Employee accessor, Object[] args, LogPersonalInfo annotation) {
 
         Long customerCode = findIdParameter(args);
+        String reason = findReasonParameter(args);
 
         if (customerCode != null) {
-
+            customerRepository.findById(customerCode).ifPresent(targetCustomer -> {
+                auditLogService.logCustomerAccess(
+                        accessor,
+                        targetCustomer,
+                        annotation.type(),
+                        reason != null ? reason : annotation.purpose());
+            });
         }
     }
 
     private void handleEmployeeLog(Employee accessor, Object[] args, LogPersonalInfo annotation) {
         Long employeeCode = findIdParameter(args);
+        String reason = findReasonParameter(args);
 
         if (employeeCode != null) {
             employeeRepository.findById(employeeCode).ifPresent(targetEmployee -> {
@@ -72,7 +80,7 @@ public class PersonalInfoLogAspect {
                         accessor,
                         targetEmployee,
                         annotation.type(),
-                        annotation.purpose());
+                        reason != null ? reason : annotation.purpose());
             });
         }
     }
@@ -82,6 +90,34 @@ public class PersonalInfoLogAspect {
         for (int i = args.length - 1; i >= 0; i--) {
             if (args[i] instanceof Long) {
                 return (Long) args[i];
+            }
+        }
+        return null;
+    }
+
+    private String findReasonParameter(Object[] args) {
+        // 1. DTO 객체 내부의 "reason" 필드 탐색 (우선순위)
+        for (Object arg : args) {
+            if (arg == null || arg instanceof String || arg instanceof Number)
+                continue;
+
+            try {
+                // 상위 클래스까지 탐색이 필요할 수 있으나, 보통 DTO는 평면적이므로 declaredField 먼저 시도
+                java.lang.reflect.Field field = arg.getClass().getDeclaredField("reason");
+                field.setAccessible(true);
+                Object value = field.get(arg);
+                if (value instanceof String && value != null && !((String) value).isEmpty()) {
+                    return (String) value;
+                }
+            } catch (Exception e) {
+                // 필드가 없거나 접근 불가능하면 무시
+            }
+        }
+
+        // 2. 메서드 인자 중 String 타입 탐색 (Fallback)
+        for (Object arg : args) {
+            if (arg instanceof String) {
+                return (String) arg;
             }
         }
         return null;

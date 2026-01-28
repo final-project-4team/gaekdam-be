@@ -15,44 +15,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Component
 public class EmployeeEncryptedRegistrationTest {
 
-    @Autowired
-    private EmployeeSecureRegistrationService employeeSecureRegistrationService;
+  @Autowired
+  private EmployeeSecureRegistrationService employeeSecureRegistrationService;
 
-    @Autowired
-    private EmployeeRepository employeeRepository;
+  @Autowired
+  private EmployeeRepository employeeRepository;
 
-    @Autowired
-    private KmsService kmsService;
+  @Autowired
+  private KmsService kmsService;
 
-    @Transactional
-    public void generate() {
+  private Long DEPARTMENT_NUM = 8L;
+  private Long HOTEL_POSITION_NUM = 2L;
 
-        if (employeeRepository.count() > 0) {
-            return;
-        }
+  @Transactional
+  public void generate() {
 
-        for (long employeeCount = 0; employeeCount < 1000; employeeCount++) {
-            long employeeNumber = 10001L + employeeCount; // 사번
-            String loginId = "hong" + employeeCount; // 로그인ID
-            String originalEmail = "hong" + employeeCount + ".gildong@company.com"; // 이메일
-            String originalPhone = String.format("010-1234-%04d", employeeCount); // 전화번호
-            String originalName = "홍길동" + employeeCount;
-            long count = (long) (Math.random() * 8) + 1;
-            long random=(long) (Math.random() * 2) ;
-
-            EmployeeSecureRegistrationRequest command = new EmployeeSecureRegistrationRequest(
-                    employeeNumber, loginId, "password123",
-                    originalEmail, originalPhone, originalName,
-                    count, count+random, 1L, 1L, count+random);
-
-            Long savedEmployeeCode = employeeSecureRegistrationService.registerEmployee(command);
-            Employee savedEmployee = employeeRepository.findById(savedEmployeeCode).orElseThrow();
-
-            byte[] plaintextDek = kmsService.decryptDataKey(savedEmployee.getDekEnc());
-            String decryptedName = AesCryptoUtils.decrypt(savedEmployee.getEmployeeNameEnc(),
-                    plaintextDek);
-
-            assertThat(decryptedName).isEqualTo(originalName);
-        }
+    if (employeeRepository.count() > 0) {
+      return;
     }
+
+    for (long employeeCount = 0; employeeCount < 1000; employeeCount++) {
+      long employeeNumber = 10001L + employeeCount; // 사번
+      String loginId = "hong" + employeeCount; // 로그인ID
+      String originalEmail = "hong" + employeeCount + ".gildong@company.com"; // 이메일
+      String originalPhone = String.format("010-1234-%04d", employeeCount); // 전화번호
+      String originalName = "홍길동" + employeeCount;
+      //long count = (long) (Math.random() * 8) + 1;
+      long count = (employeeCount % DEPARTMENT_NUM) + 1;//부서 코드
+      long random = (count * HOTEL_POSITION_NUM) - (long) (Math.random() * 2);//직급 및 권한 코드
+
+      EmployeeSecureRegistrationRequest command = new EmployeeSecureRegistrationRequest(
+          employeeNumber, loginId, "password123",
+          originalEmail, originalPhone, originalName,
+          count, random, 1L, random);
+
+      Long savedEmployeeCode = employeeSecureRegistrationService.registerEmployee(1L,command);
+      Employee savedEmployee = employeeRepository.findById(savedEmployeeCode).orElseThrow();
+
+      byte[] plaintextDek = kmsService.decryptDataKey(savedEmployee.getDekEnc());
+      String decryptedName = AesCryptoUtils.decrypt(savedEmployee.getEmployeeNameEnc(),
+          plaintextDek);
+
+      assertThat(decryptedName).isEqualTo(originalName);
+    }
+  }
 }

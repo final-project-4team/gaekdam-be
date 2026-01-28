@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.operation_service.facility.query.service;
 
+
 import com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageSummaryResponse;
 import com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityUsageSummaryMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,6 @@ import java.util.List;
 public class FacilityUsageSummaryService {
 
     private final FacilityUsageSummaryMapper mapper;
-
     public List<FacilityUsageSummaryResponse> getTodaySummary(
             LocalDate date,
             Long hotelGroupCode,

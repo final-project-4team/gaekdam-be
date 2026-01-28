@@ -2,6 +2,8 @@ package com.gaekdam.gaekdambe.customer_service.loyalty.query.service;
 
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.dto.response.LoyaltyHistoryResponse;
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.mapper.LoyaltyHistoryMapper;
+import com.gaekdam.gaekdambe.global.exception.CustomException;
+import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,10 @@ public class LoyaltyHistoryQueryService {
             LocalDateTime from,
             LocalDateTime to
     ) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new CustomException(ErrorCode.LOYALTY_HISTORY_INVALID_PERIOD);
+        }
+
         List<LoyaltyHistoryResponse> list =
                 mapper.findHistory(page, hotelGroupCode, customerCode, from, to);
 

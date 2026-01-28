@@ -1,5 +1,7 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.api;
 
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,6 +33,7 @@ public class ReportLayoutTemplateController {
     private final ReportLayoutQueryService queryService; // MyBatis 조회 재사용 가능
 
     @GetMapping
+    @AuditLog(details = "", type = PermissionTypeKey.REPORT_LAYOUT_TEMPLATE_READ)
     public ResponseEntity<ApiResponse<ReportLayoutTemplateListResponseDto>> list(@PathVariable Long layoutId) {
         // queryService.getTemplatesByLayoutId(layoutId) 이런 식으로 붙이면 됨
         return ResponseEntity.ok(ApiResponse.success(queryService.getTemplatesByLayoutId(layoutId)));

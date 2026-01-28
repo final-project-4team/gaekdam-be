@@ -10,12 +10,14 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface PermissionChangedLogMapper {
-    List<PermissionChangedLogQueryResponse> findPermissionChangedLogs(
-            @Param("hotelGroupCode") Long hotelGroupCode,
-            @Param("page") PageRequest page,
-            @Param("search") PermissionChangedLogSearchRequest search,
-            @Param("sort") SortRequest sort);
 
-    long countPermissionChangedLogs(
-            @Param("search") PermissionChangedLogSearchRequest search);
+        List<PermissionChangedLogQueryResponse> findPermissionChangedLogs(
+                        @Param("hotelGroupCode") Long hotelGroupCode,
+                        @Param("page") PageRequest page,
+                        @Param("search") PermissionChangedLogSearchRequest search,
+                        @Param("sort") SortRequest sort);
+
+        long countPermissionChangedLogs(
+                        @Param("hotelGroupCode") Long hotelGroupCode,
+                        @Param("search") PermissionChangedLogSearchRequest search);
 }

@@ -36,7 +36,7 @@ public class PermissionChangedLogQueryService {
                 .map(this::decryptNames)
                 .toList();
 
-        long total = permissionChangedLogMapper.countPermissionChangedLogs(search);
+        long total = permissionChangedLogMapper.countPermissionChangedLogs(hotelGroupCode, search);
 
         return new PageResponse<>(
                 decryptedList,

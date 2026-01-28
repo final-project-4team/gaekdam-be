@@ -9,6 +9,8 @@ import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ public class InquiryQueryController {
     private final InquiryQueryService inquiryQueryService;
 
     @GetMapping
+    @AuditLog(details = "", type = PermissionTypeKey.INQUIRY_LIST)
     public ApiResponse<PageResponse<InquiryListResponse>> getInquiries(
             @AuthenticationPrincipal CustomUser user,
             PageRequest page,
@@ -42,6 +45,7 @@ public class InquiryQueryController {
     }
 
     @GetMapping("/{inquiryCode}")
+    @AuditLog(details = "", type = PermissionTypeKey.INQUIRY_READ)
     public ApiResponse<InquiryDetailResponse> getInquiryDetail(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long inquiryCode

@@ -10,6 +10,7 @@ import com.gaekdam.gaekdambe.iam_service.log.query.dto.response.PersonalInformat
 import com.gaekdam.gaekdambe.iam_service.log.query.service.PersonalInformationLogQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,8 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class PersonalInformationLogQueryController {
   private final PersonalInformationLogQueryService personalInformationLogQueryService;
 
+  @PreAuthorize("hasAuthority('LOG_PERSONAL_INFORMATION_LIST')")
   @GetMapping
-
   public ResponseEntity<ApiResponse<PageResponse<PersonalInformationLogQueryResponse>>> getPersonalInformationLogs(
       @AuthenticationPrincipal CustomUser employee,
       PageRequest page,
