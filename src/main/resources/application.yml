@@ -11,8 +11,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: insupmail09@gmail.com
-    password:
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -73,7 +73,7 @@ crypto:
 
 logging:
   level:
-    org.apache.coyote.http11: DEBUG
+    org.apache.coyote.http11: INFO
     org.apache.tomcat.util.http.parser: DEBUG
     org.apache.tomcat.util.net: INFO
 
