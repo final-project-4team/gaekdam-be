@@ -71,8 +71,6 @@
       SELECT
       e.employee_code AS employeeCode,
       e.employee_number AS employeeNumber,
-      d.department_name AS departmentName,
-      p.hotel_position_name AS hotelPositionName,
       e.employee_name_enc AS employeeNameEnc,
       e.phone_number_enc AS phoneNumberEnc,
       e.email_enc AS emailEnc,

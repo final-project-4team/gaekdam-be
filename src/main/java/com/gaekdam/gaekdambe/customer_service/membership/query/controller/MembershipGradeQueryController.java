@@ -7,6 +7,8 @@ import com.gaekdam.gaekdambe.customer_service.membership.query.service.Membershi
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class MembershipGradeQueryController {
   private final MembershipGradeQueryService membershipGradeQueryService;
   @GetMapping("")
+  @AuditLog(details = "", type = PermissionTypeKey.MEMBERSHIP_POLICY_LIST)
   public ApiResponse<List<MembershipGradeListQueryResponse>> getMembershipGradeList(
       @AuthenticationPrincipal CustomUser employee,
       @RequestParam(value = "status", required = false) String status,
@@ -28,6 +31,7 @@ public class MembershipGradeQueryController {
   }
 
   @GetMapping("/{membershipGradeCode}")
+  @AuditLog(details = "", type = PermissionTypeKey.MEMBERSHIP_POLICY_READ)
   public ApiResponse<MembershipGradeDetailQueryResponse> getMembershipGradeDetail(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long membershipGradeCode

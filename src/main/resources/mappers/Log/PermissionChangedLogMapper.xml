@@ -35,8 +35,18 @@
         <if test="search.changedLoginId != null and search.changedLoginId != ''">
             AND ec.login_id LIKE CONCAT('%', #{search.changedLoginId}, '%')
         </if>
-        
-        <if test="search.fromDate != null">
+
+        <if test="search.beforePermissionName != null and search.beforePermissionName != ''">
+            AND pb.permission_name LIKE CONCAT('%', #{search.beforePermissionName}, '%')
+        </if>
+
+        <if test="search.afterPermissionName != null and search.afterPermissionName != ''">
+            AND pa.permission_name LIKE CONCAT('%', #{search.afterPermissionName}, '%')
+        </if>
+
+
+
+      <if test="search.fromDate != null">
             AND pcl.changed_at <![CDATA[ >= ]]> #{search.fromDate}
         </if>
         
@@ -61,8 +71,10 @@
     FROM permission_changed_log pcl
     JOIN employee ea ON pcl.accessor_code = ea.employee_code
     JOIN employee ec ON pcl.changed_user_code = ec.employee_code
+    JOIN permission pb ON pcl.before_permission_code = pb.permission_code
+    JOIN permission pa ON pcl.after_permission_code = pa.permission_code
     <where>
-        AND pcl.hotel_group_code = #{search.hotelGroupCode}
+        AND pcl.hotel_group_code = #{hotelGroupCode}
 
         <if test="search.accessorLoginId != null and search.accessorLoginId != ''">
             AND ea.login_id LIKE CONCAT('%', #{search.accessorLoginId}, '%')
@@ -70,6 +82,14 @@
         
         <if test="search.changedLoginId != null and search.changedLoginId != ''">
             AND ec.login_id LIKE CONCAT('%', #{search.changedLoginId}, '%')
+        </if>
+
+        <if test="search.beforePermissionName != null and search.beforePermissionName != ''">
+            AND pb.permission_name LIKE CONCAT('%', #{search.beforePermissionName}, '%')
+        </if>
+
+        <if test="search.afterPermissionName != null and search.afterPermissionName != ''">
+            AND pa.permission_name LIKE CONCAT('%', #{search.afterPermissionName}, '%')
         </if>
         
         <if test="search.fromDate != null">

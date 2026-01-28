@@ -62,8 +62,11 @@ dependencies {
     // csv
     implementation 'com.opencsv:opencsv:5.12.0'
 
-    //
+    //jakarta servlet
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+    //SMTP
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {

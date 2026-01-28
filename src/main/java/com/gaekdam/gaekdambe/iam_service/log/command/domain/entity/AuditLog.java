@@ -1,6 +1,5 @@
 package com.gaekdam.gaekdambe.iam_service.log.command.domain.entity;
 
-
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import jakarta.persistence.*;
@@ -11,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 
 @Entity
 @Getter
@@ -33,7 +31,6 @@ public class AuditLog {
   @Column(name = "occurred_at", nullable = false, updatable = false)
   private LocalDateTime occurredAt;
 
-
   @Column(name = "employee_code", nullable = false, updatable = false)
   private Long employeeCode;
 
@@ -46,10 +43,17 @@ public class AuditLog {
   @Column(name = "hotel_group_code", nullable = false, updatable = false)
   private Long hotelGroupCode; // HotelGroup FK 제거 -> ID 저장
 
-  // --- 상세 정보 ---
   @Lob
-  @Column(name = "details", updatable = false)
+  @Column(name = "details",columnDefinition = "MEDIUMTEXT", updatable = false)
   private String details;
+
+  @Lob
+  @Column(name = "previous_value",columnDefinition = "MEDIUMTEXT")
+  private String previousValue;
+
+  @Lob
+  @Column(name = "new_value",columnDefinition = "MEDIUMTEXT")
+  private String newValue;
 
   @Builder
   public AuditLog(
@@ -58,30 +62,50 @@ public class AuditLog {
       String employeeLoginId,
       String employeeName,
       Long hotelGroupCode,
-      String details) {
+      String details,
+      String previousValue,
+      String newValue) {
     this.permissionTypeKey = permissionTypeKey;
     this.employeeCode = employeeCode;
     this.employeeLoginId = employeeLoginId;
     this.employeeName = employeeName;
     this.hotelGroupCode = hotelGroupCode;
     this.details = details;
+    this.previousValue = previousValue;
+    this.newValue = newValue;
     this.occurredAt = LocalDateTime.now();
   }
 
   // 생성 팩토리 메서드
   public static AuditLog createLog(
       Employee employee,
+      PermissionTypeKey type){
+    return AuditLog.builder()
+        .permissionTypeKey(type)
+        .employeeCode(employee.getEmployeeCode())
+        .employeeLoginId(employee.getLoginId())
+        .employeeName(employee.getLoginId())
+        .hotelGroupCode(employee.getHotelGroup().getHotelGroupCode())
+        .build();
+  }
+
+
+  public static AuditLog createLog(
+      Employee employee,
       PermissionTypeKey type,
-      String details) {
+      String details,
+      String previousValue,
+      String newValue) {
 
     return AuditLog.builder()
         .permissionTypeKey(type)
-        // Employee 객체에서 필요한 값만 추출 (약한 참조)
         .employeeCode(employee.getEmployeeCode())
         .employeeLoginId(employee.getLoginId())
         .employeeName(employee.getLoginId())
         .hotelGroupCode(employee.getHotelGroup().getHotelGroupCode())
         .details(details)
+        .previousValue(previousValue)
+        .newValue(newValue)
         .build();
   }
 }

@@ -4,6 +4,7 @@ import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
 import com.gaekdam.gaekdambe.global.crypto.DataKey;
 import com.gaekdam.gaekdambe.global.crypto.KmsService;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
+import com.gaekdam.gaekdambe.global.smtp.MailSendService;
 import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
@@ -15,8 +16,10 @@ import com.gaekdam.gaekdambe.hotel_service.position.command.infrastructure.repos
 import com.gaekdam.gaekdambe.iam_service.employee.command.application.dto.request.EmployeeSecureRegistrationRequest;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
 import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
 import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.PermissionRepository;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,13 +43,19 @@ public class EmployeeSecureRegistrationService {
   private final PropertyRepository propertyRepository;
   private final HotelGroupRepository hotelGroupRepository;
   private final PermissionRepository permissionRepository;
+  private final MailSendService mailSendService;
 
 
+  @AuditLog(details = "직원 생성",type = PermissionTypeKey.EMPLOYEE_CREATE)
   @Transactional
-  public Long registerEmployee(EmployeeSecureRegistrationRequest command) {
+  public Long registerEmployee(Long hotelGroupCode,EmployeeSecureRegistrationRequest command) {
 
     // 비밀번호 암호화 (BCrypt)
-    String passwordToSave = passwordEncoder.encode(command.password());
+    //테스트 시에 주석처리 하여 비밀번호가 password123으로 들어가게 설정
+    /*RandomPassword randomPassword = new RandomPassword();
+    String tempPassword = randomPassword.getRandomPassword();*/
+    String tempPassword=command.password();
+    String passwordToSave = passwordEncoder.encode(tempPassword);
 
     // KMS에서 데이터 키(DEK) 생성
     DataKey dek = kmsService.generateDataKey();
@@ -77,9 +86,9 @@ public class EmployeeSecureRegistrationService {
     Property property = propertyRepository.findById(command.propertyCode())
         .orElseThrow(
             () -> new IllegalArgumentException("Property not found: " + command.propertyCode()));
-    HotelGroup hotelGroup = hotelGroupRepository.findById(command.hotelGroupCode())
+    HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode)
         .orElseThrow(() -> new IllegalArgumentException(
-            "HotelGroup not found: " + command.hotelGroupCode()));
+            "HotelGroup not found: " + hotelGroupCode));
     Permission role = permissionRepository.findById(command.permissionCode())
         .orElseThrow(() -> new IllegalArgumentException("Role not found: " + command.permissionCode()));
 
@@ -102,6 +111,9 @@ public class EmployeeSecureRegistrationService {
         role);
 
     Employee saved = employeeRepository.save(employee);
+
+    //테스트시에 주석처리하여 존재하지않는 이메일로 메일발송 되지 않게 설정
+    //mailSendService.resetPasswordEmail(command.email(),tempPassword);
 
     return saved.getEmployeeCode();
   }

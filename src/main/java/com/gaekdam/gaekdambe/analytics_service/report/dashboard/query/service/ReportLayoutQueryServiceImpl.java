@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.service;
 
+
 import java.util.List;
 
 import org.springframework.stereotype.Service;

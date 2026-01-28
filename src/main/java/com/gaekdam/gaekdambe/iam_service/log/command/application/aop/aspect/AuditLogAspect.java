@@ -29,7 +29,7 @@ public class AuditLogAspect {
             // 1. 현재 로그인한 직원 가져오기
             Employee accessor = getCurrentEmployee();
             if (accessor == null) {
-                log.warn("AuditLog 생성 실패: 로그인된 사용자 정보가 없습니다. (Anonymous User?)");
+                // log.warn("AuditLog 생성 실패: 로그인된 사용자 정보가 없습니다. (Anonymous User?)");
                 return;
             }
 
@@ -37,7 +37,9 @@ public class AuditLogAspect {
             auditLogService.saveAuditLog(
                     accessor,
                     auditLog.type(),
-                    auditLog.details());
+                    auditLog.details(),
+                    null,
+                    null);
 
         } catch (Exception e) {
             log.error("AuditLog Aspect 오류: {}", e.getMessage(), e);

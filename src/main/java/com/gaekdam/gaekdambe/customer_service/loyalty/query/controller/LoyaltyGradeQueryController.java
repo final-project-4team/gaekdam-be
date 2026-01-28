@@ -5,6 +5,8 @@ import com.gaekdam.gaekdambe.customer_service.loyalty.query.dto.response.Loyalty
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.service.LoyaltyGradeQueryService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.annotations.Param;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class LoyaltyGradeQueryController {
   private final LoyaltyGradeQueryService loyaltyGradeQueryService;
   @GetMapping("")
+  @AuditLog(details = "", type = PermissionTypeKey.LOYALTY_POLICY_LIST)
   public ApiResponse<List<LoyaltyGradeListQueryResponse>> getLoyaltyGradeList(
       @AuthenticationPrincipal CustomUser employee,
       @Param("sortBy")  String sortBy,
@@ -31,6 +34,7 @@ public class LoyaltyGradeQueryController {
   }
 
   @GetMapping("/{loyaltyGradeCode}")
+  @AuditLog(details = "", type = PermissionTypeKey.LOYALTY_POLICY_READ)
   public ApiResponse<LoyaltyGradeDetailQueryResponse> getLoyaltyGradeDetail(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long loyaltyGradeCode

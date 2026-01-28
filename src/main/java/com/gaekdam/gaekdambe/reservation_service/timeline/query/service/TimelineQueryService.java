@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.reservation_service.timeline.query.service;
 
+
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.CustomerStayResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.StaySummaryResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineDetailResponse;
@@ -22,7 +23,6 @@ public class TimelineQueryService {
     ) {
         return mapper.findCustomerStays(hotelGroupCode, customerCode);
     }
-
     public TimelineDetailResponse getTimeline(
             Long hotelGroupCode,
             Long stayCode

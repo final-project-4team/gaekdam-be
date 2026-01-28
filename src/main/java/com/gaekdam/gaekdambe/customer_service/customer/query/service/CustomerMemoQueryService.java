@@ -15,16 +15,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomerMemoQueryService {
 
-    private final CustomerMemoMapper customerMemoMapper;
+  private final CustomerMemoMapper customerMemoMapper;
 
-    public PageResponse<CustomerMemoResponse> getCustomerMemos(PageRequest page, CustomerMemoSearchRequest search, SortRequest sort) {
-        List<CustomerMemoResponse> list = customerMemoMapper.findCustomerMemos(page, search, sort);
-        long total = customerMemoMapper.countCustomerMemos(search);
+  public PageResponse<CustomerMemoResponse> getCustomerMemos(PageRequest page,
+      CustomerMemoSearchRequest search, SortRequest sort) {
+    List<CustomerMemoResponse> list = customerMemoMapper.findCustomerMemos(page, search, sort);
+    long total = customerMemoMapper.countCustomerMemos(search);
 
-        return new PageResponse<>(list, page.getPage(), page.getSize(), total);
-    }
+    return new PageResponse<>(list, page.getPage(), page.getSize(), total);
+  }
 
-    public CustomerMemoResponse getCustomerMemoDetail(CustomerMemoSearchRequest search) {
-        return customerMemoMapper.findCustomerMemoDetail(search);
-    }
+
+  public CustomerMemoResponse getCustomerMemoDetail(CustomerMemoSearchRequest search) {
+    return customerMemoMapper.findCustomerMemoDetail(search);
+  }
 }

@@ -40,10 +40,10 @@ public class Employee {
   private String loginId;
 
   @Lob
-  @Column(name = "email_enc")
+  @Column(name = "email_enc",nullable = false)
   private byte[] emailEnc;
 
-  @Column(name = "email_hash")
+  @Column(name = "email_hash",nullable = false)
   private byte[] emailHash;
 
   @Lob

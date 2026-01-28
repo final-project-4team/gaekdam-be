@@ -28,28 +28,34 @@ public class EmployeeCommandController {
   // 직원 추가
   @PostMapping("/add")
   @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
-  public ResponseEntity<ApiResponse<String>> registerEmployee(@RequestBody EmployeeSecureRegistrationRequest request) {
-
-    employeeSecureRegistrationService.registerEmployee(request);
+  public ResponseEntity<ApiResponse<String>> registerEmployee(
+      @RequestBody EmployeeSecureRegistrationRequest request,
+      @AuthenticationPrincipal CustomUser customUser
+      ) {
+    Long hotelGroupCode=customUser.getHotelGroupCode();
+    employeeSecureRegistrationService.registerEmployee(hotelGroupCode,request);
 
     return ResponseEntity.ok(ApiResponse.success("유저 추가"));
   }
 
   // 직원 정보 수정
   @PutMapping("/{employeeCode}")
+  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
   public ResponseEntity<ApiResponse<String>> updateEmployee(
       @AuthenticationPrincipal CustomUser customUser,
       @PathVariable Long employeeCode,
       // 정규식 검사
       @Valid @RequestBody EmployeeUpdateSecureRequest request) {
+    Long hotelGroupCode= customUser.getHotelGroupCode();
     Employee accessor = employeeRepository.findByLoginId(customUser.getUsername()).orElseThrow();
-    employeeUpdateService.updateEmployee(employeeCode, request, accessor);
+    employeeUpdateService.updateEmployee(hotelGroupCode,employeeCode, request, accessor);
     return ResponseEntity.ok(ApiResponse.success("유저 정보 수정 완료"));
   }
 
   // 직원 본인 비밀번호 변경
 
   @PatchMapping("/password")
+  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
   public ResponseEntity<ApiResponse<String>> changePassword(
       @AuthenticationPrincipal CustomUser customUser,
       @RequestBody PasswordChangeRequest request) {
@@ -60,6 +66,7 @@ public class EmployeeCommandController {
 
   // 직원 잠금
   @PatchMapping("/lock/{employeeCode}")
+  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
   public ResponseEntity<ApiResponse<String>> lockEmployee(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long employeeCode) {
@@ -70,6 +77,7 @@ public class EmployeeCommandController {
 
   // 직원 잠금 헤제
   @PatchMapping("/unlock/{employeeCode}")
+  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
   public ResponseEntity<ApiResponse<String>> unlockEmployee(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long employeeCode) {
@@ -80,6 +88,7 @@ public class EmployeeCommandController {
 
   // 직원 비밀번호 초기화
   @PatchMapping("/password-reset/{employeeCode}")
+  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
   public ResponseEntity<ApiResponse<String>> resetPassword(
       @PathVariable Long employeeCode) {
     String tempPassword = employeeUpdateService.resetPassword(employeeCode);

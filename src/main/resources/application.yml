@@ -8,6 +8,18 @@ spring:
     username: ${DB_USERNAME:gaekdam}
     password: ${DB_PASSWORD:gaekdam}
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -38,6 +50,8 @@ spring:
       mode: never
 
 
+
+
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
@@ -59,6 +73,8 @@ crypto:
 
 logging:
   level:
-    org.apache.coyote.http11: DEBUG
+    org.apache.coyote.http11: INFO
     org.apache.tomcat.util.http.parser: DEBUG
     org.apache.tomcat.util.net: INFO
+
+

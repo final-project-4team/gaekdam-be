@@ -8,6 +8,8 @@ import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,7 @@ public class CustomerMemoQueryController {
     private final CustomerMemoQueryService customerMemoQueryService;
 
     @GetMapping
+    @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_MEMO_LIST)
     public ApiResponse<PageResponse<CustomerMemoResponse>> getMemos(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,
@@ -40,6 +43,7 @@ public class CustomerMemoQueryController {
     }
 
     @GetMapping("/{memoCode}")
+    @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_MEMO_READ)
     public ApiResponse<CustomerMemoResponse> getMemoDetail(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,

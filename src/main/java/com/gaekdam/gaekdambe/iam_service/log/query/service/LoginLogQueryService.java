@@ -33,7 +33,7 @@ public class LoginLogQueryService {
         .map(this::decryptEmployeeName)
         .toList();
 
-    long total = logMapper.countLoginLogs(search);
+    long total = logMapper.countLoginLogs(hotelGroupCode,search);
 
     return new PageResponse<>(
         decryptedList,

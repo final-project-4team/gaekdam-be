@@ -1,5 +1,7 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.service;
 
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class ReportLayoutCommandServiceImpl implements ReportLayoutCommandServic
     }
 
     @Override
+    @AuditLog(details = "레이아웃 생성", type = PermissionTypeKey.REPORT_LAYOUT_CREATE)
     public Long create(ReportLayoutCreateDto dto) {
         ReportLayout entity = new ReportLayout();
         entity.setEmployeeCode(dto.getEmployeeCode());
@@ -74,6 +77,7 @@ public class ReportLayoutCommandServiceImpl implements ReportLayoutCommandServic
     }
 
     @Override
+    @AuditLog(details = "레이아웃 삭제", type = PermissionTypeKey.REPORT_LAYOUT_DELETE)
     public void delete(Long layoutId) {
         // Optionally check existence first to give clearer error
         if (!repository.existsById(layoutId)) {
