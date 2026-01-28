@@ -24,7 +24,7 @@ public class AuditLogQueryService {
             SortRequest sort) {
 
         List<AuditLogQueryResponse> list = auditLogMapper.findAuditLogs(hotelGroupCode, page, search, sort);
-        long total = auditLogMapper.countAuditLogs(search);
+        long total = auditLogMapper.countAuditLogs(hotelGroupCode,search);
 
         return new PageResponse<>(
                 list,

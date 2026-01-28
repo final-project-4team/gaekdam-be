@@ -2,9 +2,12 @@ package com.gaekdam.gaekdambe.iam_service.log.command.domain.entity;
 
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
+import com.gaekdam.gaekdambe.iam_service.log.command.domain.LoginResult;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,8 +50,9 @@ public class LoginLog {
   @Column(name = "occurred_at", nullable = false)
   private LocalDateTime occurredAt;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "result", nullable = false, length = 2)
-  private Boolean result; // 'Y' / 'N'
+  private LoginResult result;
 
   @Column(name = "failed_reason")
   private String failedReason;
@@ -62,7 +66,7 @@ public class LoginLog {
       Employee employee,
       String userIp,
       LocalDateTime occurredAt,
-      Boolean result,
+      LoginResult result,
       String failedReason,
       HotelGroup hotelGroup) {
     return LoginLog.builder()

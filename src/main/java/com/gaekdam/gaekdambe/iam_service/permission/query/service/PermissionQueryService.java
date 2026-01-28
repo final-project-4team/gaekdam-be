@@ -4,10 +4,13 @@ import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
 import com.gaekdam.gaekdambe.iam_service.permission.query.dto.request.PermissionQueryRequest;
 import com.gaekdam.gaekdambe.iam_service.permission.query.dto.request.PermissionSearchRequest;
 import com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionListResponse;
+import com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionNameListResponse;
 import com.gaekdam.gaekdambe.iam_service.permission.query.mapper.PermissionMapper;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,7 +20,7 @@ import org.springframework.stereotype.Service;
 public class PermissionQueryService {
 
   private final PermissionMapper permissionMapper;
-
+  @AuditLog(details = "",type = PermissionTypeKey.PERMISSION_LIST)
   public PageResponse<PermissionListResponse> getPermissionList(PermissionQueryRequest request,Long hotelGroupCode) {
     PageRequest pageReq = new PageRequest();
     pageReq.setPage(request.page());
@@ -40,5 +43,12 @@ public class PermissionQueryService {
         request.page(),
         request.size(),
         total);
+  }
+
+  public List<PermissionNameListResponse> getPermissionNameList(Long hotelGroupCode) {
+
+    List<PermissionNameListResponse> list = permissionMapper.findPermissionNameList(hotelGroupCode);
+
+    return list;
   }
 }

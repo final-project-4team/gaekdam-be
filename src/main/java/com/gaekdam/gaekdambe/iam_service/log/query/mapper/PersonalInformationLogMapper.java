@@ -10,12 +10,18 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface PersonalInformationLogMapper {
-    List<PersonalInformationLogQueryResponse> findPersonalInformationLogs(
-            @Param("hotelGroupCode") Long hotelGroupCode,
-            @Param("page") PageRequest page,
-            @Param("search") PersonalInformationLogSearchRequest search,
-            @Param("sort") SortRequest sort);
 
-    long countPersonalInformationLogs(
-            @Param("search") PersonalInformationLogSearchRequest search);
+        List<PersonalInformationLogQueryResponse> findPersonalInformationLogs(
+                        @Param("hotelGroupCode") Long hotelGroupCode,
+                        @Param("page") PageRequest page,
+                        @Param("search") PersonalInformationLogSearchRequest search,
+                        @Param("accessorNameHash") byte[] accessorNameHash,
+                        @Param("targetNameHash") byte[] targetNameHash,
+                        @Param("sort") SortRequest sort);
+
+        long countPersonalInformationLogs(
+                        @Param("hotelGroupCode") Long hotelGroupCode,
+                        @Param("search") PersonalInformationLogSearchRequest search,
+                        @Param("accessorNameHash") byte[] accessorNameHash,
+                        @Param("targetNameHash") byte[] targetNameHash);
 }

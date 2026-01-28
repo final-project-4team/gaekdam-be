@@ -4,6 +4,7 @@ import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Cus
 import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
 import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
 import com.gaekdam.gaekdambe.global.crypto.KmsService;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
@@ -25,6 +26,7 @@ public class PersonalInformationLogQueryService {
     private final EmployeeRepository employeeRepository;
     private final CustomerRepository customerRepository;
     private final KmsService kmsService;
+    private final com.gaekdam.gaekdambe.global.crypto.SearchHashService searchHashService;
 
     public PageResponse<PersonalInformationLogQueryResponse> getPersonalInformationLogs(
             Long hotelGroupCode,
@@ -32,14 +34,23 @@ public class PersonalInformationLogQueryService {
             PersonalInformationLogSearchRequest search,
             SortRequest sort) {
 
+        byte[] accessorNameHash = (search.employeeAccessorName() != null)
+                ? searchHashService.nameHash(search.employeeAccessorName())
+                : null;
+
+        byte[] targetNameHash = (search.targetName() != null)
+                ? searchHashService.nameHash(search.targetName())
+                : null;
+
         List<PersonalInformationLogQueryResponse> list = personalInformationLogMapper
-                .findPersonalInformationLogs(hotelGroupCode, page, search, sort);
+                .findPersonalInformationLogs(hotelGroupCode, page, search, accessorNameHash, targetNameHash, sort);
 
         List<PersonalInformationLogQueryResponse> decryptedList = list.stream()
                 .map(this::decryptNames)
                 .toList();
 
-        long total = personalInformationLogMapper.countPersonalInformationLogs(search);
+        long total = personalInformationLogMapper.countPersonalInformationLogs(hotelGroupCode, search,
+                accessorNameHash, targetNameHash);
 
         return new PageResponse<>(
                 decryptedList,
@@ -57,11 +68,11 @@ public class PersonalInformationLogQueryService {
                 dto.occurredAt(),
                 dto.permissionTypeKey(),
                 dto.employeeAccessorCode(),
-                accessorName,
+                MaskingUtils.maskName(accessorName),
                 dto.employeeAccessorLoginId(),
                 dto.targetType(),
                 dto.targetCode(),
-                targetName,
+                MaskingUtils.maskName(targetName),
                 dto.purpose());
     }
 

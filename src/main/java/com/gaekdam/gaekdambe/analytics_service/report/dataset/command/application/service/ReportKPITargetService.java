@@ -1,5 +1,6 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dataset.command.application.service;
 
+
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,6 +27,8 @@ public class ReportKPITargetService {
     private final ReportKPITargetRepository targetRepo;
     private final ReportKPICodeDimRepository kpiRepo;
 
+
+  //@AuditLog(details = "", type = PermissionTypeKey.KPI_CREATE)
     public ReportKPITargetId create(ReportKPITargetCreateDto dto) {
         // 1) KPI 코드 존재 검증
         if (!kpiRepo.existsById(dto.getKpiCode())) {
@@ -66,6 +69,7 @@ public class ReportKPITargetService {
     }
 
     @Transactional(readOnly = true)
+
     public ReportKPITargetResponseDto get(String targetId, Long hotelGroupCode) {
         ReportKPITargetId id = new ReportKPITargetId(targetId, hotelGroupCode);
         ReportKPITarget entity = targetRepo.findById(id)
@@ -106,6 +110,7 @@ public class ReportKPITargetService {
         }
     }
 
+    //@AuditLog(details = "", type = PermissionTypeKey.KPI_DELETE)
     public void delete(String targetId, Long hotelGroupCode) {
         ReportKPITargetId id = new ReportKPITargetId(targetId, hotelGroupCode);
 

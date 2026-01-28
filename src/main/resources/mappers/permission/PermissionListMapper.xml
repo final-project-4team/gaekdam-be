@@ -19,6 +19,12 @@
     </collection>
   </resultMap>
 
+  <resultMap id="PermissionNameListMap"
+    type="com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionNameListResponse">
+    <id     property="permissionCode" column="permission_code"/>
+    <result property="permissionName" column="permission_name"/>
+  </resultMap>
+
 
   <select id="findPermissionList" resultMap="PermissionListMap">
     SELECT
@@ -97,5 +103,18 @@
       </if>
     </where>
   </select>
+
+
+
+
+  <select id="findPermissionNameList"
+    resultType="com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionNameListResponse">
+    SELECT
+      p.permission_code AS permissionCode,
+      p.permission_name AS permissionName
+    FROM permission p
+    WHERE p.hotel_group_code = #{hotelGroupCode}
+  </select>
+
 
 </mapper>

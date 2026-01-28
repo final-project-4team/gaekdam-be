@@ -51,8 +51,9 @@ public class DummyPermissionTypeDataTest {
 
   private String getKoreanResource(String resource) {
     return switch (resource) {
-      case "REPORT" -> "리포트";
-      case "REPORT_DASHBOARD" -> "리포트 대시보드";
+      case "REPORT_LAYOUT" -> "리포트 레이아웃";
+      case "REPORT_LAYOUT_TEMPLATE" -> "리포트 레이아웃 템플릿";
+      case "REPORT_LAYOUT_TEMPLATE_LIBRARY" -> "리포트 레이아웃 템플릿 라이브러리";
       case "MEMBER" -> "회원";
       case "EMPLOYEE" -> "직원";
       case "CUSTOMER" -> "고객";
@@ -61,14 +62,19 @@ public class DummyPermissionTypeDataTest {
       case "LOYALTY_POLICY" -> "로열티 정책";
       case "CUSTOMER_TIMELINE" -> "고객 타임라인";
       case "RESERVATION" -> "예약";
-      case "RESERVATION_PACKAGE" -> "예약 패키지";
-      case "CHECK_IN_OUT" -> "체크인/아웃";
-      case "STAYS" -> "숙박";
-      case "FACILITY_USAGE" -> "시설 이용";
+      case "TODAY_RESERVATION" -> "당일 예약";
+      case "CHECK_IN" -> "체크인";
+      case "CHECK_OUT" -> "체크아웃";
+      case "TODAY_FACILITY_USAGE" -> "당일 시설 이용";
       case "INQUIRY" -> "문의";
-      case "ACCIDENT" -> "사건사고";
+      case "INCIDENT" -> "사건사고";
       case "MESSAGE" -> "메시지";
+      case "LOG_LOGIN" -> "로그인 로그";
+      case "LOG_AUDIT" -> "활동 로그";
+      case "LOG_PERMISSION_CHANGED" -> "권한 변경 로그";
+      case "LOG_PERSONAL_INFORMATION" -> "개인 정보 조회 로그";
       case "PERMISSION" -> "권한";
+      case "SETTING_OBJECTIVE" -> "목표 관리";
       default -> resource;
     };
   }

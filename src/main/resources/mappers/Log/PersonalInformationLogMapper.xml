@@ -37,17 +37,34 @@
         </if>
 
         <if test="search.permissionTypeKey != null">
-            AND pil.permission_type_key = #{search.permissionTypeKey}
+            AND pil.permission_type_key LIKE CONCAT('%',#{search.permissionTypeKey}, '%')
         </if>
 
         <if test="search.purpose != null and search.purpose != ''">
             AND pil.purpose LIKE CONCAT('%', #{search.purpose}, '%')
         </if>
 
+        <if test="search.personalInformationLogCode != null">
+            AND pil.personal_information_log_code = #{search.personalInformationLogCode}
+        </if>
+
+        <if test="accessorNameHash != null">
+            AND ea.employee_name_hash = #{accessorNameHash, jdbcType=BINARY}
+        </if>
+
         <if test="search.fromDate != null">
             AND pil.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
         </if>
         
+        <if test="search.targetCode != null">
+            AND (pil.target_employee_code = #{search.targetCode} OR pil.target_customer_code = #{search.targetCode})
+        </if>
+
+        <if test="targetNameHash != null">
+            AND (et.employee_name_hash = #{targetNameHash, jdbcType=BINARY}) 
+            <!-- OR ct.customer_name_hash = #{targetNameHash, jdbcType=BINARY} -->
+        </if>
+
         <if test="search.toDate != null">
             AND pil.occurred_at <![CDATA[ <= ]]> #{search.toDate}
         </if>
@@ -72,7 +89,7 @@
     LEFT JOIN employee et ON pil.target_employee_code = et.employee_code
     LEFT JOIN customer ct ON pil.target_customer_code = ct.customer_code
     <where>
-        AND pil.hotel_group_code = #{search.hotelGroupCode}
+        AND pil.hotel_group_code = #{hotelGroupCode}
 
         <if test="search.accessorLoginId != null and search.accessorLoginId != ''">
             AND ea.login_id LIKE CONCAT('%', #{search.accessorLoginId}, '%')
@@ -86,10 +103,27 @@
             AND pil.purpose LIKE CONCAT('%', #{search.purpose}, '%')
         </if>
 
+        <if test="search.personalInformationLogCode != null">
+            AND pil.personal_information_log_code = #{search.personalInformationLogCode}
+        </if>
+
+        <if test="accessorNameHash != null">
+            AND ea.employee_name_hash = #{accessorNameHash, jdbcType=BINARY}
+        </if>
+
         <if test="search.fromDate != null">
             AND pil.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
         </if>
         
+        <if test="search.targetCode != null">
+            AND (pil.target_employee_code = #{search.targetCode} OR pil.target_customer_code = #{search.targetCode})
+        </if>
+
+        <if test="targetNameHash != null">
+            AND (et.employee_name_hash = #{targetNameHash, jdbcType=BINARY}) 
+            <!-- OR ct.customer_name_hash = #{targetNameHash, jdbcType=BINARY} -->
+        </if>
+
         <if test="search.toDate != null">
             AND pil.occurred_at <![CDATA[ <= ]]> #{search.toDate}
         </if>

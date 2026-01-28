@@ -10,12 +10,14 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface AuditLogMapper {
-    List<AuditLogQueryResponse> findAuditLogs(
-            @Param("hotelGroupCode") Long hotelGroupCode,
-            @Param("page") PageRequest page,
-            @Param("search") AuditLogSearchRequest search,
-            @Param("sort") SortRequest sort);
 
-    long countAuditLogs(
-            @Param("search") AuditLogSearchRequest search);
+  List<AuditLogQueryResponse> findAuditLogs(
+      @Param("hotelGroupCode") Long hotelGroupCode,
+      @Param("page") PageRequest page,
+      @Param("search") AuditLogSearchRequest search,
+      @Param("sort") SortRequest sort);
+
+  long countAuditLogs(
+      @Param("hotelGroupCode") Long hotelGroupCode,
+      @Param("search") AuditLogSearchRequest search);
 }

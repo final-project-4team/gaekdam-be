@@ -1,6 +1,7 @@
 package com.gaekdam.gaekdambe.iam_service.employee.query.service;
 
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
@@ -11,6 +12,7 @@ import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeLis
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryListEncResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.mapper.EmployeeQueryMapper;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
 import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.LogPersonalInfo;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
@@ -28,30 +30,28 @@ public class EmployeeQueryService {
   private final DecryptionService decryptionService;
   private final SearchHashService searchHashService;
 
-
-  @LogPersonalInfo(
-      type = PermissionTypeKey.EMPLOYEE_READ,
-      purpose = "직원 인사 정보 조회"
-  )
-  public EmployeeDetailResponse getEmployeeDetail(Long hotelGroupCode,Long employeeCode) {
+  @LogPersonalInfo(type = PermissionTypeKey.EMPLOYEE_READ, purpose = "직원 인사 정보 조회")
+  public EmployeeDetailResponse getEmployeeDetail(Long hotelGroupCode, Long employeeCode, String reason) {
 
     EmployeeQueryEncResponse response = employeeQueryMapper.findByEmployeeCode(employeeCode);
     if (response == null || !response.hotelGroupCode().equals(hotelGroupCode)) {
-      throw new IllegalArgumentException("Not found: " + employeeCode+"or 검색하려는 직원의 hotelGroupCode가 본인의 호텔코드와 일치하지 않습니다.");
+      throw new IllegalArgumentException(
+          "Not found: " + employeeCode + "or 검색하려는 직원의 hotelGroupCode가 본인의 호텔코드와 일치하지 않습니다.");
     }
     return toDetailDto(response);
   }
-
+  @AuditLog(details = "", type = PermissionTypeKey.EMPLOYEE_LIST)
   public PageResponse<EmployeeListResponse> searchEmployees(Long hotelGroupCode,
       EmployeeQuerySearchRequest request, PageRequest page, SortRequest sort) {
     byte[] nameHash = (request.name() != null) ? searchHashService.nameHash(request.name()) : null;
     byte[] phoneHash = (request.phone() != null) ? searchHashService.phoneHash(request.phone()) : null;
     byte[] emailHash = (request.email() != null) ? searchHashService.emailHash(request.email()) : null;
 
-    long totalElements = employeeQueryMapper.countSearchEmployees(hotelGroupCode,nameHash, phoneHash, emailHash,request);
+    long totalElements = employeeQueryMapper.countSearchEmployees(hotelGroupCode, nameHash, phoneHash, emailHash,
+        request);
     List<EmployeeQueryListEncResponse> employees = employeeQueryMapper.searchEmployees(
         hotelGroupCode,
-        nameHash, phoneHash, emailHash,request,page,sort);
+        nameHash, phoneHash, emailHash, request, page, sort);
 
     List<EmployeeListResponse> content = employees.stream()
         .map(this::toListDto)
@@ -72,14 +72,10 @@ public class EmployeeQueryService {
     return new EmployeeListResponse(
         code,
         response.employeeNumber(),
-        response.departmentName(),
-        response.hotelPositionName(),
-        name,
-        phone,
-        email,
-/*                MaskingUtils.maskName(name),
-                MaskingUtils.maskPhone(phone),
-                (email != null) ? MaskingUtils.maskEmail(email) : null,*/
+        response.permissionName(),
+        MaskingUtils.maskName(name),
+        MaskingUtils.maskPhone(phone),
+        (email != null) ? MaskingUtils.maskEmail(email) : null,
         response.loginId(),
         response.employeeStatus());
   }
@@ -109,10 +105,10 @@ public class EmployeeQueryService {
         response.lastLoginAt());
   }
 
-  public EmployeeDetailResponse getMyPage(Long hotelGroupCode,String loginId) {
-    EmployeeQueryEncResponse response = employeeQueryMapper.findMyPage(hotelGroupCode,loginId);
-    if (response == null || !response.hotelGroupCode().equals(hotelGroupCode)){
-      throw new IllegalArgumentException("Not found: " + loginId+"or Not match hotelGroupCode");
+  public EmployeeDetailResponse getMyPage(Long hotelGroupCode, String loginId) {
+    EmployeeQueryEncResponse response = employeeQueryMapper.findMyPage(hotelGroupCode, loginId);
+    if (response == null || !response.hotelGroupCode().equals(hotelGroupCode)) {
+      throw new IllegalArgumentException("Not found: " + loginId + "or Not match hotelGroupCode");
     }
     return toDetailDto(response);
   }

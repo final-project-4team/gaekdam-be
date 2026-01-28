@@ -38,6 +38,7 @@ public class ReportKPITargetController {
     }
 
     @GetMapping("/{hotelGroupCode}/{targetId}")
+
     public ResponseEntity<ApiResponse<ReportKPITargetResponseDto>> get(
         @PathVariable Long hotelGroupCode,
         @PathVariable String targetId
@@ -46,6 +47,7 @@ public class ReportKPITargetController {
     }
 
     @GetMapping
+    //@AuditLog(details = "", type = PermissionTypeKey.KPI_LIST)
     public ResponseEntity<ApiResponse<List<ReportKPITargetResponseDto>>> list(
         @RequestParam Long hotelGroupCode,
         @RequestParam(required = false) String kpiCode

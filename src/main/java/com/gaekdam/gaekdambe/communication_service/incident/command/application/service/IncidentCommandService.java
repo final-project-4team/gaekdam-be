@@ -4,6 +4,8 @@ import com.gaekdam.gaekdambe.communication_service.incident.command.application.
 import com.gaekdam.gaekdambe.communication_service.incident.command.domain.entity.Incident;
 import com.gaekdam.gaekdambe.communication_service.incident.command.infrastructure.repository.IncidentRepository;
 import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity.Inquiry;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ public class IncidentCommandService {
     private final EntityManager entityManager;
 
     @Transactional
+    @AuditLog(details = "사건사고 등록", type = PermissionTypeKey.INCIDENT_CREATE)
     public Long createIncident(IncidentCreateRequest request) {
 
         Inquiry inquiry = null;

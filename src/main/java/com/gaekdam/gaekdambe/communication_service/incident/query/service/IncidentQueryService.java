@@ -36,7 +36,6 @@ public class IncidentQueryService {
 
         return new PageResponse<>(content, page.getPage(), page.getSize(), total);
     }
-
     public IncidentDetailResponse getIncidentDetail(Long hotelGroupCode, Long incidentCode) {
         IncidentDetailEncResponse row = incidentMapper.findIncidentDetail(hotelGroupCode, incidentCode);
         if (row == null) {
@@ -46,6 +45,7 @@ public class IncidentQueryService {
     }
 
     // 조치 이력 조회
+
     public List<IncidentActionHistoryResponse> getIncidentActionHistories(Long hotelGroupCode, Long incidentCode) {
         List<IncidentActionHistoryEncResponse> rows =
                 incidentMapper.findIncidentActionHistories(hotelGroupCode, incidentCode);

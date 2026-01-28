@@ -11,6 +11,8 @@ import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class CustomerMemoCommandService {
     private final EmployeeRepository employeeRepository;
 
     @Transactional
+    @AuditLog(details = "고객 메모 생성", type = PermissionTypeKey.CUSTOMER_MEMO_CREATE)
     public CustomerMemoCommandResponse createCustomerMemo(CustomUser user, Long customerCode, CustomerMemoCreateRequest request) {
         validateCustomerScope(user, customerCode);
 
@@ -56,6 +59,7 @@ public class CustomerMemoCommandService {
     }
 
     @Transactional
+    @AuditLog(details = "고객 메모 삭제", type = PermissionTypeKey.CUSTOMER_MEMO_DELETE)
     public void deleteCustomerMemo(CustomUser user, Long customerCode, Long memoCode) {
         validateCustomerScope(user, customerCode);
 

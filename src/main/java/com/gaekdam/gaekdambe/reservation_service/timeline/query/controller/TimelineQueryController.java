@@ -2,6 +2,8 @@ package com.gaekdam.gaekdambe.reservation_service.timeline.query.controller;
 
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.CustomerStayResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineCustomerResponse;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineDetailResponse;
@@ -57,6 +59,7 @@ public class TimelineQueryController {
      * 투숙 선택 → 타임라인
      */
     @GetMapping("/stays/{stayCode}")
+    @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_TIMELINE_READ)
     public ApiResponse<TimelineDetailResponse> getTimeline(
             @PathVariable Long stayCode,
             @AuthenticationPrincipal CustomUser principal

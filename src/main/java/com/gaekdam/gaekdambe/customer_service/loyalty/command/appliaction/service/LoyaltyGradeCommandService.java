@@ -8,6 +8,8 @@ import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ public class LoyaltyGradeCommandService {
 
 
   @Transactional
+  @AuditLog(details = "로열티 등급 생성", type = PermissionTypeKey.LOYALTY_POLICY_CREATE)
   public String createLoyaltyGrade(LoyaltyGradeRequest request, Long hotelGroupCode) {
 
     HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode)
@@ -41,6 +44,7 @@ public class LoyaltyGradeCommandService {
   }
 
   @Transactional
+  @AuditLog(details = "로열티 등급 삭제", type = PermissionTypeKey.LOYALTY_POLICY_DELETE)
   public String deleteLoyaltyGrade(Long hotelGroupCode, Long loyaltyGradeCode) {
     LoyaltyGrade loyaltyGrade = loyaltyGradeRepository.findById(loyaltyGradeCode)
         .orElseThrow(() -> new CustomException(ErrorCode.LOYALTY_GRADE_NOT_FOUND));

@@ -1,6 +1,5 @@
 package com.gaekdam.gaekdambe.customer_service.membership.command.application.controller;
 
-
 import com.gaekdam.gaekdambe.customer_service.membership.command.application.dto.request.MembershipGradeRequest;
 import com.gaekdam.gaekdambe.customer_service.membership.command.application.service.MembershipGradeCommandService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
@@ -27,32 +26,28 @@ public class MembershipGradeCommandController {
       @AuthenticationPrincipal CustomUser employee,
       @RequestBody MembershipGradeRequest request
 
-  ){
-    Long hotelGroupCode=employee.getHotelGroupCode();
-    return ApiResponse.success(memberShipGradeCommandService.createMembershipGrade(request,hotelGroupCode))  ;
+  ) {
+    Long hotelGroupCode = employee.getHotelGroupCode();
+    return ApiResponse.success(memberShipGradeCommandService.createMembershipGrade(request, hotelGroupCode));
   }
-
-
 
   @DeleteMapping("/{membershipGradeCode}")
   public ApiResponse<String> deleteMemberShipGrade(
       @AuthenticationPrincipal CustomUser employee,
-      @PathVariable Long membershipGradeCode
-  ){
-    Long hotelGroupCode=employee.getHotelGroupCode();
-    return ApiResponse.success(memberShipGradeCommandService.deleteMembershipGrade(hotelGroupCode,membershipGradeCode))  ;
+      @PathVariable Long membershipGradeCode) {
+    Long hotelGroupCode = employee.getHotelGroupCode();
+    return ApiResponse
+        .success(memberShipGradeCommandService.deleteMembershipGrade(hotelGroupCode, membershipGradeCode));
   }
 
   @PutMapping("/{membershipGradeCode}")
   public ApiResponse<String> updateMemberShipGrade(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long membershipGradeCode,
-      @RequestBody MembershipGradeRequest request
-  ){
-    Long hotelGroupCode=employee.getHotelGroupCode();
-    return ApiResponse.success(memberShipGradeCommandService.updateMembershipGrade(hotelGroupCode,membershipGradeCode,request))  ;
+      @RequestBody MembershipGradeRequest request) {
+    Long hotelGroupCode = employee.getHotelGroupCode();
+    return ApiResponse.success(memberShipGradeCommandService.updateMembershipGrade(hotelGroupCode, membershipGradeCode,
+        request, employee.getUsername()));
   }
-
-
 
 }

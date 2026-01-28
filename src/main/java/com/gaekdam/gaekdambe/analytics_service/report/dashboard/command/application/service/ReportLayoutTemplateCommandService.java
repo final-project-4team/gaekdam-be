@@ -1,5 +1,7 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.service;
 
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import org.springframework.stereotype.Service;
 
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.application.dto.ReportLayoutTemplateCreateDto;
@@ -23,6 +25,7 @@ public class ReportLayoutTemplateCommandService {
     private final ReportTemplateRepository templateRepo; // 라이브러리 검증용(선택)
     private final ReportLayoutRepository layoutRepo;     // 레이아웃 존재 검증용(선택)
 
+  @AuditLog(details = "레이아웃 템플릿 추가", type = PermissionTypeKey.REPORT_LAYOUT_TEMPLATE_CREATE)
     public Long addTemplate(Long layoutId, Long createdBy, ReportLayoutTemplateCreateDto dto) {
 
         if (!layoutRepo.existsById(layoutId)) {
@@ -65,7 +68,7 @@ public class ReportLayoutTemplateCommandService {
 
         repo.save(e);
     }
-
+  @AuditLog(details = "레이아웃 템플릿 삭제", type = PermissionTypeKey.REPORT_LAYOUT_TEMPLATE_DELETE)
     public void delete(Long layoutId, Long templateId) {
         // Find by composite (layoutId + templateId) because caller may pass library templateId
         ReportLayoutTemplate e = repo.findByLayoutIdAndTemplateId(layoutId, templateId)

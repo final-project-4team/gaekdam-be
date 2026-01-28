@@ -1,5 +1,7 @@
 package com.gaekdam.gaekdambe.reservation_service.stay.command.application.service;
 
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.application.dto.request.CheckInRequest;
@@ -31,6 +33,7 @@ public class CheckInOutCommandService {
      * - CheckInOut 기록 생성
      */
     @Transactional
+    @AuditLog(details = "체크인 등록", type = PermissionTypeKey.CHECK_IN_CREATE)
     public void checkIn(CheckInRequest request) {
 
         // 1. 예약 조회
@@ -73,6 +76,7 @@ public class CheckInOutCommandService {
      * - 기존 Stay 종료
      * - CheckInOut 기록
      */
+    @AuditLog(details = "체크아웃 등록", type = PermissionTypeKey.CHECK_OUT_CREATE)
     public void checkOut(CheckOutRequest request) {
 
         Stay stay = stayRepository.findById(request.getStayCode())

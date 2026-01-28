@@ -17,6 +17,7 @@ public interface LoginLogMapper {
       @Param("sort") SortRequest sort
   );
   long countLoginLogs(
+      @Param("hotelGroupCode") Long hotelGroupCode,
       @Param("search") LoginLogSearchRequest search
   );
 

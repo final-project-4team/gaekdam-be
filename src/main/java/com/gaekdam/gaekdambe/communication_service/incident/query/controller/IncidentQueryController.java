@@ -10,6 +10,8 @@ import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,7 @@ public class IncidentQueryController {
     private final IncidentQueryService incidentQueryService;
 
     @GetMapping
+    @AuditLog(details = "", type = PermissionTypeKey.INCIDENT_LIST)
     public ApiResponse<PageResponse<IncidentListResponse>> getIncidents(
             @AuthenticationPrincipal CustomUser user,
             PageRequest page,
@@ -44,6 +47,7 @@ public class IncidentQueryController {
     }
 
     @GetMapping("/{incidentCode}")
+    @AuditLog(details = "", type = PermissionTypeKey.INCIDENT_READ)
     public ApiResponse<IncidentDetailResponse> getIncidentDetail(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long incidentCode
@@ -55,6 +59,7 @@ public class IncidentQueryController {
 
     // 조치 이력 조회
     @GetMapping("/{incidentCode}/actions")
+    @AuditLog(details = "", type = PermissionTypeKey.INCIDENT_ACTION_READ)
     public ApiResponse<List<IncidentActionHistoryResponse>> getIncidentActions(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long incidentCode

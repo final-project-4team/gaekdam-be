@@ -13,8 +13,15 @@ import com.gaekdam.gaekdambe.iam_service.auth.command.application.service.LoginA
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.EmployeeStatus;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.permission.command.domain.entity.Permission;
 import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.PermissionRepository;
+import com.gaekdam.gaekdambe.iam_service.permission_mapping.command.domain.entity.PermissionMapping;
+import com.gaekdam.gaekdambe.iam_service.permission_mapping.command.infrastructure.PermissionMappingRepository;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.GetMapping;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -41,6 +48,7 @@ public class AuthController {
   private final RefreshTokenService redisRefreshTokenService;
   private final LoginAuthService loginAuthService;
   private final SearchHashService searchHashService;
+  private final PermissionMappingRepository permissionMappingRepository;
 
   private static final String COOKIE_NAME = "refreshToken";
   private final long REFRESH_TOKEN_EXPIRE = 1000 * 60 * 60;
@@ -58,17 +66,17 @@ public class AuthController {
         .orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER_ID));
     // 소프트 삭제된 계정(status = N) 체크
     if (employee.getEmployeeStatus() == EmployeeStatus.DORMANCY) {
-      loginAuthService.loginFailed(employee, ip,"휴면 게정 접속 시도");
+      loginAuthService.loginFailed(employee, ip, "휴면 게정 접속 시도");
       throw new CustomException(ErrorCode.INVALID_USER_ID, "휴면 처리된 회원 입니다.");
     }
     if (employee.getEmployeeStatus() == EmployeeStatus.LOCKED) {
-      loginAuthService.loginFailed(employee, ip,"잠긴 계정 접속 시도");
+      loginAuthService.loginFailed(employee, ip, "잠긴 계정 접속 시도");
       throw new CustomException(ErrorCode.INVALID_USER_ID, "이용 불가능 한 회원입니다.");
 
     }
 
     if (!passwordEncoder.matches(password, employee.getPasswordHash())) {
-      loginAuthService.loginFailed(employee, ip,"비밀번호 불일치");
+      loginAuthService.loginFailed(employee, ip, "비밀번호 불일치");
 
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .body(ApiResponse.failure(
@@ -193,5 +201,25 @@ public class AuthController {
     byte[] phoneHash = searchHashService.phoneHash(phone);
     boolean exists = employeeRepository.existsByPhoneNumberHash(phoneHash);
     return ResponseEntity.ok(ApiResponse.success(exists));
+  }
+
+  @GetMapping("/permissions")
+  public ResponseEntity<ApiResponse<List<PermissionTypeKey>>> getPermissions(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    if (userDetails == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.failure("AUTH-006", "인증 정보가 없습니다."));
+    }
+    String userId = userDetails.getUsername();
+    Employee employee = employeeRepository.findByLoginId(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER_ID));
+
+    Permission permission = employee.getPermission();
+    List<PermissionMapping> mappings = permissionMappingRepository.findAllByPermissionWithPermissionType(permission);
+    List<PermissionTypeKey> keys = mappings.stream()
+        .map(mapping -> mapping.getPermissionType().getPermissionTypeKey())
+        .collect(Collectors.toList());
+
+    return ResponseEntity.ok(ApiResponse.success(keys));
   }
 }
