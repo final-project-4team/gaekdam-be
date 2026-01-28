@@ -1,7 +1,9 @@
 package com.gaekdam.gaekdambe.communication_service.messaging.query.mapper;
 
 import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.request.MessageTemplateSearch;
+import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateDetailResponse;
 import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateResponse;
+import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateSettingResponse;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import org.apache.ibatis.annotations.Mapper;
@@ -18,5 +20,11 @@ public interface MessageTemplateQueryMapper {
             @Param("sort") SortRequest sort
     );
 
+
     long countTemplates(@Param("search") MessageTemplateSearch search);
+
+
+    // 단건
+    MessageTemplateDetailResponse findTemplateDetail(Long templateCode);
 }
+

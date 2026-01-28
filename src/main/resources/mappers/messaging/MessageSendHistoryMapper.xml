@@ -5,92 +5,134 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageSendHistoryMapper">
 
+    <!-- =========================
+         메시지 히스토리 리스트
+         - reservation / stay 모두 호텔 기준 필터
+         ========================= -->
     <select id="findHistories"
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryResponse">
 
         SELECT
-        send_code AS sendCode,
-        stage_code AS stageCode,
-        reservation_code AS reservationCode,
-        stay_code AS stayCode,
-        rule_code AS ruleCode,
-        template_code AS templateCode,
-        scheduled_at AS scheduledAt,
-        sent_at AS sentAt,
-        status AS status,
-        fail_reason AS failReason,
-        external_message_id AS externalMessageId
-        FROM message_send_history
+        h.send_code        AS sendCode,
+        h.stage_code       AS stageCode,
+        s.stage_name_kor   AS stageNameKor,
+        h.template_code    AS templateCode,
+        mt.title           AS templateTitle,
+        h.reservation_code AS reservationCode,
+        h.stay_code        AS stayCode,
+        h.status           AS status,
+        h.scheduled_at     AS scheduledAt,
+        h.sent_at          AS sentAt,
+        h.fail_reason      AS failReason,
+        h.external_message_id AS externalMessageId,
+        p.property_code    AS propertyCode
+        FROM message_send_history h
+        JOIN message_journey_stage s
+        ON h.stage_code = s.stage_code
+        JOIN message_template mt
+        ON h.template_code = mt.template_code
 
-        <where>
-            <if test="search != null">
+        LEFT JOIN reservation r
+        ON h.reservation_code = r.reservation_code
+        LEFT JOIN stay st
+        ON h.stay_code = st.stay_code
+        LEFT JOIN reservation r2
+        ON st.reservation_code = r2.reservation_code
 
-                <if test="search.stageCode != null">
-                    AND stage_code = #{search.stageCode}
-                </if>
+        JOIN property p
+        ON p.property_code = COALESCE(r.property_code, r2.property_code)
 
-                <if test="search.reservationCode != null">
-                    AND reservation_code = #{search.reservationCode}
-                </if>
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
 
-                <if test="search.stayCode != null">
-                    AND stay_code = #{search.stayCode}
-                </if>
-
-                <if test="search.status != null">
-                    AND status = #{search.status}
-                </if>
-
-                <if test="search.fromDate != null">
-                    AND scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
-                </if>
-
-                <if test="search.toDate != null">
-                    AND scheduled_at <![CDATA[ <= ]]> #{search.toDate}
-                </if>
-
-            </if>
-        </where>
-
-        <if test="sort != null and sort.sortBy != null">
-            ORDER BY ${sort.sortBy} ${sort.direction}
+        <if test="search.propertyCode != null">
+            AND p.property_code = #{search.propertyCode}
         </if>
 
-        LIMIT #{page.size} OFFSET #{page.offset}
+        <if test="search.stageCode != null">
+            AND h.stage_code = #{search.stageCode}
+        </if>
+
+        <if test="search.reservationCode != null">
+            AND h.reservation_code = #{search.reservationCode}
+        </if>
+
+        <if test="search.stayCode != null">
+            AND h.stay_code = #{search.stayCode}
+        </if>
+
+        <if test="search.status != null">
+            AND h.status = #{search.status}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND h.sent_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+
+        <if test="search.toDate != null">
+            AND h.sent_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+
+        ORDER BY ${sort.sortBy} ${sort.direction}
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
     </select>
 
+
+    <!-- =========================
+         메시지 히스토리 COUNT
+         - findHistories 와 100% 동일 기준
+         ========================= -->
     <select id="countHistories" resultType="long">
+
         SELECT COUNT(*)
-        FROM message_send_history
-        <where>
-            <if test="search != null">
+        FROM (
+        SELECT h.send_code
+        FROM message_send_history h
+        JOIN message_journey_stage s
+        ON h.stage_code = s.stage_code
+        JOIN message_template mt
+        ON h.template_code = mt.template_code
 
-                <if test="search.stageCode != null">
-                    AND stage_code = #{search.stageCode}
-                </if>
+        LEFT JOIN reservation r
+        ON h.reservation_code = r.reservation_code
+        LEFT JOIN stay st
+        ON h.stay_code = st.stay_code
+        LEFT JOIN reservation r2
+        ON st.reservation_code = r2.reservation_code
 
-                <if test="search.reservationCode != null">
-                    AND reservation_code = #{search.reservationCode}
-                </if>
+        JOIN property p
+        ON p.property_code = COALESCE(r.property_code, r2.property_code)
 
-                <if test="search.stayCode != null">
-                    AND stay_code = #{search.stayCode}
-                </if>
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
 
-                <if test="search.status != null">
-                    AND status = #{search.status}
-                </if>
+        <if test="search.propertyCode != null">
+            AND p.property_code = #{search.propertyCode}
+        </if>
 
-                <if test="search.fromDate != null">
-                    AND scheduled_at <![CDATA[ >= ]]> #{search.fromDate}
-                </if>
+        <if test="search.stageCode != null">
+            AND h.stage_code = #{search.stageCode}
+        </if>
 
-                <if test="search.toDate != null">
-                    AND scheduled_at <![CDATA[ <= ]]> #{search.toDate}
-                </if>
+        <if test="search.reservationCode != null">
+            AND h.reservation_code = #{search.reservationCode}
+        </if>
 
-            </if>
-        </where>
+        <if test="search.stayCode != null">
+            AND h.stay_code = #{search.stayCode}
+        </if>
+
+        <if test="search.status != null">
+            AND h.status = #{search.status}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND h.sent_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+
+        <if test="search.toDate != null">
+            AND h.sent_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+        ) t
     </select>
 
 </mapper>

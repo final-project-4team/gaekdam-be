@@ -105,7 +105,10 @@
                 AND t.operationStatus = 'CHECKOUT_PLANNED'
             </when>
             <when test="summaryType == 'STAYING'">
-                AND t.operationStatus = 'STAYING'
+                AND (
+                t.operationStatus = 'STAYING'
+                OR t.operationStatus = 'CHECKOUT_PLANNED'
+                )
             </when>
         </choose>
 

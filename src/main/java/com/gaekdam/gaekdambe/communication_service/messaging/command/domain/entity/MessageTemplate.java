@@ -24,6 +24,8 @@ public class MessageTemplate {
     @Column(name = "visitor_type", nullable = false, length = 10)
     private VisitorType visitorType;
 
+    // languageCode는 현재는 표시용이며
+    // 다국어 템플릿 분기는 향후 확장 예정
     @Enumerated(EnumType.STRING)
     @Column(name = "language_code", length = 10)
     private LanguageCode languageCode;
@@ -46,12 +48,14 @@ public class MessageTemplate {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    /** FK 영역 */
+    /**
+     * FK 영역
+     */
     @Column(name = "membership_grade_code", nullable = false)
     private Long membershipGradeCode;
 
-    @Column(name = "property_code", nullable = false)
-    private Long propertyCode;
+    @Column(name = "hotel_group_code", nullable = false)
+    private Long hotelGroupCode;
 
     @Column(name = "stage_code", nullable = false)
     private Long stageCode;
@@ -61,20 +65,20 @@ public class MessageTemplate {
             String title,
             String content,
             LanguageCode languageCode,
-            boolean isActive,
+            Boolean isActive,
             String conditionExpr
     ) {
         this.title = title;
         this.content = content;
         this.languageCode = languageCode;
-        this.isActive = isActive;
         this.conditionExpr = conditionExpr;
+
+        if (isActive != null) {
+            this.isActive = isActive;
+        }
+
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void disable() {
-        this.isActive = false;
-        this.updatedAt = LocalDateTime.now();
-    }
 
 }

@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}?serverTimezone=Asia/Seoul
     username: ${DB_USERNAME:gaekdam}
     password: ${DB_PASSWORD:gaekdam}
 
@@ -34,6 +34,7 @@ spring:
       hibernate:
         # saveAll()을 실제 JDBC batch insert로 묶어주는 옵션
         jdbc:
+          time_zone: Asia/Seoul
           batch_size: 500
         # 같은 테이블 insert/update를 묶어 배치 효율 증가
         order_inserts: true
