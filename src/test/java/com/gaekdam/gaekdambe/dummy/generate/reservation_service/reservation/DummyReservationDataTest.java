@@ -1,17 +1,9 @@
 package com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
+import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
+import com.gaekdam.gaekdambe.customer_service.customer.command.infrastructure.repository.CustomerRepository;
+import com.gaekdam.gaekdambe.hotel_service.property.command.domain.entity.Property;
+import com.gaekdam.gaekdambe.hotel_service.property.command.infrastructure.PropertyRepository;
 import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.Room;
 import com.gaekdam.gaekdambe.operation_service.room.command.domain.entity.RoomType;
 import com.gaekdam.gaekdambe.operation_service.room.command.infrastructure.repository.RoomRepository;
@@ -21,6 +13,16 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enti
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.*;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationPackageRepository;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class DummyReservationDataTest {
@@ -35,6 +37,12 @@ public class DummyReservationDataTest {
     @Autowired RoomRepository roomRepository;
     @Autowired RoomTypeRepository roomTypeRepository;
     @Autowired ReservationPackageRepository packageRepository;
+
+    // 추가: customer/hotelGroup 매칭용
+    @Autowired CustomerRepository customerRepository;
+    @Autowired
+    PropertyRepository propertyRepository;
+
     @Autowired EntityManager em;
 
     @Transactional
@@ -45,6 +53,12 @@ public class DummyReservationDataTest {
 
         Random random = new Random();
         LocalDate today = LocalDate.now();
+
+        //  property_code -> hotel_group_code 맵 구성 (스코프 정합성 보장)
+        Map<Long, Long> hotelGroupByProperty = buildHotelGroupByProperty();
+
+        //  hotel_group_code -> customer_code 리스트 맵 구성 (예약 생성 시 매칭)
+        Map<Long, List<Long>> customerCodesByHotelGroup = buildCustomerCodesByHotelGroup();
 
         List<Room> rooms = roomRepository.findAll();
         List<RoomType> roomTypes = roomTypeRepository.findAll();
@@ -64,7 +78,7 @@ public class DummyReservationDataTest {
         List<Reservation> buffer = new ArrayList<>(BATCH);
 
         /* =================================================
-           1️ TODAY 예약 분산 생성 (추가)
+           1) TODAY 예약 분산 생성
            ================================================= */
         for (int i = 0; i < TODAY_TOTAL_COUNT; i++) {
 
@@ -115,6 +129,14 @@ public class DummyReservationDataTest {
             LocalDateTime reservedAt =
                     today.minusDays(1 + random.nextInt(7)).atTime(10, 0);
 
+            //  핵심: propertyCode에 맞는 hotelGroupCode 추출
+            Long hotelGroupCode = hotelGroupByProperty.get(propertyCode);
+            if (hotelGroupCode == null) continue;
+
+            //  핵심: 해당 hotelGroupCode의 customer 중에서 뽑기 (스코프 정합성 보장)
+            Long customerCode = pickCustomerCode(hotelGroupCode, customerCodesByHotelGroup, random);
+            if (customerCode == null) continue;
+
             buffer.add(
                     Reservation.builder()
                             .reservationStatus(ReservationStatus.RESERVED)
@@ -132,7 +154,7 @@ public class DummyReservationDataTest {
                             .propertyCode(propertyCode)
                             .roomCode(room.getRoomCode())
                             .packageCode(packageCode)
-                            .customerCode((long) (random.nextInt(50_000) + 1))
+                            .customerCode(customerCode) //  변경: 랜덤(1~50000) 제거
                             .build()
             );
 
@@ -145,7 +167,7 @@ public class DummyReservationDataTest {
         }
 
         /* =================================================
-           2️ 기존 월 단위 예약 생성 (기존 코드 100% 유지)
+           2) 기존 월 단위 예약 생성 (기존 코드 유지 + customer 매칭만 수정)
            ================================================= */
         LocalDate start = LocalDate.of(2024, 1, 1);
         LocalDate end   = LocalDate.of(2026, 12, 31);
@@ -226,6 +248,15 @@ public class DummyReservationDataTest {
                                 ? reservedAt.plusHours(1 + random.nextInt(48))
                                 : null;
 
+                Long propertyCode = roomType.getPropertyCode();
+
+                //  핵심: propertyCode -> hotelGroupCode -> customerCode
+                Long hotelGroupCode = hotelGroupByProperty.get(propertyCode);
+                if (hotelGroupCode == null) continue;
+
+                Long customerCode = pickCustomerCode(hotelGroupCode, customerCodesByHotelGroup, random);
+                if (customerCode == null) continue;
+
                 buffer.add(
                         Reservation.builder()
                                 .reservationStatus(status)
@@ -240,10 +271,10 @@ public class DummyReservationDataTest {
                                 .reservedAt(reservedAt)
                                 .createdAt(reservedAt)
                                 .canceledAt(canceledAt)
-                                .propertyCode(roomType.getPropertyCode())
+                                .propertyCode(propertyCode)
                                 .roomCode(room.getRoomCode())
                                 .packageCode(packageCode)
-                                .customerCode((long) (random.nextInt(50_000) + 1))
+                                .customerCode(customerCode)
                                 .build()
                 );
 
@@ -263,5 +294,45 @@ public class DummyReservationDataTest {
             em.flush();
             em.clear();
         }
+    }
+
+    private Map<Long, Long> buildHotelGroupByProperty() {
+        // property_code -> hotel_group_code 매핑 (예약 생성 스코프 기준)
+        List<Property> properties = propertyRepository.findAll();
+        Map<Long, Long> map = new HashMap<>();
+        for (Property p : properties) {
+            if (p == null) continue;
+            if (p.getPropertyCode() == null) continue;
+            if (p.getHotelGroup() == null || p.getHotelGroup().getHotelGroupCode() == null) continue;
+            map.put(p.getPropertyCode(), p.getHotelGroup().getHotelGroupCode());
+        }
+        return map;
+    }
+
+    private Map<Long, List<Long>> buildCustomerCodesByHotelGroup() {
+        // hotel_group_code -> customer_code 리스트 구성 (예약 생성 시 반드시 이 풀에서 뽑아야 정합성 유지)
+        List<Customer> customers = customerRepository.findAll();
+        Map<Long, List<Long>> map = new HashMap<>();
+        for (Customer c : customers) {
+            if (c == null) continue;
+            if (c.getCustomerCode() == null) continue;
+            // Customer 엔티티에 getHotelGroupCode()가 없으면 필드/게터에 맞게 변경
+            Long hotelGroupCode = c.getHotelGroupCode();
+            if (hotelGroupCode == null) continue;
+            map.computeIfAbsent(hotelGroupCode, k -> new ArrayList<>()).add(c.getCustomerCode());
+        }
+        // 랜덤 접근 성능 위해 정렬 (선택 사항)
+        map.values().forEach(list -> list.sort(Comparator.naturalOrder()));
+        return map;
+    }
+
+    private Long pickCustomerCode(
+            Long hotelGroupCode,
+            Map<Long, List<Long>> customerCodesByHotelGroup,
+            Random random
+    ) {
+        List<Long> list = customerCodesByHotelGroup.get(hotelGroupCode);
+        if (list == null || list.isEmpty()) return null;
+        return list.get(random.nextInt(list.size()));
     }
 }

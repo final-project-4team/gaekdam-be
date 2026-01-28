@@ -11,16 +11,19 @@ public class MessageSendHistoryResponse {
     private Long sendCode;
 
     private Long stageCode;
+    private String stageNameKor;
+
+    private Long templateCode;
+    private String templateTitle;
+
     private Long reservationCode;
     private Long stayCode;
 
-    private Long ruleCode;
-    private Long templateCode;
+    private MessageSendStatus status;
 
     private LocalDateTime scheduledAt;
     private LocalDateTime sentAt;
 
-    private MessageSendStatus status;
     private String failReason;
     private String externalMessageId;
 }

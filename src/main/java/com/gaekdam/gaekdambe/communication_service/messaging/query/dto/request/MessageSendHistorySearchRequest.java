@@ -10,11 +10,12 @@ import java.time.LocalDateTime;
 @Setter
 public class MessageSendHistorySearchRequest {
 
-    private Long propertyCode;
+    private Long hotelGroupCode; //  필수
+    private Long propertyCode;   // 필터용
+
     private Long stageCode;
     private Long reservationCode;
     private Long stayCode;
-
     private MessageSendStatus status;
 
     private LocalDateTime fromDate;

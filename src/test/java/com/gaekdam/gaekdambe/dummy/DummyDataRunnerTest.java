@@ -38,10 +38,12 @@ import com.gaekdam.gaekdambe.dummy.generate.operation_service.room.DummyRoomType
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.reservation.DummyReservationDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyCheckInOutDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDataTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.StopWatch;
 
 @SpringBootTest
 @Rollback(value = false)
+@ActiveProfiles("test")
 class DummyDataRunnerTest {
 
     // 호텔서비스
@@ -113,9 +115,9 @@ class DummyDataRunnerTest {
     @Autowired
     DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
     @Autowired
-    DummyMessageRuleSetupTest messageRuleSetupTest;
-    @Autowired
     DummyMessageTemplateSetupTest messageTemplateSetupTest;
+    @Autowired
+    DummyMessageRuleSetupTest messageRuleSetupTest;
     @Autowired
     DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
 
@@ -186,7 +188,8 @@ class DummyDataRunnerTest {
         run(sw, "messageStage", messageJourneyStageSetupTest::generate);
         run(sw, "messageTemplate", messageTemplateSetupTest::generate);
         run(sw, "messageRule", messageRuleSetupTest::generate);
-        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
+        // 메세지 히스토리 더미데이터 생성x
+//        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
 
         // 분석 서비스
         run(sw, "reportKpiDataset", reportKpiDatasetGenerator::generate);

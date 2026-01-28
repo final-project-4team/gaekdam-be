@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageSendValidationQueryMapper">
+
+    <!-- 예약 확정 / 체크인 예정 공통 -->
+    <select id="isReservationStillValid" resultType="boolean">
+        SELECT EXISTS (
+        SELECT 1
+        FROM reservation r
+        WHERE r.reservation_code = #{reservationCode}
+        AND r.canceled_at IS NULL
+        )
+    </select>
+
+    <!-- 체크인 예정 -->
+    <select id="isCheckinPlannedStillValid" resultType="boolean">
+        SELECT EXISTS (
+        SELECT 1
+        FROM reservation r
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE r.reservation_code = #{reservationCode}
+        AND r.canceled_at IS NULL
+        AND s.stay_code IS NULL
+        )
+    </select>
+
+    <!-- 체크아웃 예정 -->
+    <select id="isCheckoutPlannedStillValid" resultType="boolean">
+        SELECT EXISTS (
+        SELECT 1
+        FROM stay s
+        JOIN reservation r
+        ON s.reservation_code = r.reservation_code
+        WHERE s.stay_code = #{stayCode}
+        AND r.canceled_at IS NULL
+        AND s.actual_checkout_at IS NULL
+        )
+    </select>
+
+</mapper>

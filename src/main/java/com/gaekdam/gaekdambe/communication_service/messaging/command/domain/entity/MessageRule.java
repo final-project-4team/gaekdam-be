@@ -64,6 +64,9 @@ public class MessageRule {
     @Column(name = "membership_grade_code", nullable = false)
     private Long membershipGradeCode;
 
+    @Column(name = "hotel_group_code", nullable = false)
+    private Long hotelGroupCode;
+
 
     public void update(
             Long templateCode,
