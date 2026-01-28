@@ -1,9 +1,12 @@
 package com.gaekdam.gaekdambe.communication_service.incident.command.application.service;
 
 import com.gaekdam.gaekdambe.communication_service.incident.command.application.dto.request.IncidentCreateRequest;
+import com.gaekdam.gaekdambe.communication_service.incident.command.domain.IncidentStatus;
 import com.gaekdam.gaekdambe.communication_service.incident.command.domain.entity.Incident;
 import com.gaekdam.gaekdambe.communication_service.incident.command.infrastructure.repository.IncidentRepository;
 import com.gaekdam.gaekdambe.communication_service.inquiry.command.domain.entity.Inquiry;
+import com.gaekdam.gaekdambe.global.exception.CustomException;
+import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import jakarta.persistence.EntityManager;
@@ -41,4 +44,18 @@ public class IncidentCommandService {
 
         return incidentRepository.save(incident).getIncidentCode();
     }
+
+    public void closeIncident(Long incidentCode) {
+
+        Incident incident = incidentRepository.findById(incidentCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 사건/사고입니다."));
+
+        // 이미 종결이면 그냥 리턴 or 예외
+        if (incident.getIncidentStatus() == IncidentStatus.CLOSED) {
+            return;
+        }
+
+        incident.close(); // 엔티티 메서드로 상태 변경
+    }
+
 }
