@@ -17,8 +17,10 @@ public class MessageRuleCommandController {
     private final MessageRuleCommandService service;
 
     @PostMapping
-    public ApiResponse<Long> create(@RequestBody MessageRuleCreateRequest req) {
+    public ApiResponse<Long> create(@RequestBody MessageRuleCreateRequest req,
+                                    @AuthenticationPrincipal CustomUser customUser) {
 
+        req.setHotelGroupCode(customUser.getHotelGroupCode());
 
         return ApiResponse.success(service.createRule(req));
     }

@@ -188,7 +188,8 @@ class DummyDataRunnerTest {
         run(sw, "messageStage", messageJourneyStageSetupTest::generate);
         run(sw, "messageTemplate", messageTemplateSetupTest::generate);
         run(sw, "messageRule", messageRuleSetupTest::generate);
-        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
+        // 메세지 히스토리 더미데이터 생성x
+//        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
 
         // 분석 서비스
         run(sw, "reportKpiDataset", reportKpiDatasetGenerator::generate);

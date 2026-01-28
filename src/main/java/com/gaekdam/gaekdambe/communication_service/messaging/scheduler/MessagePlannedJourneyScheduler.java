@@ -2,7 +2,7 @@ package com.gaekdam.gaekdambe.communication_service.messaging.scheduler;
 
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.event.MessageJourneyEvent;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.resolver.MessageStageResolver;
-import com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.ReservationMessagingQueryMapper;
+import com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingPlannedJourneyTargetQueryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
@@ -12,19 +12,20 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * 체크인/체크아웃 예정 여정 이벤트 스케줄러
+ */
 @Component
 @RequiredArgsConstructor
 @Profile("!test")
 public class MessagePlannedJourneyScheduler {
 
-    private final ReservationMessagingQueryMapper queryMapper;
+    private final MessagingPlannedJourneyTargetQueryMapper queryMapper;
     private final MessageStageResolver stageResolver;
     private final ApplicationEventPublisher eventPublisher;
 
-    /**
-     * 체크인 / 체크아웃 예정 메시지 스케줄러
-     * 5분 주기
-     */
+    private static final Long HOTEL_GROUP_CODE = 1L;
+
     @Scheduled(cron = "0 */5 * * * *")
     public void publishPlannedJourneyEvents() {
 
@@ -39,7 +40,11 @@ public class MessagePlannedJourneyScheduler {
         Long stageCode = stageResolver.resolveStageCode("CHECKIN_PLANNED");
 
         List<Long> reservationCodes =
-                queryMapper.findTodayCheckinPlannedReservationCodes(today, stageCode);
+                queryMapper.findTodayCheckinPlannedReservationCodes(
+                        HOTEL_GROUP_CODE,
+                        today,
+                        stageCode
+                );
 
         for (Long reservationCode : reservationCodes) {
             eventPublisher.publishEvent(
@@ -53,7 +58,11 @@ public class MessagePlannedJourneyScheduler {
         Long stageCode = stageResolver.resolveStageCode("CHECKOUT_PLANNED");
 
         List<Long> stayCodes =
-                queryMapper.findTodayCheckoutPlannedStayCodes(today, stageCode);
+                queryMapper.findTodayCheckoutPlannedStayCodes(
+                        HOTEL_GROUP_CODE,
+                        today,
+                        stageCode
+                );
 
         for (Long stayCode : stayCodes) {
             eventPublisher.publishEvent(

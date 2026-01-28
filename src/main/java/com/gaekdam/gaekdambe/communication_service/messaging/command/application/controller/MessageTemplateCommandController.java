@@ -23,8 +23,8 @@ public class MessageTemplateCommandController {
             @RequestBody MessageTemplateCreateRequest req,
             @AuthenticationPrincipal CustomUser customUser
     ) {
-        Long propertyCode = customUser.getPropertyCode();
-        return ApiResponse.success(service.createTemplate(req, propertyCode));
+        Long hotelGroupCode = customUser.getHotelGroupCode();
+        return ApiResponse.success(service.createTemplate(req, hotelGroupCode));
     }
 
     @PutMapping("/{templateCode}")

@@ -22,6 +22,7 @@ public class MessageRuleCommandService {
         LocalDateTime now = LocalDateTime.now();
 
         MessageRule rule = MessageRule.builder()
+                .hotelGroupCode(req.getHotelGroupCode())
                 .referenceEntityType(req.getReferenceEntityType())
                 .offsetMinutes(req.getOffsetMinutes())
                 .visitorType(req.getVisitorType())

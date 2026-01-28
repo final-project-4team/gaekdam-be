@@ -5,8 +5,10 @@ import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enum
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums.VisitorType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @NoArgsConstructor
 public class MessageRuleCreateRequest {
     private ReferenceEntityType referenceEntityType; // RESERVATION, STAY
@@ -17,6 +19,7 @@ public class MessageRuleCreateRequest {
     private int priority;
     private String description;
 
+    private Long hotelGroupCode;
     private Long stageCode;
     private Long templateCode;
     private Long membershipGradeCode;

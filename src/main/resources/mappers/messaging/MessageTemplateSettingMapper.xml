@@ -20,7 +20,7 @@
         FROM message_journey_stage s
                  LEFT JOIN message_template t
                            ON t.stage_code = s.stage_code
-                               AND t.property_code = #{propertyCode}
+                               AND t.hotel_group_code = #{hotelGroupCode}
         WHERE s.is_active = true
         ORDER BY s.stage_code ASC
     </select>

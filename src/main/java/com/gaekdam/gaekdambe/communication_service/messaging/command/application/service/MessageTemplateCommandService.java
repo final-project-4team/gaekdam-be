@@ -20,7 +20,7 @@ public class MessageTemplateCommandService {
     private final MessageTemplateRepository repository;
 
     @Transactional
-    public Long createTemplate(MessageTemplateCreateRequest req, Long propertyCode) {
+    public Long createTemplate(MessageTemplateCreateRequest req, Long hotelGroupCode) {
         LocalDateTime now = LocalDateTime.now();
 
         MessageTemplate template = MessageTemplate.builder()
@@ -31,7 +31,7 @@ public class MessageTemplateCommandService {
                 .conditionExpr(req.getConditionExpr())
                 .isActive(req.isActive())
                 .membershipGradeCode(req.getMembershipGradeCode())
-                .propertyCode(propertyCode)
+                .hotelGroupCode(hotelGroupCode)
                 .stageCode(req.getStageCode())
                 .createdAt(now)
                 .updatedAt(now)

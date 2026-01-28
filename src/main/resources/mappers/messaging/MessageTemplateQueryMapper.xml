@@ -12,25 +12,23 @@
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateResponse">
 
         SELECT
-        template_code           AS templateCode,
-        stage_code              AS stageCode,
-        visitor_type            AS visitorType,
-        language_code           AS languageCode,
+        template_code AS templateCode,
+        stage_code AS stageCode,
+        visitor_type AS visitorType,
+        language_code AS languageCode,
         title,
-        is_active               AS isActive,
-        membership_grade_code   AS membershipGradeCode
+        is_active AS isActive,
+        membership_grade_code AS membershipGradeCode
         FROM message_template
-        <where>
-            AND property_code = #{search.propertyCode}
+        WHERE hotel_group_code = #{search.hotelGroupCode}
 
-            <if test="search.stageCode != null">
-                AND stage_code = #{search.stageCode}
-            </if>
+        <if test="search.stageCode != null">
+            AND stage_code = #{search.stageCode}
+        </if>
 
-            <if test="search.isActive != null">
-                AND is_active = #{search.isActive}
-            </if>
-        </where>
+        <if test="search.isActive != null">
+            AND is_active = #{search.isActive}
+        </if>
 
         <if test="sort != null and sort.sortBy != null">
             ORDER BY ${sort.sortBy} ${sort.direction}
@@ -61,25 +59,23 @@
     <select id="findSettingTemplates"
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateSettingResponse">
 
-        SELECT
-            s.stage_code        AS stageCode,
-            s.stage_name_eng    AS stageNameEng,
-            s.stage_name_kor    AS stageNameKor,
+        SELECT s.stage_code     AS stageCode,
+               s.stage_name_eng AS stageNameEng,
+               s.stage_name_kor AS stageNameKor,
 
-            t.template_code     AS templateCode,
-            t.visitor_type      AS visitorType,
-            t.is_active         AS isActive,
-            t.title             AS title
+               t.template_code  AS templateCode,
+               t.visitor_type   AS visitorType,
+               t.is_active      AS isActive,
+               t.title          AS title
         FROM message_journey_stage s
                  LEFT JOIN message_template t
                            ON t.stage_code = s.stage_code
-                               AND t.property_code = #{propertyCode}
+                               AND t.hotel_group_code = #{hotelGroupCode}
 
         WHERE s.is_active = true
 
-        ORDER BY
-            s.stage_code ASC,
-            t.visitor_type ASC
+        ORDER BY s.stage_code ASC,
+                 t.visitor_type ASC
     </select>
 
 

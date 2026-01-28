@@ -24,11 +24,6 @@ public interface MessageTemplateQueryMapper {
     long countTemplates(@Param("search") MessageTemplateSearch search);
 
 
-    List<MessageTemplateSettingResponse> findSettingTemplates(
-            @Param("propertyCode") Long propertyCode
-    );
-
-
     // 단건
     MessageTemplateDetailResponse findTemplateDetail(Long templateCode);
 }

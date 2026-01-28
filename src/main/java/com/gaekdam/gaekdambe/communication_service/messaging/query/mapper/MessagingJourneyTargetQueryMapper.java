@@ -5,21 +5,34 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 여정 상태 변경 대상 조회 (hotel_group 기준)
+ */
 @Mapper
 public interface MessagingJourneyTargetQueryMapper {
 
-    // 예약 확정
-    List<Long> findReservationConfirmedTargets(@Param("stageCode") Long stageCode);
+    List<Long> findReservationConfirmedTargets(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("stageCode") Long stageCode
+    );
 
-    // 예약 취소
-    List<Long> findReservationCancelledTargets(@Param("stageCode") Long stageCode);
+    List<Long> findReservationCancelledTargets(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("stageCode") Long stageCode
+    );
 
-    // 노쇼
-    List<Long> findNoShowTargets(@Param("stageCode") Long stageCode);
+    List<Long> findNoShowTargets(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("stageCode") Long stageCode
+    );
 
-    // 체크인 등록(DB 기준)
-    List<Long> findCheckInConfirmedStayTargets(@Param("stageCode") Long stageCode);
+    List<Long> findCheckInConfirmedStayTargets(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("stageCode") Long stageCode
+    );
 
-    // 체크아웃 등록(DB 기준)
-    List<Long> findCheckOutConfirmedStayTargets(@Param("stageCode") Long stageCode);
+    List<Long> findCheckOutConfirmedStayTargets(
+            @Param("hotelGroupCode") Long hotelGroupCode,
+            @Param("stageCode") Long stageCode
+    );
 }

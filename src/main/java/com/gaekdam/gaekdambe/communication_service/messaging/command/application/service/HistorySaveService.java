@@ -48,10 +48,16 @@ public class HistorySaveService {
             reservationCode = stay.getReservationCode();
         }
 
-        MessageTemplate template = templateRepository.findById(rule.getTemplateCode())
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Template not found: " + rule.getTemplateCode())
-                );
+        if (rule.getTemplateCode() == null) {
+            saveSkipped(event, rule, reservationCode, stayCode, LocalDateTime.now(), "template_code_null");
+            return;
+        }
+
+        MessageTemplate template =
+                templateRepository.findById(rule.getTemplateCode())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("Template not found: " + rule.getTemplateCode())
+                        );
 
         LocalDateTime scheduledAt = LocalDateTime.now().plusMinutes(rule.getOffsetMinutes());
 

@@ -54,8 +54,8 @@ public class MessageTemplate {
     @Column(name = "membership_grade_code", nullable = false)
     private Long membershipGradeCode;
 
-    @Column(name = "property_code", nullable = false)
-    private Long propertyCode;
+    @Column(name = "hotel_group_code", nullable = false)
+    private Long hotelGroupCode;
 
     @Column(name = "stage_code", nullable = false)
     private Long stageCode;
