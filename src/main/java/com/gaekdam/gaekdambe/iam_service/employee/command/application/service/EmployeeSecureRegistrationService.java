@@ -46,8 +46,9 @@ public class EmployeeSecureRegistrationService {
   private final MailSendService mailSendService;
 
 
-  @AuditLog(details = "직원 생성",type = PermissionTypeKey.EMPLOYEE_CREATE)
+
   @Transactional
+  @AuditLog(details = "'직원 이름: '+ #command.name", type = PermissionTypeKey.EMPLOYEE_CREATE)
   public Long registerEmployee(Long hotelGroupCode,EmployeeSecureRegistrationRequest command) {
 
     // 비밀번호 암호화 (BCrypt)

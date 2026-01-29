@@ -192,7 +192,7 @@ public class EmployeeUpdateService {
     employee.updateOrganization(department, hotelPosition, afterPermission);
   }
 
-  @AuditLog(details = "비밀번호 변경", type = PermissionTypeKey.EMPLOYEE_UPDATE)
+  @AuditLog(details = "'비밀번호 변경", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   @Transactional
   public void changePassword(Employee employee, PasswordChangeRequest request) {
     log.info("비밀번호 변경 시작 - loginId: {}", employee.getLoginId());
@@ -213,8 +213,8 @@ public class EmployeeUpdateService {
     log.info("비밀번호 변경 완료 - loginId: {}", employee.getLoginId());
   }
 
-  @AuditLog(details = "비밀번호 초기화", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   @Transactional
+  @AuditLog(details = "'비밀번호 초기화   직원 코드 : '+#employeeCode", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   public String resetPassword(Long employeeCode) {
     log.info("비밀번호 초기화 시작 - employeeCode: {}", employeeCode);
 
@@ -241,8 +241,8 @@ public class EmployeeUpdateService {
     return tempPassword;
   }
 
-  @AuditLog(details = "직원 잠금", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   @Transactional
+  @AuditLog(details = "'직원 잠금   직원 코드 : '+#employeeCode", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   public void lockEmployee(Long hotelGroupCode, Long employeeCode) {
     log.info("직원 잠금 시작 - employeeCode: {}, hotelGroupCode: {}", employeeCode, hotelGroupCode);
 
@@ -260,8 +260,8 @@ public class EmployeeUpdateService {
   }
 
   // 유저 잠금 해제
-  @AuditLog(details = "직원 잠금 해제", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   @Transactional
+  @AuditLog(details = "'직원 잠금해제  직원 코드 : '+#employeeCode", type = PermissionTypeKey.EMPLOYEE_UPDATE)
   public void unlockEmployee(Long hotelGroupCode, Long employeeCode) {
     log.info("직원 잠금 해제 시작 - employeeCode: {}, hotelGroupCode: {}", employeeCode, hotelGroupCode);
 
@@ -286,8 +286,8 @@ public class EmployeeUpdateService {
   public void dormancyEmployee() {
     log.info("휴면 계정 전환 스케줄러 실행");
 
-    // LocalDateTime targetDate = LocalDateTime.now().minusMonths(6);
-    LocalDateTime targetDate = LocalDateTime.now().minusMinutes(60);
+    LocalDateTime targetDate = LocalDateTime.now().minusMonths(6);
+    //LocalDateTime targetDate = LocalDateTime.now().minusMinutes(60);
 
     List<Employee> targetEmployees = employeeRepository
         .findByEmployeeStatusAndLastLoginAtBefore(EmployeeStatus.ACTIVE,

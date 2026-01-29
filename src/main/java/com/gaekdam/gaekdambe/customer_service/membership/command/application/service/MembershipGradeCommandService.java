@@ -44,8 +44,8 @@ public class MembershipGradeCommandService {
   private final AuditLogService auditLogService;
 
   // 멤버십 생성
-  @AuditLog(type = PermissionTypeKey.MEMBERSHIP_POLICY_CREATE, details = "멤버십 등급 생성")
   @Transactional
+  @AuditLog(details = "'멤버십 등급 이름: '+ #request.gradeName", type = PermissionTypeKey.MEMBERSHIP_POLICY_CREATE)
   public String createMembershipGrade(MembershipGradeRequest request, Long hotelGroupCode) {
     if (request.gradeName() == null || request.gradeName().isBlank()) {
       throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
@@ -81,8 +81,8 @@ public class MembershipGradeCommandService {
     return "멤버십 등급 생성 완료";
   }
 
-  @AuditLog(type = PermissionTypeKey.MEMBERSHIP_POLICY_DELETE, details = "멤버십 등급 삭제")
   @Transactional
+  @AuditLog(details = "'멤버십 등급 이름: '+ #membershipGradeCode", type = PermissionTypeKey.MEMBERSHIP_POLICY_DELETE)
   public String deleteMembershipGrade(Long hotelGroupCode, Long membershipGradeCode) {
     MembershipGrade membershipGrade = membershipGradeRepository.findById(membershipGradeCode)
         .orElseThrow(() ->  new CustomException(ErrorCode.MEMBERSHIP_GRADE_NOT_FOUND));

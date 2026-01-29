@@ -4,6 +4,7 @@ import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +34,7 @@ public class ReportLayoutTemplateController {
     private final ReportLayoutQueryService queryService; // MyBatis 조회 재사용 가능
 
     @GetMapping
+    @PreAuthorize("hasAuthority('REPORT_LAYOUT_TEMPLATE_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.REPORT_LAYOUT_TEMPLATE_READ)
     public ResponseEntity<ApiResponse<ReportLayoutTemplateListResponseDto>> list(@PathVariable Long layoutId) {
         // queryService.getTemplatesByLayoutId(layoutId) 이런 식으로 붙이면 됨
@@ -41,6 +43,7 @@ public class ReportLayoutTemplateController {
 
     // 특정 레이아웃에 템플릿 추가 하기
     @PostMapping
+    @PreAuthorize("hasAuthority('REPORT_LAYOUT_TEMPLATE_CREATE')")
     public ResponseEntity<ApiResponse<Long>> add(
             @PathVariable Long layoutId,
             @RequestParam Long employeeCode, // 임시(나중에 인증에서 꺼내기)
@@ -52,6 +55,7 @@ public class ReportLayoutTemplateController {
 
     // 특정 레이아웃에 템플릿 수정 하기
     @PatchMapping("/{layoutTemplateId}")
+    @PreAuthorize("hasAuthority('REPORT_LAYOUT_TEMPLATE_UPDATE')")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable Long layoutId,
             @PathVariable Long layoutTemplateId,
@@ -63,6 +67,7 @@ public class ReportLayoutTemplateController {
 
     // 특정 레이아웃에 템플릿 삭제 하기
     @DeleteMapping("/{templateId}")
+    @PreAuthorize("hasAuthority('REPORT_LAYOUT_TEMPLATE_DELETE')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long layoutId,
             @PathVariable Long templateId) {

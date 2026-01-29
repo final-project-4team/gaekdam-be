@@ -64,6 +64,14 @@
             AND (et.employee_name_hash = #{targetNameHash, jdbcType=BINARY}) 
             <!-- OR ct.customer_name_hash = #{targetNameHash, jdbcType=BINARY} -->
         </if>
+        
+        <if test="search.targetType == 'EMPLOYEE'">
+            AND pil.target_employee_code IS NOT NULL
+        </if>
+
+        <if test="search.targetType == 'CUSTOMER'">
+            AND pil.target_customer_code IS NOT NULL
+        </if>
 
         <if test="search.toDate != null">
             AND pil.occurred_at <![CDATA[ <= ]]> #{search.toDate}
@@ -122,6 +130,14 @@
         <if test="targetNameHash != null">
             AND (et.employee_name_hash = #{targetNameHash, jdbcType=BINARY}) 
             <!-- OR ct.customer_name_hash = #{targetNameHash, jdbcType=BINARY} -->
+        </if>
+        
+        <if test="search.targetType == 'EMPLOYEE'">
+            AND pil.target_employee_code IS NOT NULL
+        </if>
+
+        <if test="search.targetType == 'CUSTOMER'">
+            AND pil.target_customer_code IS NOT NULL
         </if>
 
         <if test="search.toDate != null">

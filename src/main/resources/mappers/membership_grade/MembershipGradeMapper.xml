@@ -20,6 +20,7 @@
     FROM membership_grade ms
     WHERE ms.hotel_group_code = #{hotelGroupCode}
 
+
     <choose>
       <when test="status != null and status == 'INACTIVE'">
         AND ms.membership_grade_status = #{status}

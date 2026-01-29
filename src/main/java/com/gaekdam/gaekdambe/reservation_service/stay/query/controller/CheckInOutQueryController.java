@@ -8,6 +8,7 @@ import com.gaekdam.gaekdambe.reservation_service.stay.query.dto.request.CheckInO
 import com.gaekdam.gaekdambe.reservation_service.stay.query.dto.response.CheckInOutResponse;
 import com.gaekdam.gaekdambe.reservation_service.stay.query.service.CheckInOutQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ public class CheckInOutQueryController {
     private final CheckInOutQueryService checkInOutQueryService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('TODAY_RESERVATION_LIST')")
     public ApiResponse<PageResponse<CheckInOutResponse>> getCheckInOuts(
             PageRequest page,
             CheckInOutSearchRequest search,

@@ -19,6 +19,7 @@ public class MembershipHistoryQueryController {
     private final MembershipHistoryQueryService service;
 
     @GetMapping("/history")
+    //  @PreAuthorize("hasAuthority('MEMBERSHIP_LIST')") 아직 없음
     public ApiResponse<PageResponse<MembershipHistoryResponse>> getHistory(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,

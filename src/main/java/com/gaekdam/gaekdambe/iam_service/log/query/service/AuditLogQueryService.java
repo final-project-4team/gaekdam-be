@@ -24,12 +24,17 @@ public class AuditLogQueryService {
             SortRequest sort) {
 
         List<AuditLogQueryResponse> list = auditLogMapper.findAuditLogs(hotelGroupCode, page, search, sort);
-        long total = auditLogMapper.countAuditLogs(hotelGroupCode,search);
+        long total = auditLogMapper.countAuditLogs(hotelGroupCode, search);
 
         return new PageResponse<>(
                 list,
                 page.getPage(),
                 page.getSize(),
                 total);
+    }
+
+    public AuditLogQueryResponse getAuditLog(Long auditLogCode) {
+        return auditLogMapper.findAuditLog(auditLogCode)
+                .orElseThrow(() -> new IllegalArgumentException("Audit Log not found with id: " + auditLogCode));
     }
 }

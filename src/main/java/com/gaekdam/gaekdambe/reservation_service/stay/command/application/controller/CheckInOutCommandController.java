@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.reservation_service.stay.command.application.dto.re
 import com.gaekdam.gaekdambe.reservation_service.stay.command.application.dto.request.CheckOutRequest;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.application.service.CheckInOutCommandService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ public class CheckInOutCommandController {
 
     // 오늘 예약정보 안에 체크인 등록
     @PostMapping("/checkin")
+    @PreAuthorize("hasAuthority('CHECK_IN_CREATE')")
     public ApiResponse<Void> checkIn(
             @RequestBody CheckInRequest request
     ) {
@@ -28,6 +30,7 @@ public class CheckInOutCommandController {
 
     // 오늘 예약정보 안에 체크아웃 등록
     @PostMapping("/checkout")
+    @PreAuthorize("hasAuthority('CHECK_OUT_CREATE')")
     public ApiResponse<Void> checkOut(
             @RequestBody CheckOutRequest request
     ) {

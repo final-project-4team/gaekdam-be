@@ -2,6 +2,8 @@ package com.gaekdam.gaekdambe.reservation_service.stay.command.application.servi
 
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.event.MessageJourneyEvent;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.resolver.MessageStageResolver;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.Reservation;
 import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
 import com.gaekdam.gaekdambe.reservation_service.stay.command.application.dto.request.CheckInRequest;
@@ -36,6 +38,8 @@ public class CheckInOutCommandService {
      * - CheckInOut 기록
      * - 메시징 이벤트 발행
      */
+    @Transactional
+    @AuditLog(details = "'체크 인   예약 코드 : ' + #request.reservationCode", type = PermissionTypeKey.CHECK_IN_CREATE)
     public void checkIn(CheckInRequest request) {
 
         Reservation reservation = reservationRepository.findById(request.getReservationCode())
@@ -86,6 +90,7 @@ public class CheckInOutCommandService {
      * - CheckInOut 기록
      * - 메시징 이벤트 발행
      */
+    @AuditLog(details = "'체크아웃   숙박 코드 : ' + #request.stayCode", type = PermissionTypeKey.CHECK_OUT_CREATE)
     public void checkOut(CheckOutRequest request) {
 
         Stay stay = stayRepository.findById(request.getStayCode())

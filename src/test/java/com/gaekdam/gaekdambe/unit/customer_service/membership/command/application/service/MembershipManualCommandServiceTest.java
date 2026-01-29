@@ -14,6 +14,8 @@ import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,8 @@ class MembershipManualCommandServiceTest {
     private MembershipRepository membershipRepository;
     private MembershipGradeRepository membershipGradeRepository;
     private MembershipHistoryRepository membershipHistoryRepository;
+    private EmployeeRepository employeeRepository;
+    private AuditLogService auditLogService;
 
     private MembershipManualCommandService service;
 
@@ -43,7 +47,10 @@ class MembershipManualCommandServiceTest {
         membershipRepository = mock(MembershipRepository.class);
         membershipGradeRepository = mock(MembershipGradeRepository.class);
         membershipHistoryRepository = mock(MembershipHistoryRepository.class);
-        service = new MembershipManualCommandService(membershipRepository, membershipGradeRepository, membershipHistoryRepository);
+        employeeRepository=mock(EmployeeRepository.class);
+        auditLogService = mock(AuditLogService.class);
+
+        service = new MembershipManualCommandService(membershipRepository, membershipGradeRepository, membershipHistoryRepository,employeeRepository, auditLogService);
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,7 @@ public class MembershipGradeQueryController {
   }
 
   @GetMapping("/{membershipGradeCode}")
+  @PreAuthorize("hasAuthority('MEMBERSHIP_POLICY_READ')")
   @AuditLog(details = "", type = PermissionTypeKey.MEMBERSHIP_POLICY_READ)
   public ApiResponse<MembershipGradeDetailQueryResponse> getMembershipGradeDetail(
       @AuthenticationPrincipal CustomUser employee,

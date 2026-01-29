@@ -24,7 +24,7 @@
         AND al.employee_login_id LIKE CONCAT('%', #{search.employeeLoginId}, '%')
       </if>
 
-      <if test="search.permissionTypeKey != null">
+      <if test="search.permissionTypeKey != null and search.permissionTypeKey != ''">
         AND  al.permission_type_key LIKE CONCAT('%', #{search.permissionTypeKey}, '%')
       </if>
 
@@ -66,8 +66,8 @@
         AND al.employee_login_id LIKE CONCAT('%', #{search.employeeLoginId}, '%')
       </if>
 
-      <if test="search.permissionTypeKey != null">
-        AND al.permission_type_key = #{search.permissionTypeKey}
+      <if test="search.permissionTypeKey != null and search.permissionTypeKey != ''">
+        AND al.permission_type_key LIKE CONCAT('%', #{search.permissionTypeKey}, '%')
       </if>
 
       <if test="search.details != null and search.details != ''">
@@ -82,6 +82,23 @@
         AND al.occurred_at <![CDATA[ <= ]]> #{search.toDate}
       </if>
     </where>
+  </select>
+
+  <select id="findAuditLog"
+    resultType="com.gaekdam.gaekdambe.iam_service.log.query.dto.response.AuditLogQueryResponse">
+    SELECT
+      al.audit_log_code AS auditLogCode,
+      al.permission_type_key AS permissionTypeKey,
+      al.employee_code AS employeeCode,
+      al.employee_login_id AS employeeLoginId,
+      al.employee_name AS employeeName,
+      al.hotel_group_code AS hotelGroupCode,
+      al.details AS details,
+      al.previous_value AS previousValue,
+      al.new_value AS newValue,
+      al.occurred_at AS occurredAt
+    FROM audit_log al
+    WHERE al.audit_log_code = #{auditLogCode}
   </select>
 
 </mapper>

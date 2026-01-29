@@ -20,6 +20,7 @@ public class LoyaltyHistoryQueryController {
     private final LoyaltyHistoryQueryService service;
 
     @GetMapping("/history")
+    //  @PreAuthorize("hasAuthority('LOYALTY_LIST')") 아직 없음
     public ApiResponse<PageResponse<LoyaltyHistoryResponse>> getHistory(
             @AuthenticationPrincipal CustomUser user,
             @PathVariable Long customerCode,

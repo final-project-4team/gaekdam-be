@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.customer_service.membership.command.application.ser
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +22,9 @@ public class MembershipGradeCommandController {
 
   private final MembershipGradeCommandService memberShipGradeCommandService;
 
+  //멤버십 등급 생성
   @PostMapping("")
+  @PreAuthorize("hasAuthority('MEMBERSHIP_POLICY_CREATE')")
   public ApiResponse<String> createMemberShipGrade(
       @AuthenticationPrincipal CustomUser employee,
       @RequestBody MembershipGradeRequest request
@@ -31,7 +34,9 @@ public class MembershipGradeCommandController {
     return ApiResponse.success(memberShipGradeCommandService.createMembershipGrade(request, hotelGroupCode));
   }
 
+  //멤버십 등급 삭제
   @DeleteMapping("/{membershipGradeCode}")
+  @PreAuthorize("hasAuthority('MEMBERSHIP_POLICY_DELETE')")
   public ApiResponse<String> deleteMemberShipGrade(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long membershipGradeCode) {
@@ -40,7 +45,9 @@ public class MembershipGradeCommandController {
         .success(memberShipGradeCommandService.deleteMembershipGrade(hotelGroupCode, membershipGradeCode));
   }
 
+  //멤버십 등급 수정
   @PutMapping("/{membershipGradeCode}")
+  @PreAuthorize("hasAuthority('MEMBERSHIP_POLICY_UPDATE')")
   public ApiResponse<String> updateMemberShipGrade(
       @AuthenticationPrincipal CustomUser employee,
       @PathVariable Long membershipGradeCode,

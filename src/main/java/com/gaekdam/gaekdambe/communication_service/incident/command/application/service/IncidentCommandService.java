@@ -22,7 +22,7 @@ public class IncidentCommandService {
     private final EntityManager entityManager;
 
     @Transactional
-    @AuditLog(details = "사건사고 등록", type = PermissionTypeKey.INCIDENT_CREATE)
+    @AuditLog(details = "'사건사고 등록 제목 : '+#request.incidentTitle", type = PermissionTypeKey.INCIDENT_CREATE)
     public Long createIncident(IncidentCreateRequest request) {
 
         Inquiry inquiry = null;

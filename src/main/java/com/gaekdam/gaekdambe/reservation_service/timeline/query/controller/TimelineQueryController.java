@@ -10,6 +10,7 @@ import com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.Tim
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.service.TimelineCustomerQueryService;
 import com.gaekdam.gaekdambe.reservation_service.timeline.query.service.TimelineQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,8 @@ public class TimelineQueryController {
      * 타임라인 고객 검색 (stay 기준)
      */
     @GetMapping("/customers")
+    @PreAuthorize("hasAuthority('CUSTOMER_TIMELINE_READ')")
+    @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_TIMELINE_READ)
     public ApiResponse<List<TimelineCustomerResponse>> getTimelineCustomers(
             @AuthenticationPrincipal CustomUser principal,
             @RequestParam(required = false) String keyword
@@ -43,6 +46,8 @@ public class TimelineQueryController {
      * 고객 선택 → 투숙 리스트
      */
     @GetMapping("/customers/{customerCode}/stays")
+    @PreAuthorize("hasAuthority('CUSTOMER_TIMELINE_READ')")
+    @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_TIMELINE_READ)
     public ApiResponse<List<CustomerStayResponse>> getCustomerStays(
             @PathVariable Long customerCode,
             @AuthenticationPrincipal CustomUser principal
@@ -59,6 +64,7 @@ public class TimelineQueryController {
      * 투숙 선택 → 타임라인
      */
     @GetMapping("/stays/{stayCode}")
+    @PreAuthorize("hasAuthority('CUSTOMER_TIMELINE_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_TIMELINE_READ)
     public ApiResponse<TimelineDetailResponse> getTimeline(
             @PathVariable Long stayCode,

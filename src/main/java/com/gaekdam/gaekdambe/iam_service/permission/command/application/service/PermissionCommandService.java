@@ -32,8 +32,9 @@ public class PermissionCommandService {
   private final com.gaekdam.gaekdambe.iam_service.log.command.application.service.AuditLogService auditLogService;
 
   // 권한 생성
-  @AuditLog(details = "권한 생성", type = PermissionTypeKey.PERMISSION_CREATE)
+
   @Transactional
+  @AuditLog(details = "'권한 이름 : '+ #request.permissionName", type = PermissionTypeKey.PERMISSION_CREATE)
   public String createPermission(PermissionCreateRequest request, Long hotelGroupCode) {
     HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode).orElseThrow();
 
@@ -121,8 +122,8 @@ public class PermissionCommandService {
   }
 
   // 권한 삭제
-  @AuditLog(details = "권한 삭제", type = PermissionTypeKey.PERMISSION_DELETE)
   @Transactional
+  @AuditLog(details = "'권한 코드 : '+ #permissionCode", type = PermissionTypeKey.PERMISSION_DELETE)
   public String deletePermission(Long permissionCode, Long hotelGroupCode) {
     Permission permission = permissionRepository.findById(permissionCode).orElseThrow();
     if (!permission.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {

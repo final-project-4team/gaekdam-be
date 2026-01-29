@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,6 +37,14 @@ public class AuditLogQueryController {
         page, search,
         sort);
 
+    return ResponseEntity.ok(ApiResponse.success(response));
+  }
+
+  @PreAuthorize("hasAuthority('LOG_AUDIT_READ')")
+  @GetMapping("/{auditLogCode}")
+  public ResponseEntity<ApiResponse<AuditLogQueryResponse>> getAuditLogDetail(
+      @PathVariable Long auditLogCode) {
+    AuditLogQueryResponse response = auditLogQueryService.getAuditLog(auditLogCode);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 }

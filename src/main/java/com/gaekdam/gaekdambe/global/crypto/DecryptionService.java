@@ -26,7 +26,7 @@ public class DecryptionService {
 
     public byte[] getPlaintextDek(Long cacheCode, byte[] encryptedDek) {
         return dekCache.get(cacheCode, key -> {
-            System.out.println("[DEK Cache Miss] KMS 호출 - employeeCode=" + cacheCode);
+            //System.out.println("[DEK Cache Miss] KMS 호출 - employeeCode=" + cacheCode);
             return kmsService.decryptDataKey(encryptedDek);
         });
     }

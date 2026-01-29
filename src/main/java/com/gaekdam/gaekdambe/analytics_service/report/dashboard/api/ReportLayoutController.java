@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -40,6 +41,7 @@ public class ReportLayoutController {
 
   // 레이아웃 생성
   @PostMapping
+  @PreAuthorize("hasAuthority('REPORT_LAYOUT_CREATE')")
   public ResponseEntity<ApiResponse<Long>> create(@RequestBody @Valid ReportLayoutCreateDto dto) {
     
     Long id = commandService.create(dto);
@@ -49,6 +51,7 @@ public class ReportLayoutController {
 
     // 레이아웃 수정(부분수정)
   @PatchMapping("/{id}")
+  @PreAuthorize("hasAuthority('REPORT_LAYOUT_UPDATE')")
   public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id,
                                                   @RequestBody @Valid ReportLayoutUpdateDto dto) {
     dto.setLayoutId(id);
@@ -58,6 +61,7 @@ public class ReportLayoutController {
 
   // 레이아웃 삭제
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('REPORT_LAYOUT_DELETE')")
   public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
     commandService.delete(id);
     return ResponseEntity.ok(ApiResponse.success(null));
@@ -65,6 +69,7 @@ public class ReportLayoutController {
 
   // 레이아웃 리스트 조회 (사용자별)
   @GetMapping
+  @PreAuthorize("hasAuthority('REPORT_LAYOUT_LIST')")
   public ResponseEntity<ApiResponse<List<ReportLayoutResponseDto>>> list(
     @RequestParam Long employeeCode
   ) {

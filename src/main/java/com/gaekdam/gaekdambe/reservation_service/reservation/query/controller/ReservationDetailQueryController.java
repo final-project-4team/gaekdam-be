@@ -1,10 +1,10 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.query.controller;
 
-import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
-import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
@@ -22,12 +22,11 @@ public class ReservationDetailQueryController {
 
     // 통합예약정보 상세보기
     @GetMapping("/detail/{reservationCode}")
-    @AuditLog(details = "", type = PermissionTypeKey.RESERVATION_READ)
+    @PreAuthorize("hasAuthority('RESERVATION_READ')")
     public ApiResponse<ReservationDetailResponse> getReservationDetail(
-            @PathVariable Long reservationCode
-    ) {
+            @PathVariable Long reservationCode,
+            @RequestParam(required = false) String reason) {
         return ApiResponse.success(
-                reservationDetailQueryService.getReservationDetail(reservationCode)
-        );
+                reservationDetailQueryService.getReservationDetail(reservationCode, reason));
     }
 }

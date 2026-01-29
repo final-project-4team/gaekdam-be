@@ -15,6 +15,7 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.Opera
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.TodayOperationQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,8 @@ public class ReservationQueryController {
 
 
     @GetMapping
+    @PreAuthorize("hasAuthority('RESERVATION_LIST')")
+    @AuditLog(details = "", type = PermissionTypeKey.RESERVATION_LIST)
     public ApiResponse<PageResponse<ReservationResponse>> getReservations(
             @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,
@@ -53,7 +56,7 @@ public class ReservationQueryController {
 
     // 통합 예약 조회 (리스트)
     @GetMapping("/operations")
-    @AuditLog(details = "", type = PermissionTypeKey.RESERVATION_LIST)
+    @PreAuthorize("hasAuthority('RESERVATION_LIST')")
     public ApiResponse<PageResponse<OperationBoardResponse>> getOperationBoard(
             @AuthenticationPrincipal CustomUser customUser,
             PageRequest page,
@@ -76,6 +79,7 @@ public class ReservationQueryController {
 
     // 오늘의 예약정보 리스트(체크인예정 ,체크아웃예정, 투숙중)
     @GetMapping("/today/operations")
+    @PreAuthorize("hasAuthority('TODAY_RESERVATION_LIST')")
     @AuditLog(details = "", type = PermissionTypeKey.TODAY_RESERVATION_LIST)
     public ApiResponse<PageResponse<OperationBoardResponse>> getTodayOperations(
             @AuthenticationPrincipal CustomUser customUser,
@@ -109,6 +113,7 @@ public class ReservationQueryController {
 
     // 오늘의 예약정보 카운트(체크인예정 ,체크아웃예정, 투숙중 상단 숫자카드)
     @GetMapping("/today/operations/summary")
+    @PreAuthorize("hasAuthority('TODAY_RESERVATION_LIST')")
     public ApiResponse<Map<String, Long>> getTodayOperationSummary(
             @AuthenticationPrincipal CustomUser customUser,
             @RequestParam(required = false) Long propertyCode

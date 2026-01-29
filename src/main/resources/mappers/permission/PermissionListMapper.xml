@@ -40,6 +40,7 @@
     FROM permission p
     <where>
         AND p.hotel_group_code=#{hotelGroupCode}
+        AND p.permission_status = 'ACTIVE'
       <if test="search != null and search.permissionName != null and search.permissionName != ''">
         AND p.permission_name LIKE CONCAT('%', #{search.permissionName}, '%')
       </if>
@@ -85,6 +86,7 @@
     SELECT COUNT(*)
     FROM permission p
     <where>
+      AND p.permission_status = 'ACTIVE'
       <if test="search != null and search.permissionName != null and search.permissionName != ''">
         AND p.permission_name LIKE CONCAT('%', #{search.permissionName}, '%')
       </if>
@@ -114,6 +116,7 @@
       p.permission_name AS permissionName
     FROM permission p
     WHERE p.hotel_group_code = #{hotelGroupCode}
+      AND p.permission_status = 'ACTIVE'
   </select>
 
 
