@@ -23,36 +23,42 @@ public class DummyLoyaltyGradeDataTest {
     @Transactional
     public void generate() {
 
-        if (loyaltyGradeRepository.count() > 0) return;
-
         List<HotelGroup> hotelGroups = hotelGroupRepository.findAll();
         if (hotelGroups.isEmpty()) return;
 
         for (HotelGroup hg : hotelGroups) {
 
-            // GENERAL
-            loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
-                    hg,
-                    "GENERAL",
-                    1L,
-                    "General loyalty grade",
-                    0L,
-                    0,
-                    12,
-                    1
-            ));
+            // 호텔그룹별로 존재여부 체크
+            boolean hasGeneral =
+                    loyaltyGradeRepository.existsByHotelGroupAndLoyaltyGradeName(hg, "GENERAL");
+            boolean hasExcellent =
+                    loyaltyGradeRepository.existsByHotelGroupAndLoyaltyGradeName(hg, "EXCELLENT");
 
-            // EXCELLENT
-            loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
-                    hg,
-                    "EXCELLENT",
-                    2L,
-                    "Excellent loyalty grade",
-                    0L,
-                    10,
-                    12,
-                    1
-            ));
+            if (!hasGeneral) {
+                loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
+                        hg,
+                        "GENERAL",
+                        1L,
+                        "General loyalty grade",
+                        0L,
+                        0,
+                        12,
+                        1
+                ));
+            }
+
+            if (!hasExcellent) {
+                loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
+                        hg,
+                        "EXCELLENT",
+                        2L,
+                        "Excellent loyalty grade",
+                        0L,
+                        10,
+                        12,
+                        1
+                ));
+            }
         }
 
         em.flush();
