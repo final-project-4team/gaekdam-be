@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class LoyaltyGradeQueryController {
   private final LoyaltyGradeQueryService loyaltyGradeQueryService;
   @GetMapping("")
-  @PreAuthorize("hasAuthority('LOYALTY_POLICY_LIST')")
   @AuditLog(details = "", type = PermissionTypeKey.LOYALTY_POLICY_LIST)
   public ApiResponse<List<LoyaltyGradeListQueryResponse>> getLoyaltyGradeList(
       @AuthenticationPrincipal CustomUser employee,

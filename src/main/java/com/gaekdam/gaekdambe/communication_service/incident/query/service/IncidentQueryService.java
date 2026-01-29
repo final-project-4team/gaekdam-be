@@ -9,6 +9,8 @@ import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
 import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.LogPersonalInfo;
+import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,8 @@ public class IncidentQueryService {
 
         return new PageResponse<>(content, page.getPage(), page.getSize(), total);
     }
+
+    @LogPersonalInfo(type = PermissionTypeKey.CUSTOMER_READ, purpose = "고객 정보 조회")
     public IncidentDetailResponse getIncidentDetail(Long hotelGroupCode, Long incidentCode) {
         IncidentDetailEncResponse row = incidentMapper.findIncidentDetail(hotelGroupCode, incidentCode);
         if (row == null) {

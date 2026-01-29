@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -32,13 +33,14 @@ public class ReportKPITargetController {
     private final ReportKPITargetService service;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_CREATE')")
     public ResponseEntity<ApiResponse<ReportKPITargetId>> create(@RequestBody @Valid ReportKPITargetCreateDto dto) {
         ReportKPITargetId id = service.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(id));
     }
 
     @GetMapping("/{hotelGroupCode}/{targetId}")
-
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_LIST')")
     public ResponseEntity<ApiResponse<ReportKPITargetResponseDto>> get(
         @PathVariable Long hotelGroupCode,
         @PathVariable String targetId
@@ -47,7 +49,7 @@ public class ReportKPITargetController {
     }
 
     @GetMapping
-
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_LIST')")
     public ResponseEntity<ApiResponse<List<ReportKPITargetResponseDto>>> list(
         @RequestParam Long hotelGroupCode,
         @RequestParam(required = false) String kpiCode
@@ -56,6 +58,7 @@ public class ReportKPITargetController {
     }
 
     @PatchMapping("/{hotelGroupCode}/{targetId}")
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_UPDATE')")
     public ResponseEntity<ApiResponse<Void>> update(
         @PathVariable Long hotelGroupCode,
         @PathVariable String targetId,
@@ -66,6 +69,7 @@ public class ReportKPITargetController {
     }
 
     @DeleteMapping("/{hotelGroupCode}/{targetId}")
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_DELETE')")
     public ResponseEntity<ApiResponse<Void>> delete(
         @PathVariable Long hotelGroupCode,
         @PathVariable String targetId

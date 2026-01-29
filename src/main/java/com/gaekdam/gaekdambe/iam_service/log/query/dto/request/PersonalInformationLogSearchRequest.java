@@ -10,6 +10,7 @@ public record PersonalInformationLogSearchRequest(
                 String purpose,
                 Long personalInformationLogCode,
                 String employeeAccessorName,
+                String targetType,
                 Long targetCode,
                 String targetName,
                 LocalDateTime fromDate,

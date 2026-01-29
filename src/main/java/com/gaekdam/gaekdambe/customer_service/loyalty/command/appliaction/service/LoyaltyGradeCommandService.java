@@ -8,7 +8,10 @@ import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
+import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
+import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.service.AuditLogService;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,8 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class LoyaltyGradeCommandService {
+
   private final HotelGroupRepository hotelGroupRepository;
   private final LoyaltyGradeRepository loyaltyGradeRepository;
+  private final EmployeeRepository employeeRepository;
+  private final AuditLogService auditLogService;
 
 
   @Transactional
@@ -63,7 +69,8 @@ public class LoyaltyGradeCommandService {
   }
 
   @Transactional
-  public String updateLoyaltyGrade(Long hotelGroupCode, Long loyaltyGradeCode, LoyaltyGradeRequest request) {
+  public String updateLoyaltyGrade(Long hotelGroupCode, Long loyaltyGradeCode,
+      LoyaltyGradeRequest request, String accessorLoginId) {
 
     LoyaltyGrade loyaltyGrade = loyaltyGradeRepository.findById(loyaltyGradeCode)
         .orElseThrow(() -> new CustomException(ErrorCode.LOYALTY_GRADE_NOT_FOUND));
@@ -71,6 +78,9 @@ public class LoyaltyGradeCommandService {
     if (!loyaltyGrade.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {
       throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);
     }
+    String prevName = loyaltyGrade.getLoyaltyGradeName();
+    Long prevInfoAmount = loyaltyGrade.getLoyaltyCalculationAmount();
+    Integer prevInfoCount = loyaltyGrade.getLoyaltyCalculationCount();
 
     loyaltyGrade.update(
         request.loyaltyGradeName(),
@@ -81,6 +91,47 @@ public class LoyaltyGradeCommandService {
         request.loyaltyCalculationTermMonth(),
         request.loyaltyCalculationRenewalDay());
 
+    StringBuilder changes = new StringBuilder();
+
+
+
+    //  등급 이름 비교
+    String newName = loyaltyGrade.getLoyaltyGradeName();
+    if (prevName != null && !prevName.equals(newName)) {
+      changes.append(String.format("[등급명: %s -> %s] ", prevName, newName));
+    }
+    // 기준 금액 비교
+    Long newInfoAmount = loyaltyGrade.getLoyaltyCalculationAmount();
+    if (prevInfoAmount == null) {
+      if (newInfoAmount != null) {
+        changes.append(String.format("[기준금액: 없음 -> %d] ", newInfoAmount));
+      }
+    } else if (!prevInfoAmount.equals(newInfoAmount)) {
+      // newInfoAmount가 null인 경우 처리 포함
+      changes.append(String.format("[기준금액: %d -> %s] ", prevInfoAmount,
+          (newInfoAmount != null ? newInfoAmount.toString() : "없음")));
+    }
+    // 기준 횟수 비교
+    Integer newInfoCount = loyaltyGrade.getLoyaltyCalculationCount();
+    if (prevInfoCount == null) {
+      if (newInfoCount != null) {
+        changes.append(String.format("[기준횟수: 없음 -> %d] ", newInfoCount));
+      }
+    } else if (!prevInfoCount.equals(newInfoCount)) {
+      changes.append(String.format("[기준횟수: %d -> %s] ", prevInfoCount,
+          (newInfoCount != null ? newInfoCount.toString() : "없음")));
+    }
+
+    Employee accessor = employeeRepository.findByLoginId(accessorLoginId).orElse(null);
+    if (accessor != null) {
+      auditLogService.saveAuditLog(
+          accessor,
+          PermissionTypeKey.LOYALTY_POLICY_UPDATE,
+          changes.toString(), // "이름: A->B, 금액: 100->200"
+          null,
+          null
+      );
+    }
     return "등급 정보가 수정 되었습니다";
   }
 }

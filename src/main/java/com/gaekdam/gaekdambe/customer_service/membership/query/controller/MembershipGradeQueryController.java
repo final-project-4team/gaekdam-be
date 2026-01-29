@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 public class MembershipGradeQueryController {
   private final MembershipGradeQueryService membershipGradeQueryService;
   @GetMapping("")
-  @PreAuthorize("hasAuthority('MEMBERSHIP_POLICY_LIST')")
   @AuditLog(details = "", type = PermissionTypeKey.MEMBERSHIP_POLICY_LIST)
   public ApiResponse<List<MembershipGradeListQueryResponse>> getMembershipGradeList(
       @AuthenticationPrincipal CustomUser employee,

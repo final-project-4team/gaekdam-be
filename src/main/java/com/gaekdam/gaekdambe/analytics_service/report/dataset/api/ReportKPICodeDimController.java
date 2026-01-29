@@ -20,7 +20,9 @@ public class ReportKPICodeDimController {
 
     private final ReportKPICodeDimService service; // 또는 repo 직접 주입
 
+
     @GetMapping("/kpi-codes")
+    //@PreAuthorize("hasAuthority('SETTING_OBJECTIVE_LIST')")
     public ResponseEntity<ApiResponse<List<KpiCodeDto>>> list() {
         List<KpiCodeDto> list = service.listActive();
         return ResponseEntity.ok(ApiResponse.success(list));

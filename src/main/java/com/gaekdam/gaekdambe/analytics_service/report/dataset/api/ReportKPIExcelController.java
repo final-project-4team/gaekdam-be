@@ -6,6 +6,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,6 +45,7 @@ public class ReportKPIExcelController {
     }
 
     @PostMapping(value = "/objective/template/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_UPDATE')")
     public ApiResponse<ImportResultDto> importTargets(
         @RequestParam Long hotelGroupCode,
         @RequestParam(required = false) String periodType,

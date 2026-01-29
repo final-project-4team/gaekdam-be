@@ -286,8 +286,8 @@ public class EmployeeUpdateService {
   public void dormancyEmployee() {
     log.info("휴면 계정 전환 스케줄러 실행");
 
-    // LocalDateTime targetDate = LocalDateTime.now().minusMonths(6);
-    LocalDateTime targetDate = LocalDateTime.now().minusMinutes(60);
+    LocalDateTime targetDate = LocalDateTime.now().minusMonths(6);
+    //LocalDateTime targetDate = LocalDateTime.now().minusMinutes(60);
 
     List<Employee> targetEmployees = employeeRepository
         .findByEmployeeStatusAndLastLoginAtBefore(EmployeeStatus.ACTIVE,

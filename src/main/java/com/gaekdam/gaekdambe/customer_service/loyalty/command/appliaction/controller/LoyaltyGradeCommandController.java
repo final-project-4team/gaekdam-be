@@ -50,8 +50,9 @@ public class LoyaltyGradeCommandController {
       @PathVariable Long loyaltyGradeCode,
        @RequestBody LoyaltyGradeRequest request) {
     Long hotelGroupCode = employee.getHotelGroupCode();
+    String accessorLoingId=employee.getUsername();
     return ApiResponse
-        .success(loyaltyGradeCommandService.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, request));
+        .success(loyaltyGradeCommandService.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, request,accessorLoingId));
   }
 
 }

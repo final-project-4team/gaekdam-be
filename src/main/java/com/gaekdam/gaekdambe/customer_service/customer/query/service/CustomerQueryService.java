@@ -37,12 +37,10 @@ import java.util.Set;
 public class CustomerQueryService {
 
   private static final Set<String> CUSTOMER_LIST_SORT_WHITELIST = Set.of(
-      "created_at", "customer_code", "customer_name", "last_used_date"
-  );
+      "created_at", "customer_code", "customer_name", "last_used_date");
 
   private static final Set<String> STATUS_HISTORY_SORT_WHITELIST = Set.of(
-      "changed_at", "customer_status_history_code"
-  );
+      "changed_at", "customer_status_history_code");
 
   private final CustomerMapper customerMapper;
   private final CustomerResponseAssembler assembler;
@@ -56,8 +54,7 @@ public class CustomerQueryService {
         request.getSortBy(),
         request.getDirection(),
         CUSTOMER_LIST_SORT_WHITELIST,
-        "created_at"
-    );
+        "created_at");
 
     CustomerListSearchParam search = buildCustomerListSearchParam(request);
 
@@ -72,7 +69,7 @@ public class CustomerQueryService {
   }
 
   @LogPersonalInfo(type = PermissionTypeKey.CUSTOMER_READ, purpose = "고객 정보 조회")
-  public CustomerDetailResponse getCustomerDetail(Long hotelGroupCode, Long customerCode) {
+  public CustomerDetailResponse getCustomerDetail(Long hotelGroupCode, Long customerCode, String reason) {
     CustomerDetailRow detailRow = customerMapper.findCustomerDetail(hotelGroupCode, customerCode);
     if (detailRow == null) {
       throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
@@ -94,19 +91,17 @@ public class CustomerQueryService {
   public CustomerStatusHistoryResponse getCustomerStatusHistories(
       Long hotelGroupCode,
       Long customerCode,
-      CustomerStatusHistoryRequest request
-  ) {
+      CustomerStatusHistoryRequest request) {
     PageRequest page = buildPageRequest(request.getPage(), request.getSize());
 
     SortRequest sort = buildSortRequest(
         request.getSortBy(),
         request.getDirection(),
         STATUS_HISTORY_SORT_WHITELIST,
-        "changed_at"
-    );
+        "changed_at");
 
-    List<CustomerStatusHistoryRow> rows =
-        customerMapper.findCustomerStatusHistories(hotelGroupCode, customerCode, page, sort);
+    List<CustomerStatusHistoryRow> rows = customerMapper.findCustomerStatusHistories(hotelGroupCode, customerCode, page,
+        sort);
 
     long total = customerMapper.countCustomerStatusHistories(hotelGroupCode, customerCode);
     return assembler.toCustomerStatusHistoryResponse(rows, page.getPage(), page.getSize(), total);
@@ -146,14 +141,12 @@ public class CustomerQueryService {
   // SearchParam Builder (정리)
   // =========================
 
-
   private CustomerListSearchParam buildCustomerListSearchParam(CustomerListSearchRequest request) {
     KeywordParts parts = new KeywordParts(
         request.getCustomerCode(),
         request.getCustomerName(),
         request.getPhoneNumber(),
-        request.getEmail()
-    );
+        request.getEmail());
 
     // ✅ CHANGED: keyword를 분해하는 로직을 별도 메서드로 분리
     applyKeywordIfNeeded(request.getKeyword(), parts);
@@ -182,8 +175,7 @@ public class CustomerQueryService {
         request.getNationalityType(),
         request.getMembershipGradeCode(),
         request.getLoyaltyGradeCode(),
-        request.getInflowChannel()
-    );
+        request.getInflowChannel());
   }
 
   /**
@@ -215,7 +207,8 @@ public class CustomerQueryService {
   }
 
   /**
-   * ✅ CHANGED(핵심): 전체검색 판별 로직만 담당 - 이메일 우선 - 전화(숫자 8자리 이상) 우선 - 그 다음 고객코드(숫자만) - 나머지 이름
+   * ✅ CHANGED(핵심): 전체검색 판별 로직만 담당 - 이메일 우선 - 전화(숫자 8자리 이상) 우선 - 그 다음 고객코드(숫자만) -
+   * 나머지 이름
    */
   private KeywordResolved resolveKeyword(String keyword) {
     if (keyword.contains("@")) {
@@ -243,8 +236,7 @@ public class CustomerQueryService {
     return new Hashes(
         toHex(searchHashService.nameHash(normalizedName)),
         toHex(searchHashService.phoneHash(normalizedPhone)),
-        toHex(searchHashService.emailHash(normalizedEmail))
-    );
+        toHex(searchHashService.emailHash(normalizedEmail)));
   }
 
   // =========================
@@ -305,7 +297,9 @@ public class CustomerQueryService {
 
   }
 
-  private enum KeywordType {CUSTOMER_CODE, EMAIL, PHONE, NAME}
+  private enum KeywordType {
+    CUSTOMER_CODE, EMAIL, PHONE, NAME
+  }
 
   private record KeywordResolved(KeywordType type, String value, Long customerCode) {
 
@@ -326,15 +320,13 @@ public class CustomerQueryService {
     }
   }
 
-
   // 고객활동쪽에서 추가함1
   @LogPersonalInfo(type = PermissionTypeKey.CUSTOMER_READ, purpose = "고객 정보 조회")
   public CustomerBasicResponse getCustomerBasic(
       Long hotelGroupCode,
-      Long customerCode
-  ) {
-    CustomerBasicRow row =
-        customerMapper.findCustomerBasic(hotelGroupCode, customerCode);
+      Long customerCode,
+      String reason) {
+    CustomerBasicRow row = customerMapper.findCustomerBasic(hotelGroupCode, customerCode);
 
     if (row == null) {
       throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 고객입니다.");
@@ -345,8 +337,7 @@ public class CustomerQueryService {
       customerName = decryptionService.decrypt(
           row.getCustomerCode(),
           row.getDekEnc(),
-          row.getCustomerNameEnc()
-      );
+          row.getCustomerNameEnc());
     }
 
     String phoneNumber = null;
@@ -354,16 +345,13 @@ public class CustomerQueryService {
       phoneNumber = decryptionService.decrypt(
           row.getCustomerCode(),
           row.getDekEnc(),
-          row.getPhoneEnc()
-      );
+          row.getPhoneEnc());
     }
 
     return new CustomerBasicResponse(
         row.getCustomerCode(),
         customerName,
-        phoneNumber
-    );
+        phoneNumber);
   }
-
 
 }
