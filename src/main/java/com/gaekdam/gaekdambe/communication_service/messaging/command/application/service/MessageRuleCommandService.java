@@ -32,7 +32,6 @@ public class MessageRuleCommandService {
                 .description(req.getDescription())
                 .stageCode(req.getStageCode())
                 .templateCode(req.getTemplateCode())
-                .membershipGradeCode(req.getMembershipGradeCode())
                 .createdAt(now)
                 .updatedAt(now)
                 .build();

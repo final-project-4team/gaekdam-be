@@ -51,8 +51,6 @@ public class MessageTemplate {
     /**
      * FK 영역
      */
-    @Column(name = "membership_grade_code", nullable = false)
-    private Long membershipGradeCode;
 
     @Column(name = "hotel_group_code", nullable = false)
     private Long hotelGroupCode;

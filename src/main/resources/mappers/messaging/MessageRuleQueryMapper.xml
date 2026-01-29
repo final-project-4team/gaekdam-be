@@ -68,28 +68,26 @@
             resultType="com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageRule">
 
         SELECT
-        r.rule_code              AS ruleCode,
-        r.reference_entity_type  AS referenceEntityType,
-        r.offset_minutes         AS offsetMinutes,
-        r.visitor_type           AS visitorType,
-        r.channel                AS channel,
-        r.is_enabled             AS isEnabled,
-        r.priority               AS priority,
-        r.description            AS description,
-        r.created_at             AS createdAt,
-        r.updated_at             AS updatedAt,
-        r.stage_code             AS stageCode,
-        r.template_code          AS templateCode,
-        r.membership_grade_code  AS membershipGradeCode,
-        r.hotel_group_code       AS hotelGroupCode
+            r.rule_code              AS ruleCode,
+            r.reference_entity_type  AS referenceEntityType,
+            r.offset_minutes         AS offsetMinutes,
+            r.channel                AS channel,
+            r.is_enabled             AS isEnabled,
+            r.priority               AS priority,
+            r.description            AS description,
+            r.created_at             AS createdAt,
+            r.updated_at             AS updatedAt,
+            r.stage_code             AS stageCode,
+            r.template_code          AS templateCode,
+            r.hotel_group_code       AS hotelGroupCode
         FROM message_rule r
+                 JOIN message_template t
+                      ON r.template_code = t.template_code
         WHERE
-        r.hotel_group_code = #{hotelGroupCode}
-        AND r.stage_code = #{stageCode}
-        AND r.is_enabled = true
-        <if test="visitorType != null">
-            AND (r.visitor_type IS NULL OR r.visitor_type = #{visitorType})
-        </if>
+            r.hotel_group_code = #{hotelGroupCode}
+          AND r.stage_code = #{stageCode}
+          AND r.is_enabled = true
+          AND t.visitor_type = #{visitorType}
         ORDER BY r.priority ASC
     </select>
 

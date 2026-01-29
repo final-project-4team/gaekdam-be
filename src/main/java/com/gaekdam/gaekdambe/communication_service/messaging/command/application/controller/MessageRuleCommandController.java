@@ -15,15 +15,15 @@ import org.springframework.web.bind.annotation.*;
 public class MessageRuleCommandController {
 
     private final MessageRuleCommandService service;
-
-    @PostMapping
-    public ApiResponse<Long> create(@RequestBody MessageRuleCreateRequest req,
-                                    @AuthenticationPrincipal CustomUser customUser) {
-
-        req.setHotelGroupCode(customUser.getHotelGroupCode());
-
-        return ApiResponse.success(service.createRule(req));
-    }
+//    룰 자체도 우선은 공통으로 강제화 추후 확장가능
+//    @PostMapping
+//    public ApiResponse<Long> create(@RequestBody MessageRuleCreateRequest req,
+//                                    @AuthenticationPrincipal CustomUser customUser) {
+//
+//        req.setHotelGroupCode(customUser.getHotelGroupCode());
+//
+//        return ApiResponse.success(service.createRule(req));
+//    }
 
     @PutMapping("/{ruleCode}")
     public ApiResponse<Void> update(

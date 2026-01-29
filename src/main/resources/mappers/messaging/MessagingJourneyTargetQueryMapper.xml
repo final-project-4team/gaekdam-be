@@ -5,7 +5,9 @@
 
 <mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingJourneyTargetQueryMapper">
 
-    <!-- 예약 확정 : 오늘 생성된 RESERVED -->
+    <!-- =================================================
+         예약 확정 : 오늘 생성된 RESERVED
+         ================================================= -->
     <select id="findReservationConfirmedTargets" resultType="long">
         SELECT r.reservation_code
         FROM reservation r
@@ -22,8 +24,9 @@
             )
     </select>
 
-
-    <!-- 예약 취소 : 오늘 취소된 것만 -->
+    <!-- =================================================
+         예약 취소 : 오늘 취소된 것만
+         ================================================= -->
     <select id="findReservationCancelledTargets" resultType="long">
         SELECT r.reservation_code
         FROM reservation r
@@ -40,7 +43,9 @@
             )
     </select>
 
-    <!-- 노쇼 : 오늘 노쇼로 변경된 것만 -->
+    <!-- =================================================
+         노쇼 : 오늘 노쇼 상태로 변경된 것만
+         ================================================= -->
     <select id="findNoShowTargets" resultType="long">
         SELECT r.reservation_code
         FROM reservation r
@@ -56,7 +61,9 @@
             )
     </select>
 
-    <!-- 체크인 등록 : 오늘 체크인한 것만 -->
+    <!-- =================================================
+         체크인 등록 : 오늘 체크인한 것만
+         ================================================= -->
     <select id="findCheckInConfirmedStayTargets" resultType="long">
         SELECT s.stay_code
         FROM stay s
@@ -73,7 +80,9 @@
             )
     </select>
 
-    <!-- 체크아웃 등록 : 오늘 체크아웃한 것만 -->
+    <!-- =================================================
+         체크아웃 등록 : 오늘 체크아웃한 것만
+         ================================================= -->
     <select id="findCheckOutConfirmedStayTargets" resultType="long">
         SELECT s.stay_code
         FROM stay s

@@ -2,6 +2,7 @@ package com.gaekdam.gaekdambe.communication_service.messaging.query.controller;
 
 
 import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.request.MessageSendHistorySearchRequest;
+import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryDetailResponse;
 import com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryResponse;
 import com.gaekdam.gaekdambe.communication_service.messaging.query.service.MessageSendHistoryQueryService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
@@ -12,6 +13,7 @@ import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,5 +43,17 @@ public class MessageSendHistoryQueryController {
         return ApiResponse.success(
                 service.getHistories(page, search, sort)
         );
+    }
+
+
+
+    /**
+     * 발송 이력 상세 조회
+     */
+    @GetMapping("/{sendCode}")
+    public ApiResponse<MessageSendHistoryDetailResponse> getDetail(
+            @PathVariable Long sendCode
+    ) {
+        return ApiResponse.success(service.getDetail(sendCode));
     }
 }
