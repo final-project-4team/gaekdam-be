@@ -141,12 +141,32 @@
             AND c.nationality_type = #{search.nationalityType}
         </if>
 
-        <if test="search.membershipGradeCode != null">
-            AND m.membership_grade_code = #{search.membershipGradeCode}
+        <if test="search.inflowChannel != null and search.inflowChannel != ''">
+            AND rr.reservation_channel = #{search.inflowChannel}
         </if>
 
+        <!-- 멤버십 필터: code 기반, -1이면 미가입 -->
+        <if test="search.membershipGradeCode != null">
+            <choose>
+                <when test="search.membershipGradeCode == -1">
+                    AND m.membership_code IS NULL
+                </when>
+                <otherwise>
+                    AND m.membership_grade_code = #{search.membershipGradeCode}
+                </otherwise>
+            </choose>
+        </if>
+
+        <!-- 로열티 필터: code 기반, -1이면 미가입 -->
         <if test="search.loyaltyGradeCode != null">
-            AND l.loyalty_grade_code = #{search.loyaltyGradeCode}
+            <choose>
+                <when test="search.loyaltyGradeCode == -1">
+                    AND l.loyalty_code IS NULL
+                </when>
+                <otherwise>
+                    AND l.loyalty_grade_code = #{search.loyaltyGradeCode}
+                </otherwise>
+            </choose>
         </if>
 
         <if test="search.customerCode != null">
@@ -563,7 +583,6 @@
         WHERE h.customer_code = #{customerCode}
     </select>
 
-
     <!-- =========================
          Marketing Consents
        ========================= -->
@@ -587,8 +606,7 @@
         cc.contact_code DESC
     </select>
 
-
-<!--고객 활동쪽에서 추가함-->
+    <!-- 고객 활동쪽에서 추가함 -->
     <select id="findCustomerBasic"
             resultType="com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerBasicRow">
         SELECT
