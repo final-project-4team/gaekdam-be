@@ -18,7 +18,6 @@
         language_code AS languageCode,
         title,
         is_active AS isActive,
-        membership_grade_code AS membershipGradeCode
         FROM message_template
         WHERE hotel_group_code = #{search.hotelGroupCode}
 
@@ -41,8 +40,6 @@
         SELECT COUNT(*)
         FROM message_template
         <where>
-            AND property_code = #{search.propertyCode}
-
             <if test="search.stageCode != null">
                 AND stage_code = #{search.stageCode}
             </if>

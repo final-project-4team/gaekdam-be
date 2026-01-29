@@ -15,6 +15,6 @@ public class MessageTemplateCreateRequest {
     private String conditionExpr;
     private boolean isActive;
 
-    private Long membershipGradeCode;
+
     private Long stageCode;
 }

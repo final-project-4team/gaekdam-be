@@ -18,14 +18,14 @@ public class MessageTemplateCommandController {
 
     private final MessageTemplateCommandService service;
 
-    @PostMapping
-    public ApiResponse<Long> create(
-            @RequestBody MessageTemplateCreateRequest req,
-            @AuthenticationPrincipal CustomUser customUser
-    ) {
-        Long hotelGroupCode = customUser.getHotelGroupCode();
-        return ApiResponse.success(service.createTemplate(req, hotelGroupCode));
-    }
+//    @PostMapping
+//    public ApiResponse<Long> create(
+//            @RequestBody MessageTemplateCreateRequest req,
+//            @AuthenticationPrincipal CustomUser customUser
+//    ) {
+//        Long hotelGroupCode = customUser.getHotelGroupCode();
+//        return ApiResponse.success(service.createTemplate(req, hotelGroupCode));
+//    }
 
     @PutMapping("/{templateCode}")
     public ApiResponse<Void> update(

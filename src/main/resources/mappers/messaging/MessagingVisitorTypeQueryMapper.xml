@@ -20,7 +20,8 @@
                         FROM reservation r
                         WHERE r.reservation_code = #{reservationCode}
                     )
-                      AND s.actual_checkin_at IS NOT NULL
+                      AND s.actual_checkout_at IS NOT NULL
+                      AND r2.reservation_code <![CDATA[ <> ]]> #{reservationCode}
                 )
                     THEN 'REPEAT'
                 ELSE 'FIRST'

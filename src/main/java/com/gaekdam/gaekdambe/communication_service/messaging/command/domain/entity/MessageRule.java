@@ -16,7 +16,19 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "message_rule")
+@Table(
+        name = "message_rule",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_message_rule_stage_visitor",
+                        columnNames = {
+                                "hotel_group_code",
+                                "stage_code",
+                                "visitor_type"
+                        }
+                )
+        }
+)
 public class MessageRule {
 
     @Id
@@ -60,9 +72,6 @@ public class MessageRule {
 
     @Column(name = "template_code", nullable = false)
     private Long templateCode;
-
-    @Column(name = "membership_grade_code", nullable = false)
-    private Long membershipGradeCode;
 
     @Column(name = "hotel_group_code", nullable = false)
     private Long hotelGroupCode;

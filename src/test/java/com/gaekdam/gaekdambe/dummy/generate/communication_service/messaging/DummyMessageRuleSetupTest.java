@@ -68,7 +68,6 @@ public class DummyMessageRuleSetupTest {
                     .templateCode(template.getTemplateCode())
                     .referenceEntityType(refType)
                     .visitorType(template.getVisitorType())
-                    .membershipGradeCode(template.getMembershipGradeCode())
                     .channel(MessageChannel.SMS)
                     .offsetMinutes(0)
                     .priority(1)

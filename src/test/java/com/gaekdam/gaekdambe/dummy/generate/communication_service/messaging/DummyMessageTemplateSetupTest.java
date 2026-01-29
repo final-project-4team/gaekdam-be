@@ -74,9 +74,6 @@ public class DummyMessageTemplateSetupTest {
                             )
                             .conditionExpr(null)
                             .isActive(true)
-                            .membershipGradeCode(
-                                    visitor == VisitorType.FIRST ? 1L : 2L
-                            )
                             .createdAt(now)
                             .updatedAt(now)
                             .build();

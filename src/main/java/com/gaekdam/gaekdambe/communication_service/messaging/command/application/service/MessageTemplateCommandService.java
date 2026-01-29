@@ -19,6 +19,8 @@ public class MessageTemplateCommandService {
 
     private final MessageTemplateRepository repository;
 
+    // 템플릿은 우선 공통 틀로 사용하게 만든다
+    // 추후 열어두면 템플릿 확장은 가능
     @Transactional
     public Long createTemplate(MessageTemplateCreateRequest req, Long hotelGroupCode) {
         LocalDateTime now = LocalDateTime.now();
@@ -30,7 +32,6 @@ public class MessageTemplateCommandService {
                 .content(req.getContent())
                 .conditionExpr(req.getConditionExpr())
                 .isActive(req.isActive())
-                .membershipGradeCode(req.getMembershipGradeCode())
                 .hotelGroupCode(hotelGroupCode)
                 .stageCode(req.getStageCode())
                 .createdAt(now)
