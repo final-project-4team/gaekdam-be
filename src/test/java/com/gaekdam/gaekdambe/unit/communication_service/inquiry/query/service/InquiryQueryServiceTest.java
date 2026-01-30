@@ -8,6 +8,7 @@ import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.Inquiry
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryDetailRow;
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryListRow;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
@@ -27,13 +28,15 @@ class InquiryQueryServiceTest {
 
     private InquiryMapper inquiryMapper;
     private DecryptionService decryptionService;
+    private SearchHashService searchHashService;
     private InquiryQueryService service;
 
     @BeforeEach
     void setUp() {
         inquiryMapper = mock(InquiryMapper.class);
         decryptionService = mock(DecryptionService.class);
-        service = new InquiryQueryService(inquiryMapper, decryptionService);
+        searchHashService = mock(SearchHashService.class);
+        service = new InquiryQueryService(inquiryMapper, decryptionService, searchHashService);
     }
 
     @Test
@@ -45,6 +48,7 @@ class InquiryQueryServiceTest {
         page.setSize(10);
 
         InquiryListSearchRequest search = new InquiryListSearchRequest();
+
         SortRequest sort = new SortRequest();
         sort.setSortBy("created_at");
         sort.setDirection("DESC");
@@ -96,7 +100,6 @@ class InquiryQueryServiceTest {
         assertThat(dto.getEmployeeCode()).isEqualTo(7001L);
         assertThat(dto.getEmployeeLoginId()).isEqualTo("emp01");
 
-        // 직원명: 목록에서 마스킹 처리됨 (예: "직****화")
         assertThat(dto.getEmployeeName())
                 .isNotNull()
                 .startsWith("직")
@@ -108,21 +111,17 @@ class InquiryQueryServiceTest {
         assertThat(dto.getInquiryCategoryName()).isEqualTo("카테고리");
         assertThat(dto.getLinkedIncidentCode()).isEqualTo(5001L);
 
-        // CHANGED: 고객명도 정책에 따라 "복호화 그대로" or "마스킹" 둘 다 허용
-        assertThat(dto.getCustomerName()).isNotNull();
-        if (dto.getCustomerName().contains("****")) {
-            assertThat(dto.getCustomerName())
-                    .startsWith("고")
-                    .endsWith("화");
-        } else {
-            assertThat(dto.getCustomerName()).isEqualTo("고객명복호화");
-        }
+        assertThat(dto.getCustomerName())
+                .isNotNull()
+                .startsWith("고")
+                .endsWith("화")
+                .contains("****");
 
         verify(inquiryMapper).findInquiries(page, search, sort);
         verify(inquiryMapper).countInquiries(search);
         verify(decryptionService).decrypt(9001L, customerDekEnc, customerNameEnc);
         verify(decryptionService).decrypt(7001L, employeeDekEnc, employeeNameEnc);
-        verifyNoMoreInteractions(inquiryMapper, decryptionService);
+        verifyNoMoreInteractions(inquiryMapper, decryptionService, searchHashService);
     }
 
     @Test
@@ -146,7 +145,7 @@ class InquiryQueryServiceTest {
 
         verify(inquiryMapper).findInquiryDetail(hotelGroupCode, inquiryCode);
         verifyNoMoreInteractions(inquiryMapper);
-        verifyNoInteractions(decryptionService);
+        verifyNoInteractions(decryptionService, searchHashService);
     }
 
     @Test
@@ -210,7 +209,7 @@ class InquiryQueryServiceTest {
         verify(inquiryMapper).findInquiryDetail(hotelGroupCode, inquiryCode);
         verify(decryptionService).decrypt(9001L, customerDekEnc, customerNameEnc);
         verify(decryptionService).decrypt(7001L, employeeDekEnc, employeeNameEnc);
-        verifyNoMoreInteractions(inquiryMapper, decryptionService);
+        verifyNoMoreInteractions(inquiryMapper, decryptionService, searchHashService);
     }
 
     @Test
@@ -256,6 +255,6 @@ class InquiryQueryServiceTest {
 
         verify(inquiryMapper).findInquiryDetail(hotelGroupCode, inquiryCode);
         verify(decryptionService).decrypt(7001L, employeeDekEnc, employeeNameEnc);
-        verifyNoMoreInteractions(inquiryMapper, decryptionService);
+        verifyNoMoreInteractions(inquiryMapper, decryptionService, searchHashService);
     }
 }
