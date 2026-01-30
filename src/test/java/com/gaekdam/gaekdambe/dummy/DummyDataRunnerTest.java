@@ -4,7 +4,10 @@ import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyCusto
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.customer.DummyMemberDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.loyalty.DummyLoyaltyGradeDataTest;
 import com.gaekdam.gaekdambe.dummy.generate.customer_service.membership.DummyMembershipGradeDataTest;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
@@ -41,9 +44,11 @@ import com.gaekdam.gaekdambe.dummy.generate.reservation_service.stay.DummyStayDa
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.StopWatch;
 
-@SpringBootTest
+@DisabledIfEnvironmentVariable(named = "CI", matches = "true")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE) // 포트 충돌 방지
 @Rollback(value = false)
-@ActiveProfiles("test")
+@ActiveProfiles("local-dummy")
+@Tag("dummy")
 class DummyDataRunnerTest {
 
     // 호텔서비스

@@ -14,6 +14,7 @@ import com.gaekdam.gaekdambe.customer_service.membership.command.infrastructure.
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
+import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
 import com.gaekdam.gaekdambe.iam_service.log.command.application.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +52,11 @@ class MembershipManualCommandServiceTest {
         auditLogService = mock(AuditLogService.class);
 
         service = new MembershipManualCommandService(membershipRepository, membershipGradeRepository, membershipHistoryRepository,employeeRepository, auditLogService);
+
+        Employee accessor = mock(Employee.class);
+        lenient().when(employeeRepository.findById(anyLong())).thenReturn(Optional.of(accessor));
     }
+
 
     @Test
     @DisplayName("request null이면 INVALID_INCORRECT_FORMAT")

@@ -4,15 +4,21 @@ on:
   pull_request:
     branches: ["develop", "main"]
 
+permissions:
+  contents: read
+
 jobs:
   unit-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
+          cache: gradle
+
       - run: ./gradlew test --no-daemon
 
   integration-test:
@@ -20,8 +26,11 @@ jobs:
     needs: unit-test
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
+          cache: gradle
+
       - run: ./gradlew integrationTest --no-daemon
