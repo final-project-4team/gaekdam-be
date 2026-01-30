@@ -5,8 +5,8 @@ spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}
-    username: ${DB_USERNAME:gaekdam}
-    password: ${DB_PASSWORD:gaekdam}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
