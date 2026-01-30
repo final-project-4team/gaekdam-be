@@ -78,8 +78,9 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
-
+    useJUnitPlatform {
+        excludeTags 'dummy'
+    }
     jvmArgs "-javaagent:${configurations.mockitoAgent.singleFile}"
 }
 
@@ -148,6 +149,21 @@ tasks.register('integrationTest', Test) {
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnitPlatform()
     shouldRunAfter tasks.named('test')
+    jvmArgs "-javaagent:${configurations.mockitoAgent.singleFile}"
+}
+
+// dummy data generator (local only)
+tasks.register('dummyData', Test) {
+    description = 'Runs dummy data generator tests (local DB only).'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags 'dummy'
+    }
+
     jvmArgs "-javaagent:${configurations.mockitoAgent.singleFile}"
 }
 
