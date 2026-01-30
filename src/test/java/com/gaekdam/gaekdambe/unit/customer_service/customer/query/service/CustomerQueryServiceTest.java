@@ -32,6 +32,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CustomerQueryServiceTest {
 
+    private static final String REASON = "UNIT_TEST_REASON";
+
     private CustomerMapper customerMapper;
     private CustomerResponseAssembler assembler;
     private SearchHashService searchHashService;
@@ -84,7 +86,7 @@ class CustomerQueryServiceTest {
         // when
         PageResponse<CustomerListItem> res = service.getCustomerList(req);
 
-        // then (✅ PageResponse는 content/totalElements)
+        // then
         assertThat(res.getContent()).hasSize(1);
         assertThat(res.getPage()).isEqualTo(1);
         assertThat(res.getSize()).isEqualTo(20);
@@ -95,11 +97,9 @@ class CustomerQueryServiceTest {
         assertThat(pageCap.getValue().getPage()).isEqualTo(1);
         assertThat(pageCap.getValue().getSize()).isEqualTo(20);
 
-        // sortBy 기본값 created_at, direction 기본값 DESC
         assertThat(sortCap.getValue().getSortBy()).isEqualTo("created_at");
         assertThat(sortCap.getValue().getDirection()).isEqualTo("DESC");
 
-        // ✅ CustomerListSearchParam은 class + getter
         CustomerListSearchParam search = searchCap.getValue();
         assertThat(search.getHotelGroupCode()).isEqualTo(1L);
         assertThat(search.getCustomerCode()).isNull();
@@ -131,7 +131,6 @@ class CustomerQueryServiceTest {
         verify(customerMapper).countCustomers(searchCap.capture());
         CustomerListSearchParam search = searchCap.getValue();
 
-        // keyword 무시 여부 핵심만 체크
         assertThat(search.getCustomerCode()).isNull();
     }
 
@@ -218,7 +217,7 @@ class CustomerQueryServiceTest {
 
         // when
         CustomException ex = catchThrowableOfType(
-                () -> service.getCustomerDetail(1L, 100L),
+                () -> service.getCustomerDetail(1L, 100L, REASON),
                 CustomException.class
         );
 
@@ -233,13 +232,14 @@ class CustomerQueryServiceTest {
         // given
         CustomerDetailRow row = mock(CustomerDetailRow.class);
         when(customerMapper.findCustomerDetail(1L, 100L)).thenReturn(row);
-        when(customerMapper.findCustomerContacts(1L, 100L)).thenReturn(List.of(mock(CustomerContactRow.class)));
+        when(customerMapper.findCustomerContacts(1L, 100L))
+                .thenReturn(List.of(mock(CustomerContactRow.class)));
 
         CustomerDetailResponse expected = mock(CustomerDetailResponse.class);
         when(assembler.toCustomerDetailResponse(any(), any())).thenReturn(expected);
 
         // when
-        CustomerDetailResponse res = service.getCustomerDetail(1L, 100L);
+        CustomerDetailResponse res = service.getCustomerDetail(1L, 100L, REASON);
 
         // then
         assertThat(res).isSameAs(expected);
@@ -285,10 +285,10 @@ class CustomerQueryServiceTest {
     void getCustomerStatusHistories_defaults_and_sort_whitelist() {
         // given
         CustomerStatusHistoryRequest req = new CustomerStatusHistoryRequest();
-        req.setPage(0); // default -> 1
-        req.setSize(0); // default -> 20
-        req.setSortBy("NOT_ALLOWED"); // default -> changed_at
-        req.setDirection("aaa"); // default -> DESC
+        req.setPage(0);
+        req.setSize(0);
+        req.setSortBy("NOT_ALLOWED");
+        req.setDirection("aaa");
 
         when(customerMapper.findCustomerStatusHistories(anyLong(), anyLong(), any(PageRequest.class), any(SortRequest.class)))
                 .thenReturn(List.of(mock(CustomerStatusHistoryRow.class)));
@@ -342,7 +342,7 @@ class CustomerQueryServiceTest {
 
         // when
         CustomException ex = catchThrowableOfType(
-                () -> service.getCustomerBasic(1L, 100L),
+                () -> service.getCustomerBasic(1L, 100L, REASON),
                 CustomException.class
         );
 
@@ -372,9 +372,9 @@ class CustomerQueryServiceTest {
         when(decryptionService.decrypt(100L, dek, phoneEnc)).thenReturn("01012345678");
 
         // when
-        CustomerBasicResponse res = service.getCustomerBasic(1L, 100L);
+        CustomerBasicResponse res = service.getCustomerBasic(1L, 100L, REASON);
 
-        // then (✅ CustomerBasicResponse는 class일 확률 높아서 getter 사용)
+        // then
         assertThat(res.getCustomerCode()).isEqualTo(100L);
         assertThat(res.getCustomerName()).isEqualTo("홍길동");
         assertThat(res.getPhoneNumber()).isEqualTo("01012345678");
@@ -397,7 +397,7 @@ class CustomerQueryServiceTest {
         when(customerMapper.findCustomerBasic(1L, 100L)).thenReturn(row);
 
         // when
-        CustomerBasicResponse res = service.getCustomerBasic(1L, 100L);
+        CustomerBasicResponse res = service.getCustomerBasic(1L, 100L, REASON);
 
         // then
         assertThat(res.getCustomerName()).isNull();

@@ -9,6 +9,8 @@ import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
+import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,15 +26,28 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class LoyaltyGradeCommandServiceTest {
 
+    private static final String REASON = "UNIT_TEST_REASON";
+
     private HotelGroupRepository hotelGroupRepository;
     private LoyaltyGradeRepository loyaltyGradeRepository;
+    private EmployeeRepository employeeRepository;
+    private AuditLogService auditLogService;
+
     private LoyaltyGradeCommandService service;
 
     @BeforeEach
     void setUp() {
         hotelGroupRepository = mock(HotelGroupRepository.class);
         loyaltyGradeRepository = mock(LoyaltyGradeRepository.class);
-        service = new LoyaltyGradeCommandService(hotelGroupRepository, loyaltyGradeRepository);
+        employeeRepository = mock(EmployeeRepository.class);
+        auditLogService = mock(AuditLogService.class);
+
+        service = new LoyaltyGradeCommandService(
+                hotelGroupRepository,
+                loyaltyGradeRepository,
+                employeeRepository,
+                auditLogService
+        );
     }
 
     @Test
@@ -160,7 +175,7 @@ class LoyaltyGradeCommandServiceTest {
         LoyaltyGrade grade = LoyaltyGrade.registerLoyaltyGrade(
                 group, "EXCELLENT", 3L, "c", 1L, 1, 12, 10
         );
-        grade.deleteLoyaltyGradeStatus(); // INACTIVE
+        grade.deleteLoyaltyGradeStatus();
 
         when(loyaltyGradeRepository.findById(loyaltyGradeCode)).thenReturn(Optional.of(grade));
 
@@ -217,7 +232,7 @@ class LoyaltyGradeCommandServiceTest {
 
         // when
         CustomException ex = catchThrowableOfType(
-                () -> service.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, req),
+                () -> service.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, req, REASON),
                 CustomException.class
         );
 
@@ -247,7 +262,7 @@ class LoyaltyGradeCommandServiceTest {
 
         // when
         CustomException ex = catchThrowableOfType(
-                () -> service.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, req),
+                () -> service.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, req, REASON),
                 CustomException.class
         );
 
@@ -283,7 +298,7 @@ class LoyaltyGradeCommandServiceTest {
         when(req.loyaltyCalculationRenewalDay()).thenReturn(20);
 
         // when
-        String msg = service.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, req);
+        String msg = service.updateLoyaltyGrade(hotelGroupCode, loyaltyGradeCode, req, REASON);
 
         // then
         assertThat(msg).isEqualTo("등급 정보가 수정 되었습니다");

@@ -13,6 +13,7 @@ import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.iam_service.employee.command.domain.entity.Employee;
 import com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.EmployeeRepository;
+import com.gaekdam.gaekdambe.iam_service.log.command.application.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class CustomerMemoCommandServiceTest {
     private CustomerRepository customerRepository;
     private CustomerMemoRepository customerMemoRepository;
     private EmployeeRepository employeeRepository;
+    private AuditLogService auditLogService;
 
     private CustomerMemoCommandService service;
 
@@ -41,8 +43,9 @@ class CustomerMemoCommandServiceTest {
         customerRepository = mock(CustomerRepository.class);
         customerMemoRepository = mock(CustomerMemoRepository.class);
         employeeRepository = mock(EmployeeRepository.class);
+        auditLogService = mock(AuditLogService.class);
 
-        service = new CustomerMemoCommandService(customerRepository, customerMemoRepository, employeeRepository);
+        service = new CustomerMemoCommandService(customerRepository, customerMemoRepository, employeeRepository,auditLogService);
     }
 
     private CustomUser mockUser(Long hotelGroupCode) {
@@ -234,6 +237,7 @@ class CustomerMemoCommandServiceTest {
                 .willReturn(Optional.of(memo));
         given(memo.isDeleted()).willReturn(false);
         given(memo.getCustomerMemoCode()).willReturn(memoCode);
+        given(memo.getCustomerMemoContent()).willReturn("before");
 
         // when
         CustomerMemoCommandResponse res = service.updateCustomerMemo(user, customerCode, memoCode, req);

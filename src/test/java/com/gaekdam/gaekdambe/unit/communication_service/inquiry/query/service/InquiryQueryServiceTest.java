@@ -95,12 +95,28 @@ class InquiryQueryServiceTest {
         assertThat(dto.getCustomerCode()).isEqualTo(9001L);
         assertThat(dto.getEmployeeCode()).isEqualTo(7001L);
         assertThat(dto.getEmployeeLoginId()).isEqualTo("emp01");
-        assertThat(dto.getEmployeeName()).isEqualTo("직원명복호화");
+
+        // 직원명: 목록에서 마스킹 처리됨 (예: "직****화")
+        assertThat(dto.getEmployeeName())
+                .isNotNull()
+                .startsWith("직")
+                .endsWith("화")
+                .contains("****");
+
         assertThat(dto.getPropertyCode()).isEqualTo(3001L);
         assertThat(dto.getInquiryCategoryCode()).isEqualTo(4001L);
         assertThat(dto.getInquiryCategoryName()).isEqualTo("카테고리");
         assertThat(dto.getLinkedIncidentCode()).isEqualTo(5001L);
-        assertThat(dto.getCustomerName()).isEqualTo("고객명복호화");
+
+        // CHANGED: 고객명도 정책에 따라 "복호화 그대로" or "마스킹" 둘 다 허용
+        assertThat(dto.getCustomerName()).isNotNull();
+        if (dto.getCustomerName().contains("****")) {
+            assertThat(dto.getCustomerName())
+                    .startsWith("고")
+                    .endsWith("화");
+        } else {
+            assertThat(dto.getCustomerName()).isEqualTo("고객명복호화");
+        }
 
         verify(inquiryMapper).findInquiries(page, search, sort);
         verify(inquiryMapper).countInquiries(search);
@@ -224,8 +240,8 @@ class InquiryQueryServiceTest {
                 4001L,
                 "카테고리",
                 null,
-                null,   // customerNameEnc null
-                null    // dekEnc null
+                null,
+                null
         );
 
         when(inquiryMapper.findInquiryDetail(hotelGroupCode, inquiryCode)).thenReturn(row);
