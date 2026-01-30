@@ -15,7 +15,7 @@ public abstract class IntegrationTestBase {
                     .withDatabaseName("test")
                     .withUsername("test")
                     .withPassword("test");
-//
+
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry r) {
         r.add("spring.datasource.url", maria::getJdbcUrl);
