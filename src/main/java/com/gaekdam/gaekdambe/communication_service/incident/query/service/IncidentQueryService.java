@@ -14,8 +14,8 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -66,6 +66,8 @@ public class IncidentQueryService {
 
     private IncidentListResponse toListDto(IncidentListEncResponse r) {
         String employeeName = decryptEmployeeName(r.employeeCode(), r.employeeDekEnc(), r.employeeNameEnc());
+
+        employeeName = MaskingUtils.maskName(employeeName);
 
         return new IncidentListResponse(
                 r.incidentCode(),

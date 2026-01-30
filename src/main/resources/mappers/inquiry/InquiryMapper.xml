@@ -16,11 +16,9 @@
             <arg column="employeeCode" javaType="java.lang.Long"/>
 
             <arg column="employeeLoginId" javaType="java.lang.String"/>
-            <arg column="employeeNameEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
-            <arg column="employeeDekEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
 
             <arg column="propertyCode" javaType="java.lang.Long"/>
@@ -28,12 +26,9 @@
             <arg column="inquiryCategoryName" javaType="java.lang.String"/>
             <arg column="linkedIncidentCode" javaType="java.lang.Long"/>
 
-            <arg column="customerNameEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="customerNameEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
-
-            <arg column="dekEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="dekEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
         </constructor>
     </resultMap>
@@ -52,11 +47,9 @@
             <arg column="employeeCode" javaType="java.lang.Long"/>
 
             <arg column="employeeLoginId" javaType="java.lang.String"/>
-            <arg column="employeeNameEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
-            <arg column="employeeDekEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
 
             <arg column="propertyCode" javaType="java.lang.Long"/>
@@ -64,12 +57,9 @@
             <arg column="inquiryCategoryName" javaType="java.lang.String"/>
             <arg column="linkedIncidentCode" javaType="java.lang.Long"/>
 
-            <arg column="customerNameEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="customerNameEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
-
-            <arg column="dekEnc"
-                 javaType="[B" jdbcType="VARBINARY"
+            <arg column="dekEnc" javaType="[B" jdbcType="VARBINARY"
                  typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
         </constructor>
     </resultMap>
@@ -87,7 +77,6 @@
         <where>
             p.hotel_group_code = #{search.hotelGroupCode}
 
-            <!-- 추가: 고객코드 필터 -->
             <if test="search.customerCode != null">
                 AND i.customer_code = #{search.customerCode}
             </if>
@@ -104,12 +93,58 @@
                 AND i.inquiry_status = #{search.status}
             </if>
 
-            <if test="search.keyword != null and search.keyword != ''">
-                AND (
-                i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
-                OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
-                )
-            </if>
+            <choose>
+                <!-- ✅ 고객명: customer.customer_name_hash 가 String 이므로 String 비교 -->
+                <when test="search.searchType == 'CUSTOMER_NAME'">
+                    <choose>
+                        <when test="search.customerNameHash != null and search.customerNameHash != ''">
+                            AND cu.customer_name_hash = #{search.customerNameHash}
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- ✅ 담당자명: employee.employee_name_hash 는 VARBINARY(byte[]) -->
+                <when test="search.searchType == 'EMPLOYEE_NAME'">
+                    <choose>
+                        <when test="search.employeeNameHash != null and search.employeeNameHash.length > 0">
+                            AND e.employee_name_hash =
+                            #{search.employeeNameHash, jdbcType=VARBINARY, typeHandler=org.apache.ibatis.type.ByteArrayTypeHandler}
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 담당자 ID(login_id): 일치 -->
+                <when test="search.searchType == 'EMPLOYEE_ID'">
+                    <choose>
+                        <when test="search.employeeLoginId != null and search.employeeLoginId != ''">
+                            AND e.login_id = #{search.employeeLoginId}
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 제목: LIKE -->
+                <when test="search.searchType == 'TITLE'">
+                    <choose>
+                        <when test="search.keyword != null and search.keyword != ''">
+                            AND i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 기본: ALL(제목+내용 LIKE) -->
+                <otherwise>
+                    <if test="search.keyword != null and search.keyword != ''">
+                        AND (
+                        i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
+                        OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
+                        )
+                    </if>
+                </otherwise>
+            </choose>
 
             <if test="search.fromDate != null">
                 AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
@@ -142,6 +177,7 @@
 
         cu.customer_name_enc     AS customerNameEnc,
         cu.dek_enc               AS dekEnc
+
         <include refid="InquiryBaseFrom"/>
         <include refid="InquiryWhere"/>
 
@@ -171,36 +207,8 @@
     <!-- COUNT -->
     <select id="countInquiries" resultType="long">
         SELECT COUNT(DISTINCT i.inquiry_code)
-        FROM inquiry i
-        JOIN property p ON p.property_code = i.property_code
-        WHERE p.hotel_group_code = #{search.hotelGroupCode}
-
-        <!-- 추가: 고객코드 필터 -->
-        <if test="search.customerCode != null">
-            AND i.customer_code = #{search.customerCode}
-        </if>
-
-        <if test="search.propertyCode != null">
-            AND i.property_code = #{search.propertyCode}
-        </if>
-        <if test="search.inquiryCategoryCode != null">
-            AND i.inquiry_category_code = #{search.inquiryCategoryCode}
-        </if>
-        <if test="search.status != null and search.status != ''">
-            AND i.inquiry_status = #{search.status}
-        </if>
-        <if test="search.keyword != null and search.keyword != ''">
-            AND (
-            i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
-            OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
-            )
-        </if>
-        <if test="search.fromDate != null">
-            AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
-        </if>
-        <if test="search.toDate != null">
-            AND i.created_at &lt; DATE_ADD(CONCAT(#{search.toDate}, ' 00:00:00'), INTERVAL 1 DAY)
-        </if>
+        <include refid="InquiryBaseFrom"/>
+        <include refid="InquiryWhere"/>
     </select>
 
     <!-- DETAIL -->

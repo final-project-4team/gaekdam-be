@@ -67,11 +67,15 @@ dependencies {
 
     //SMTP
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // integrationTest(Testcontainers)
+    testImplementation platform("org.testcontainers:testcontainers-bom:1.21.4")
+    testImplementation "org.testcontainers:junit-jupiter"
+    testImplementation "org.testcontainers:mariadb"
 }
 
 tasks.named('test') {
-    useJUnitPlatform {
-    }
+    useJUnitPlatform()
 }
 
 jacoco {
@@ -82,38 +86,63 @@ tasks.named('jacocoTestReport') {
     dependsOn tasks.named('test')
 
     def includes = [
-            "com/gaekdam/gaekdambe/customer_service/membership/command/**/service/**",
-            "com/gaekdam/gaekdambe/customer_service/membership/query/**/service/**"
+            "com/gaekdam/gaekdambe/**/*Service.class"
     ]
-
 
     def excludes = [
             "**/*Application*",
             "**/*Config*",
-            "**/*Dto*",
-            "**/*Request*",
-            "**/*Response*",
-            "**/*Mapper*",
-            "**/*Exception*",
-            "**/global/**",
-
-
+            "**/global/config/**",
+            "**/global/exception/**",
+            "**/global/paging/**",
+            "**/dto/**",
             "**/controller/**",
+            "**/*Mapper*",
             "**/repository/**",
             "**/infrastructure/**",
-            "**/domain/**",
-            "**/entity/**"
+            "**/service/model/**",
+            "**/service/assembler/**",
+            "**/service/**/row/**"
     ]
 
-    classDirectories.setFrom(files(classDirectories.files.collect { classesDir ->
-        fileTree(dir: classesDir, includes: includes, excludes: excludes)
-    }))
+    // 전체 class 대상으로 report 만들고 excludes만 적용
+    classDirectories.setFrom(
+            sourceSets.main.output.asFileTree.matching {
+                include includes
+                exclude excludes
+            }
+    )
+
 
     reports {
         html.required = true
         xml.required = false
         csv.required = false
     }
+}
+
+// integrationTest sourceSet + task
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integrationTest/java')
+        resources.srcDir file('src/integrationTest/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    shouldRunAfter tasks.named('test')
 }
 
 

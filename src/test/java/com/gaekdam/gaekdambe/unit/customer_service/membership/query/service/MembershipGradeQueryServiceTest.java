@@ -83,7 +83,10 @@ class MembershipGradeQueryServiceTest {
         Long hotelGroupCode = 1L;
         Long gradeCode = 10L;
 
-        MembershipGradeDetailQueryResponse dto = mock(MembershipGradeDetailQueryResponse.class);
+        MembershipGradeDetailQueryResponse dto = new MembershipGradeDetailQueryResponse(
+                gradeCode, "GOLD", 2L, "tier", 1000L, 1, 12, 1,
+                null, null
+        );
         when(mapper.findMembershipGradeDetail(hotelGroupCode, gradeCode)).thenReturn(dto);
 
         // when

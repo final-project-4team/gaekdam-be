@@ -20,8 +20,15 @@ public class InquiryListSearchRequest {
     private Long inquiryCategoryCode;
 
     private String status;   // IN_PROGRESS / ANSWERED
-    private String keyword;  // 제목/내용 검색
 
-    private LocalDate fromDate; // created_at >= fromDate 00:00:00
-    private LocalDate toDate;   // created_at < (toDate+1) 00:00:00
+    // 검색
+    private String searchType;
+    private String keyword;
+
+    private String customerNameHash;
+    private byte[] employeeNameHash;
+    private String employeeLoginId;
+
+    private LocalDate fromDate;
+    private LocalDate toDate;
 }

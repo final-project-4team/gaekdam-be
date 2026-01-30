@@ -114,9 +114,7 @@ public class CustomerQueryService {
     return assembler.toCustomerMarketingConsentResponse(customerCode, rows);
   }
 
-  // =========================
   // Page / Sort builders
-  // =========================
 
   private PageRequest buildPageRequest(int page, int size) {
     PageRequest pageRequest = new PageRequest();
@@ -137,9 +135,8 @@ public class CustomerQueryService {
     return sort;
   }
 
-  // =========================
+
   // SearchParam Builder (정리)
-  // =========================
 
   private CustomerListSearchParam buildCustomerListSearchParam(CustomerListSearchRequest request) {
     KeywordParts parts = new KeywordParts(
@@ -148,15 +145,15 @@ public class CustomerQueryService {
         request.getPhoneNumber(),
         request.getEmail());
 
-    // ✅ CHANGED: keyword를 분해하는 로직을 별도 메서드로 분리
+    // keyword를 분해하는 로직을 별도 메서드로 분리
     applyKeywordIfNeeded(request.getKeyword(), parts);
 
-    // ✅ normalize
+    // normalize
     String normalizedName = Normalizer.name(parts.customerName);
     String normalizedPhone = Normalizer.phone(parts.phoneNumber);
     String normalizedEmail = Normalizer.email(parts.email);
 
-    // ✅ CHANGED: 해시 생성 로직 분리
+    // 해시 생성 로직 분리
     Hashes hashes = buildHashes(normalizedName, normalizedPhone, normalizedEmail);
 
     log.info("[CustomerList] parts: customerCode={}, name='{}', phone='{}', email='{}'",
@@ -179,7 +176,7 @@ public class CustomerQueryService {
   }
 
   /**
-   * ✅ CHANGED: keyword 적용을 별도 함수로 분리 - 상세검색 값이 비어있을 때만 keyword를 분해해서 세팅
+   * keyword 적용을 별도 함수로 분리 - 상세검색 값이 비어있을 때만 keyword를 분해해서 세팅
    */
   private void applyKeywordIfNeeded(String keywordRaw, KeywordParts parts) {
     if (hasAnyDetailCondition(parts)) {
@@ -207,7 +204,7 @@ public class CustomerQueryService {
   }
 
   /**
-   * ✅ CHANGED(핵심): 전체검색 판별 로직만 담당 - 이메일 우선 - 전화(숫자 8자리 이상) 우선 - 그 다음 고객코드(숫자만) -
+   * 전체검색 판별 로직만 담당 - 이메일 우선 - 전화(숫자 8자리 이상) 우선 - 그 다음 고객코드(숫자만) -
    * 나머지 이름
    */
   private KeywordResolved resolveKeyword(String keyword) {
@@ -239,9 +236,7 @@ public class CustomerQueryService {
         toHex(searchHashService.emailHash(normalizedEmail)));
   }
 
-  // =========================
   // Utils
-  // =========================
 
   private String normalizeSortBy(String sortBy, Set<String> whitelist, String defaultSort) {
     if (isBlank(sortBy)) {
@@ -320,7 +315,7 @@ public class CustomerQueryService {
     }
   }
 
-  // 고객활동쪽에서 추가함1
+  // 고객활동쪽에서 추가함
   @LogPersonalInfo(type = PermissionTypeKey.CUSTOMER_READ, purpose = "고객 정보 조회")
   public CustomerBasicResponse getCustomerBasic(
       Long hotelGroupCode,
