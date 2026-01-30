@@ -67,11 +67,15 @@ dependencies {
 
     //SMTP
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // integrationTest(Testcontainers)
+    testImplementation platform("org.testcontainers:testcontainers-bom:1.21.4")
+    testImplementation "org.testcontainers:junit-jupiter"
+    testImplementation "org.testcontainers:mariadb"
 }
 
 tasks.named('test') {
-    useJUnitPlatform {
-    }
+    useJUnitPlatform()
 }
 
 jacoco {
@@ -115,6 +119,30 @@ tasks.named('jacocoTestReport') {
         xml.required = false
         csv.required = false
     }
+}
+
+// integrationTest sourceSet + task
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integrationTest/java')
+        resources.srcDir file('src/integrationTest/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    shouldRunAfter tasks.named('test')
 }
 
 
