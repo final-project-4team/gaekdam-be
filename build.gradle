@@ -19,6 +19,7 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    mockitoAgent
 }
 
 repositories {
@@ -72,10 +73,14 @@ dependencies {
     testImplementation platform("org.testcontainers:testcontainers-bom:1.21.4")
     testImplementation "org.testcontainers:junit-jupiter"
     testImplementation "org.testcontainers:mariadb"
+
+    mockitoAgent "net.bytebuddy:byte-buddy-agent:1.17.8"
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    jvmArgs "-javaagent:${configurations.mockitoAgent.singleFile}"
 }
 
 jacoco {
@@ -143,6 +148,7 @@ tasks.register('integrationTest', Test) {
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnitPlatform()
     shouldRunAfter tasks.named('test')
+    jvmArgs "-javaagent:${configurations.mockitoAgent.singleFile}"
 }
 
 
