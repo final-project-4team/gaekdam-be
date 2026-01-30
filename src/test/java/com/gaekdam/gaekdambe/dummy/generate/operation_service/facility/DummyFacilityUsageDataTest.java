@@ -1,217 +1,235 @@
 package com.gaekdam.gaekdambe.dummy.generate.operation_service.facility;
 
-import com.gaekdam.gaekdambe.operation_service.facility.command.domain.entity.Facility;
-import com.gaekdam.gaekdambe.operation_service.facility.command.domain.entity.FacilityUsage;
 import com.gaekdam.gaekdambe.operation_service.facility.command.domain.enums.FacilityUsageType;
 import com.gaekdam.gaekdambe.operation_service.facility.command.domain.enums.PriceSource;
-import com.gaekdam.gaekdambe.operation_service.facility.command.infrastructure.repository.FacilityRepository;
-import com.gaekdam.gaekdambe.operation_service.facility.command.infrastructure.repository.FacilityUsageRepository;
-import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity.PackageFacility;
-import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.PackageFacilityRepository;
-import com.gaekdam.gaekdambe.reservation_service.reservation.command.infrastructure.repository.ReservationRepository;
-import com.gaekdam.gaekdambe.reservation_service.stay.command.domain.entity.Stay;
-import com.gaekdam.gaekdambe.reservation_service.stay.command.infrastructure.repository.StayRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Component
 public class DummyFacilityUsageDataTest {
 
-    private static final int BATCH = 500;
+    private static final int BATCH_SIZE = 500;
 
-    @Autowired FacilityUsageRepository facilityUsageRepository;
-    @Autowired StayRepository stayRepository;
-    @Autowired FacilityRepository facilityRepository;
-    @Autowired ReservationRepository reservationRepository;
-    @Autowired PackageFacilityRepository packageFacilityRepository;
     @Autowired
-    EntityManager em;
+    private JdbcTemplate jdbcTemplate;
 
     @Transactional
     public void generate() {
 
-        // 중복 생성 방지
-        if (facilityUsageRepository.count() > 0) return;
+        // 이미 생성돼 있으면 스킵
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM facility_usage",
+                Long.class
+        );
+        if (count != null && count > 0) return;
 
         Random random = new Random();
 
-        // Stay 전체 로드 (투숙 기준)
-        List<Stay> stays = stayRepository.findAll();
+        // -------------------------------
+        // 1. Stay 조회 (실제 체크인만)
+        // -------------------------------
+        List<StayRow> stays = jdbcTemplate.query("""
+            SELECT stay_code, reservation_code, actual_checkin_at, actual_checkout_at
+            FROM stay
+            WHERE actual_checkin_at IS NOT NULL
+        """, (rs, i) -> new StayRow(
+                rs.getLong("stay_code"),
+                rs.getLong("reservation_code"),
+                rs.getTimestamp("actual_checkin_at").toLocalDateTime(),
+                rs.getTimestamp("actual_checkout_at") != null
+                        ? rs.getTimestamp("actual_checkout_at").toLocalDateTime()
+                        : null
+        ));
+
         if (stays.isEmpty()) return;
 
-        /**
-         * packageCode → 포함된 facilityCode 목록
-         * (패키지 포함 시설 판별용 캐시)
-         */
-        Map<Long, List<Long>> packageFacilityMap =
-                packageFacilityRepository.findAll()
-                        .stream()
-                        .collect(Collectors.groupingBy(
-                                PackageFacility::getPackageCode,
-                                Collectors.mapping(
-                                        PackageFacility::getFacilityCode,
-                                        Collectors.toList()
-                                )
-                        ));
+        // -------------------------------
+        // 2. reservation_code → property / package
+        // -------------------------------
+        Map<Long, ReservationInfo> reservationMap = jdbcTemplate.query("""
+            SELECT reservation_code, property_code, package_code
+            FROM reservation
+        """, rs -> {
+            Map<Long, ReservationInfo> map = new HashMap<>();
+            while (rs.next()) {
+                map.put(
+                        rs.getLong("reservation_code"),
+                        new ReservationInfo(
+                                rs.getLong("property_code"),
+                                rs.getObject("package_code") != null
+                                        ? rs.getLong("package_code")
+                                        : null
+                        )
+                );
+            }
+            return map;
+        });
 
-        // 배치 저장 버퍼
-        List<FacilityUsage> buffer = new ArrayList<>(BATCH);
+        // -------------------------------
+        // 3. property_code → facilities
+        // -------------------------------
+        Map<Long, List<Long>> facilityMap = jdbcTemplate.query("""
+            SELECT facility_code, property_code
+            FROM facility
+        """, rs -> {
+            Map<Long, List<Long>> map = new HashMap<>();
+            while (rs.next()) {
+                map.computeIfAbsent(
+                        rs.getLong("property_code"),
+                        k -> new ArrayList<>()
+                ).add(rs.getLong("facility_code"));
+            }
+            return map;
+        });
 
-        for (Stay stay : stays) {
+        // -------------------------------
+        // 4. package_code → facility_code
+        // -------------------------------
+        Map<Long, Set<Long>> packageFacilityMap = jdbcTemplate.query("""
+            SELECT package_code, facility_code
+            FROM package_facility
+        """, rs -> {
+            Map<Long, Set<Long>> map = new HashMap<>();
+            while (rs.next()) {
+                map.computeIfAbsent(
+                        rs.getLong("package_code"),
+                        k -> new HashSet<>()
+                ).add(rs.getLong("facility_code"));
+            }
+            return map;
+        });
 
-            // 실제 체크인한 투숙만 대상
-            if (stay.getActualCheckinAt() == null) continue;
+        // -------------------------------
+        // 5. batch insert 준비
+        // -------------------------------
+        List<Object[]> batch = new ArrayList<>(BATCH_SIZE);
 
-            // 예약 정보 조회 (property / package)
-            Long propertyCode =
-                    reservationRepository.findPropertyCodeByReservationCode(
-                            stay.getReservationCode()
-                    );
-            if (propertyCode == null) continue;
+        for (StayRow stay : stays) {
 
-            Long packageCode =
-                    reservationRepository.findPackageCodeByReservationCode(
-                            stay.getReservationCode()
-                    );
+            ReservationInfo reservation = reservationMap.get(stay.reservationCode());
+            if (reservation == null) continue;
 
-            // 패키지에 포함된 시설 목록
-            List<Long> includedFacilities =
-                    packageCode != null
-                            ? packageFacilityMap.getOrDefault(packageCode, List.of())
-                            : List.of();
-
-            // 지점 전체 시설
-            List<Facility> facilities =
-                    facilityRepository.findByPropertyCode(propertyCode);
+            List<Long> facilities =
+                    facilityMap.getOrDefault(reservation.propertyCode(), List.of());
             if (facilities.isEmpty()) continue;
 
-            // 투숙당 1~3회 시설 이용
+            Set<Long> packageFacilities =
+                    reservation.packageCode() != null
+                            ? packageFacilityMap.getOrDefault(reservation.packageCode(), Set.of())
+                            : Set.of();
+
             int usageCount = random.nextInt(3) + 1;
-            boolean isStaying = stay.getActualCheckoutAt() == null;
+            boolean staying = stay.actualCheckoutAt() == null;
 
             for (int i = 0; i < usageCount; i++) {
 
-                Facility facility =
+                Long facilityCode =
                         facilities.get(random.nextInt(facilities.size()));
 
-                boolean isPersonBased = random.nextBoolean();
+                boolean personBased = random.nextBoolean();
 
-                // 이용 시각 결정
-                LocalDateTime usageAt;
-                if (isStaying) {
-                    LocalDate today = LocalDate.now();
-                    LocalDate checkinDate = stay.getActualCheckinAt().toLocalDate();
+                LocalDateTime usageAt = staying
+                        ? randomBetween(stay.actualCheckinAt(), LocalDateTime.now(), random)
+                        : randomBetween(stay.actualCheckinAt(), stay.actualCheckoutAt(), random);
 
-                    usageAt = checkinDate.isEqual(today)
-                            ? randomDateTimeBetween(
-                            stay.getActualCheckinAt(),
-                            LocalDateTime.now(),
-                            random
-                    )
-                            : randomDateTimeBetween(
-                            today.atStartOfDay(),
-                            LocalDateTime.now(),
-                            random
-                    );
-                } else {
-                    usageAt = randomDateTimeBetween(
-                            stay.getActualCheckinAt(),
-                            stay.getActualCheckoutAt(),
-                            random
-                    );
-                }
-
-                // 인원/수량 설정
-                Integer usedPersonCount =
-                        isPersonBased ? random.nextInt(4) + 1 : null;
-
-                Integer usageQuantity =
-                        isPersonBased ? null : random.nextInt(3) + 1;
+                Integer usedPerson =
+                        personBased ? random.nextInt(4) + 1 : null;
+                Integer quantity =
+                        personBased ? null : random.nextInt(3) + 1;
 
                 FacilityUsageType usageType =
-                        (usedPersonCount != null && usedPersonCount >= 2)
+                        (usedPerson != null && usedPerson >= 2)
                                 ? FacilityUsageType.WITH_GUEST
                                 : FacilityUsageType.PERSONAL;
 
-                // 패키지 사용 가능 여부
                 boolean usePackage =
-                        packageCode != null
-                                && includedFacilities.contains(facility.getFacilityCode())
+                        reservation.packageCode() != null
+                                && packageFacilities.contains(facilityCode)
                                 && random.nextInt(100) < 70;
 
-                FacilityUsage usage;
+                BigDecimal price;
+                PriceSource priceSource;
 
                 if (usePackage) {
-                    // 패키지 포함 시설 → 무료
-                    usage = FacilityUsage.builder()
-                            .stayCode(stay.getStayCode())
-                            .facilityCode(facility.getFacilityCode())
-                            .usageAt(usageAt)
-                            .usageType(usageType)
-                            .usedPersonCount(usedPersonCount)
-                            .usageQuantity(usageQuantity)
-                            .usagePrice(BigDecimal.ZERO)
-                            .priceSource(PriceSource.PACKAGE)
-                            .createdAt(LocalDateTime.now())
-                            .build();
+                    price = BigDecimal.ZERO;
+                    priceSource = PriceSource.PACKAGE;
                 } else {
-                    // 추가 이용 → 유료
-                    int quantity = usageQuantity != null ? usageQuantity : 1;
-                    BigDecimal unitPrice =
+                    int qty = quantity != null ? quantity : 1;
+                    BigDecimal unit =
                             BigDecimal.valueOf((random.nextInt(5) + 1) * 10_000);
-
-                    usage = FacilityUsage.builder()
-                            .stayCode(stay.getStayCode())
-                            .facilityCode(facility.getFacilityCode())
-                            .usageAt(usageAt)
-                            .usageType(usageType)
-                            .usedPersonCount(usedPersonCount)
-                            .usageQuantity(usageQuantity)
-                            .usagePrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
-                            .priceSource(PriceSource.EXTRA)
-                            .createdAt(LocalDateTime.now())
-                            .build();
+                    price = unit.multiply(BigDecimal.valueOf(qty));
+                    priceSource = PriceSource.EXTRA;
                 }
 
-                buffer.add(usage);
+                batch.add(new Object[]{
+                        stay.stayCode(),
+                        facilityCode,
+                        Timestamp.valueOf(usageAt),
+                        usageType.name(),
+                        usedPerson,
+                        quantity,
+                        price,
+                        priceSource.name(),
+                        Timestamp.valueOf(LocalDateTime.now())
+                });
 
-                // 배치 저장
-                if (buffer.size() == BATCH) {
-                    facilityUsageRepository.saveAll(buffer);
-                    em.flush();
-                    em.clear();
-                    buffer.clear();
+                if (batch.size() == BATCH_SIZE) {
+                    flush(batch);
+                    batch.clear();
                 }
             }
         }
 
-        // 남은 데이터 처리
-        if (!buffer.isEmpty()) {
-            facilityUsageRepository.saveAll(buffer);
-            em.flush();
-            em.clear();
+        if (!batch.isEmpty()) {
+            flush(batch);
         }
     }
 
-    // start ~ end 사이 랜덤 시각
-    private LocalDateTime randomDateTimeBetween(
+    private void flush(List<Object[]> batch) {
+        jdbcTemplate.batchUpdate("""
+            INSERT INTO facility_usage (
+                stay_code,
+                facility_code,
+                usage_at,
+                usage_type,
+                used_person_count,
+                usage_quantity,
+                usage_price,
+                price_source,
+                created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, batch);
+    }
+
+    private LocalDateTime randomBetween(
             LocalDateTime start,
             LocalDateTime end,
             Random random
     ) {
-        long seconds = java.time.Duration.between(start, end).getSeconds();
+        long seconds = Duration.between(start, end).getSeconds();
         if (seconds <= 0) return start;
         return start.plusSeconds(random.nextLong(seconds));
     }
+
+    record StayRow(
+            Long stayCode,
+            Long reservationCode,
+            LocalDateTime actualCheckinAt,
+            LocalDateTime actualCheckoutAt
+    ) {}
+
+    record ReservationInfo(
+            Long propertyCode,
+            Long packageCode
+    ) {}
 }
