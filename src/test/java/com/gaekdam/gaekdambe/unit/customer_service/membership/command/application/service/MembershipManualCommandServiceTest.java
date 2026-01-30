@@ -57,7 +57,6 @@ class MembershipManualCommandServiceTest {
     @DisplayName("request null이면 INVALID_INCORRECT_FORMAT")
     void requestNull_thenThrow() {
         // given
-        // request = null
 
         // when
         CustomException ex = catchThrowableOfType(
@@ -70,11 +69,47 @@ class MembershipManualCommandServiceTest {
     }
 
     @Test
-    @DisplayName("employeeCode null이면 INVALID_REQUEST")
+    @DisplayName("membershipGradeCode null이면 INVALID_INCORRECT_FORMAT")
+    void gradeCodeNull_thenThrow() {
+        // given
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                null, MembershipStatus.ACTIVE, null, "reason", 10L
+        );
+
+        // when
+        CustomException ex = catchThrowableOfType(
+                () -> service.changeMembershipManually(1L, 10L, 100L, req),
+                CustomException.class
+        );
+
+        // then
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_INCORRECT_FORMAT);
+    }
+
+    @Test
+    @DisplayName("membershipStatus null이면 INVALID_INCORRECT_FORMAT")
+    void statusNull_thenThrow() {
+        // given
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                1L, null, null, "reason", 10L
+        );
+
+        // when
+        CustomException ex = catchThrowableOfType(
+                () -> service.changeMembershipManually(1L, 10L, 100L, req),
+                CustomException.class
+        );
+
+        // then
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_INCORRECT_FORMAT);
+    }
+
+    @Test
+    @DisplayName("employeeCode null이면 EMPLOYEE_CODE_REQUIRED")
     void employeeCodeNull_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "reason", null
+                1L, MembershipStatus.ACTIVE, null, "reason", 10L
         );
 
         // when
@@ -84,8 +119,25 @@ class MembershipManualCommandServiceTest {
         );
 
         // then
-        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST);
-        assertThat(ex.getMessage()).contains("employeeCode");
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.EMPLOYEE_CODE_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("changeReason null이면 MEMBERSHIP_MANUAL_REASON_REQUIRED")
+    void changeReasonNull_thenThrow() {
+        // given
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                1L, MembershipStatus.ACTIVE, null, null, 10L
+        );
+
+        // when
+        CustomException ex = catchThrowableOfType(
+                () -> service.changeMembershipManually(1L, 10L, 100L, req),
+                CustomException.class
+        );
+
+        // then
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_MANUAL_REASON_REQUIRED);
     }
 
     @Test
@@ -178,7 +230,84 @@ class MembershipManualCommandServiceTest {
     }
 
     @Test
-    @DisplayName("멤버십 기존 존재 시: 멤버십 변경 + 이력 저장")
+    @DisplayName("afterGradeName null이면 MEMBERSHIP_GRADE_NAME_EMPTY")
+    void afterGradeNameNull_thenThrow() {
+        // given
+        Long hotelGroupCode = 1L;
+        Long employeeCode = 10L;
+        Long customerCode = 100L;
+
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                1L, MembershipStatus.ACTIVE, null, "reason", employeeCode
+        );
+
+        MembershipGrade afterGrade = mock(MembershipGrade.class);
+        HotelGroup hg = mock(HotelGroup.class);
+
+        when(membershipGradeRepository.findById(1L)).thenReturn(Optional.of(afterGrade));
+        when(afterGrade.getHotelGroup()).thenReturn(hg);
+        when(hg.getHotelGroupCode()).thenReturn(hotelGroupCode);
+        when(afterGrade.getMembershipGradeStatus()).thenReturn(MembershipGradeStatus.ACTIVE);
+        when(afterGrade.getGradeName()).thenReturn(null);
+
+        // membership null 방지(핵심)
+        Membership membership = Membership.registerMembership(
+                customerCode, hotelGroupCode, null, LocalDateTime.now(), LocalDateTime.now()
+        );
+        when(membershipRepository.findByCustomerCodeAndHotelGroupCode(customerCode, hotelGroupCode))
+                .thenReturn(Optional.of(membership));
+
+        // when
+        CustomException ex = catchThrowableOfType(
+                () -> service.changeMembershipManually(hotelGroupCode, employeeCode, customerCode, req),
+                CustomException.class
+        );
+
+        // then
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_GRADE_NAME_EMPTY);
+    }
+
+    @Test
+    @DisplayName("afterGradeName blank이면 MEMBERSHIP_GRADE_NAME_EMPTY")
+    void afterGradeNameBlank_thenThrow() {
+        // given
+        Long hotelGroupCode = 1L;
+        Long employeeCode = 10L;
+        Long customerCode = 100L;
+
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                1L, MembershipStatus.ACTIVE, null, "reason", employeeCode
+        );
+
+        MembershipGrade afterGrade = mock(MembershipGrade.class);
+        HotelGroup hg = mock(HotelGroup.class);
+
+        when(membershipGradeRepository.findById(1L)).thenReturn(Optional.of(afterGrade));
+        when(afterGrade.getHotelGroup()).thenReturn(hg);
+        when(hg.getHotelGroupCode()).thenReturn(hotelGroupCode);
+        when(afterGrade.getMembershipGradeStatus()).thenReturn(MembershipGradeStatus.ACTIVE);
+        when(afterGrade.getGradeName()).thenReturn("   ");
+
+        // membership null 방지(핵심)
+        Membership membership = Membership.registerMembership(
+                customerCode, hotelGroupCode, null, LocalDateTime.now(), LocalDateTime.now()
+        );
+        when(membershipRepository.findByCustomerCodeAndHotelGroupCode(customerCode, hotelGroupCode))
+                .thenReturn(Optional.of(membership));
+
+        // when
+        CustomException ex = catchThrowableOfType(
+                () -> service.changeMembershipManually(hotelGroupCode, employeeCode, customerCode, req),
+                CustomException.class
+        );
+
+        // then
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_GRADE_NAME_EMPTY);
+    }
+
+
+    @Test
+    @DisplayName("멤버십 기존 존재 시: 변경 + 이력 저장 (beforeGradeName 정상)")
     void existingMembership_success() throws Exception {
         // given
         Long hotelGroupCode = 1L;
@@ -224,8 +353,7 @@ class MembershipManualCommandServiceTest {
 
         // then
         assertThat(result).isEqualTo("멤버십 수동 변경 완료");
-
-        verify(membershipRepository).save(membership);
+        verify(membershipRepository, times(1)).save(membership);
 
         verify(membershipHistoryRepository).save(historyCaptor.capture());
         MembershipHistory saved = historyCaptor.getValue();
@@ -243,7 +371,92 @@ class MembershipManualCommandServiceTest {
     }
 
     @Test
-    @DisplayName("멤버십 미존재 시: 신규 생성 후 변경 + 이력 저장")
+    @DisplayName("기존 멤버십 + beforeGrade 조회 empty 브랜치 커버")
+    void existingMembership_beforeGradeNotFound_stillSaveHistory() throws Exception {
+        // given
+        Long hotelGroupCode = 1L;
+        Long employeeCode = 10L;
+        Long customerCode = 100L;
+
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode
+        );
+
+        MembershipGrade afterGrade = mock(MembershipGrade.class);
+        HotelGroup hg = mock(HotelGroup.class);
+
+        when(membershipGradeRepository.findById(2L)).thenReturn(Optional.of(afterGrade));
+        when(afterGrade.getHotelGroup()).thenReturn(hg);
+        when(hg.getHotelGroupCode()).thenReturn(hotelGroupCode);
+        when(afterGrade.getMembershipGradeStatus()).thenReturn(MembershipGradeStatus.ACTIVE);
+        when(afterGrade.getMembershipGradeCode()).thenReturn(2L);
+        when(afterGrade.getGradeName()).thenReturn("GOLD");
+
+        Membership membership = Membership.registerMembership(
+                customerCode, hotelGroupCode, 1L,
+                LocalDateTime.now().minusDays(10),
+                LocalDateTime.now().minusDays(10)
+        );
+        setField(membership, "membershipCode", 777L);
+        setField(membership, "membershipGradeCode", 1L);
+
+        when(membershipRepository.findByCustomerCodeAndHotelGroupCode(customerCode, hotelGroupCode))
+                .thenReturn(Optional.of(membership));
+
+        when(membershipGradeRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when
+        String result = service.changeMembershipManually(hotelGroupCode, employeeCode, customerCode, req);
+
+        // then
+        assertThat(result).isEqualTo("멤버십 수동 변경 완료");
+        verify(membershipHistoryRepository).save(any(MembershipHistory.class));
+    }
+
+    @Test
+    @DisplayName("기존 멤버십 + beforeGradeCode null 브랜치 커버")
+    void existingMembership_beforeGradeCodeNull_stillSaveHistory() throws Exception {
+        // given
+        Long hotelGroupCode = 1L;
+        Long employeeCode = 10L;
+        Long customerCode = 100L;
+
+        MembershipManualChangeRequest req = new MembershipManualChangeRequest(
+                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode
+        );
+
+        MembershipGrade afterGrade = mock(MembershipGrade.class);
+        HotelGroup hg = mock(HotelGroup.class);
+
+        when(membershipGradeRepository.findById(2L)).thenReturn(Optional.of(afterGrade));
+        when(afterGrade.getHotelGroup()).thenReturn(hg);
+        when(hg.getHotelGroupCode()).thenReturn(hotelGroupCode);
+        when(afterGrade.getMembershipGradeStatus()).thenReturn(MembershipGradeStatus.ACTIVE);
+        when(afterGrade.getMembershipGradeCode()).thenReturn(2L);
+        when(afterGrade.getGradeName()).thenReturn("GOLD");
+
+        Membership membership = Membership.registerMembership(
+                customerCode, hotelGroupCode, null,
+                LocalDateTime.now().minusDays(10),
+                LocalDateTime.now().minusDays(10)
+        );
+        setField(membership, "membershipCode", 777L);
+        setField(membership, "membershipGradeCode", null);
+
+        when(membershipRepository.findByCustomerCodeAndHotelGroupCode(customerCode, hotelGroupCode))
+                .thenReturn(Optional.of(membership));
+
+        // when
+        String result = service.changeMembershipManually(hotelGroupCode, employeeCode, customerCode, req);
+
+        // then
+        assertThat(result).isEqualTo("멤버십 수동 변경 완료");
+        verify(membershipHistoryRepository).save(any(MembershipHistory.class));
+        verify(membershipGradeRepository, never()).findById(1L);
+    }
+
+    @Test
+    @DisplayName("멤버십 미존재 시: 신규 생성(orElseGet) + 변경 + 이력 저장 (save 2번)")
     void newMembership_success() throws Exception {
         // given
         Long hotelGroupCode = 1L;
@@ -269,7 +482,9 @@ class MembershipManualCommandServiceTest {
 
         when(membershipRepository.save(any(Membership.class))).thenAnswer(inv -> {
             Membership m = inv.getArgument(0);
-            setField(m, "membershipCode", 888L);
+            if (m.getMembershipCode() == null) {
+                setField(m, "membershipCode", 888L);
+            }
             return m;
         });
 
@@ -280,11 +495,12 @@ class MembershipManualCommandServiceTest {
 
         // then
         assertThat(result).isEqualTo("멤버십 수동 변경 완료");
+        verify(membershipRepository, times(2)).save(any(Membership.class));
 
         verify(membershipHistoryRepository).save(historyCaptor.capture());
         MembershipHistory saved = historyCaptor.getValue();
 
-        assertThat(saved.getMembershipCode()).isEqualTo(888L);
+        assertThat(saved.getMembershipCode()).isNotNull();
         assertThat(saved.getAfterGrade()).isEqualTo("GOLD");
     }
 

@@ -114,9 +114,7 @@ public class CustomerQueryService {
     return assembler.toCustomerMarketingConsentResponse(customerCode, rows);
   }
 
-  // =========================
   // Page / Sort builders
-  // =========================
 
   private PageRequest buildPageRequest(int page, int size) {
     PageRequest pageRequest = new PageRequest();

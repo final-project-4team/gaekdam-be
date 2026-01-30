@@ -17,6 +17,8 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
+
 
 import java.util.List;
 
@@ -49,6 +51,7 @@ public class InquiryQueryService {
         if (detailRow == null) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "존재하지 않는 문의입니다.");
         }
+
 
         String customerName = decryptCustomerName(
                 detailRow.customerCode(),
@@ -96,6 +99,9 @@ public class InquiryQueryService {
                 listRow.employeeDekEnc(),
                 listRow.employeeNameEnc()
         );
+
+        customerName = MaskingUtils.maskName(customerName);
+        employeeName = MaskingUtils.maskName(employeeName);
 
         return new InquiryListResponse(
                 listRow.inquiryCode(),

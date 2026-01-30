@@ -82,32 +82,33 @@ tasks.named('jacocoTestReport') {
     dependsOn tasks.named('test')
 
     def includes = [
-            "com/gaekdam/gaekdambe/customer_service/membership/command/**/service/**",
-            "com/gaekdam/gaekdambe/customer_service/membership/query/**/service/**"
+            "com/gaekdam/gaekdambe/**/*Service.class"
     ]
-
 
     def excludes = [
             "**/*Application*",
             "**/*Config*",
-            "**/*Dto*",
-            "**/*Request*",
-            "**/*Response*",
-            "**/*Mapper*",
-            "**/*Exception*",
-            "**/global/**",
-
-
+            "**/global/config/**",
+            "**/global/exception/**",
+            "**/global/paging/**",
+            "**/dto/**",
             "**/controller/**",
+            "**/*Mapper*",
             "**/repository/**",
             "**/infrastructure/**",
-            "**/domain/**",
-            "**/entity/**"
+            "**/service/model/**",
+            "**/service/assembler/**",
+            "**/service/**/row/**"
     ]
 
-    classDirectories.setFrom(files(classDirectories.files.collect { classesDir ->
-        fileTree(dir: classesDir, includes: includes, excludes: excludes)
-    }))
+    // 전체 class 대상으로 report 만들고 excludes만 적용
+    classDirectories.setFrom(
+            sourceSets.main.output.asFileTree.matching {
+                include includes
+                exclude excludes
+            }
+    )
+
 
     reports {
         html.required = true
