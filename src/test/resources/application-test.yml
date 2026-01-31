@@ -2,3 +2,4 @@ spring:
   task:
     scheduling:
       enabled: false
+
