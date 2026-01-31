@@ -1,19 +1,18 @@
 name: Create Release
 
 on:
-  pull_request:
+  push:
     branches: ["develop"]
 
 permissions:
   contents: write
 
 concurrency:
-  group: create-release-develop-${{ github.event.pull_request.number }}
+  group: create-release-develop-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   release:
-    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
