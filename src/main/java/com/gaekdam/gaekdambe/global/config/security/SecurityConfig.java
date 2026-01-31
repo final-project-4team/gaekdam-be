@@ -50,6 +50,9 @@ public class SecurityConfig {
   /*              .requestMatchers(
                     "/api/v1/auth/**"
                 ).permitAll()*/
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/health/**").permitAll()
+                .requestMatchers("/health").permitAll()
                 // Swagger 공개
                 .requestMatchers(
                     "/swagger-ui.html",
