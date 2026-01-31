@@ -40,6 +40,7 @@ public class EmployeeQueryService {
     }
     return toDetailDto(response);
   }
+
   @AuditLog(details = "", type = PermissionTypeKey.EMPLOYEE_LIST)
   public PageResponse<EmployeeListResponse> searchEmployees(Long hotelGroupCode,
       EmployeeQuerySearchRequest request, PageRequest page, SortRequest sort) {
@@ -97,6 +98,11 @@ public class EmployeeQueryService {
         response.propertyName(),
         response.hotelGroupName(),
         response.permissionName(),
+        response.departmentCode(),
+        response.hotelPositionCode(),
+        response.propertyCode(),
+        response.hotelGroupCode(),
+        response.permissionCode(),
         response.hiredAt(),
         response.employeeStatus(),
         response.createdAt(),

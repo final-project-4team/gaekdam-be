@@ -3,6 +3,7 @@ package com.gaekdam.gaekdambe.iam_service.employee.command.application.service;
 import com.gaekdam.gaekdambe.global.crypto.AesCryptoUtils;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.crypto.KmsService;
+import com.gaekdam.gaekdambe.global.crypto.PasswordValidator;
 import com.gaekdam.gaekdambe.global.crypto.RandomPassword;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
@@ -197,6 +198,8 @@ public class EmployeeUpdateService {
   public void changePassword(Employee employee, PasswordChangeRequest request) {
     log.info("비밀번호 변경 시작 - loginId: {}", employee.getLoginId());
 
+
+    PasswordValidator.validate(request.newPassword());
     // 기존 비밀번호 검증
     if (!passwordEncoder.matches(request.currentPassword(), employee.getPasswordHash())) {
       log.warn("비밀번호 변경 실패: 현재 비밀번호 불일치 - loginId: {}", employee.getLoginId());

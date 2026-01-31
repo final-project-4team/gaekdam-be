@@ -1,6 +1,5 @@
 package com.gaekdam.gaekdambe.dummy.generate.iam_service.permissionType;
 
-import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup;
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.entity.PermissionType;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
@@ -23,8 +22,10 @@ public class DummyPermissionTypeDataTest {
       return;
     }
 
+/*
     HotelGroup hotelGroup = hotelGroupRepository.findById(1L)
         .orElseThrow(() -> new IllegalArgumentException("HotelGroup with ID 1 not found"));
+*/
 
     for (PermissionTypeKey key : PermissionTypeKey.values()) {
       String keyName = key.name();
@@ -42,8 +43,8 @@ public class DummyPermissionTypeDataTest {
           key,
           permissionTypeName,
           resourceStr,
-          actionStr,
-          hotelGroup);
+          actionStr
+        );
 
       permissionTypeRepository.save(permissionType);
     }
