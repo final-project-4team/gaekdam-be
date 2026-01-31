@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -601,102 +602,161 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         // 로그: 진입
         log.debug("queryMetricTimeSeries called: metricKey={}, period={}, filter={}", metricKey, period, filter);
 
-        // 1) 기간 범위 계산: year 단위이면 월별 레이블 생성, month 단위이면 일별 레이블(간단화 위해 month->일 처리 생략 가능)
+        // 1) 기간 범위 계산: 연간(월별 bucket) 또는 월간(일별 bucket)
         LocalDate start;
         LocalDate end;
+        boolean isYear = false;
+        boolean isMonth = false;
         try {
-            LocalDate[] range = computeRangeFromPeriod(period);
-            start = range[0];
-            end = range[1];
+            if (period != null && period.matches("\\d{4}")) {
+                // 연간: YYYY
+                int y = Integer.parseInt(period);
+                start = LocalDate.of(y, 1, 1);
+                end = LocalDate.of(y, 12, 31);
+                isYear = true;
+            } else if (period != null && period.matches("\\d{4}-\\d{1,2}")) {
+                // 월간: YYYY-MM
+                YearMonth ym = YearMonth.parse(period);
+                start = ym.atDay(1);
+                end = ym.atEndOfMonth();
+                isMonth = true;
+            } else {
+                throw new IllegalArgumentException("unsupported period: " + period);
+            }
             log.debug("Computed date range for timeseries: period={}, start={}, end={}", period, start, end);
-        } catch (IllegalArgumentException ex) {
+        } catch (Exception ex) {
             throw new IllegalArgumentException("invalid period for time series: " + period);
         }
 
         // 2) 내부 메트릭 키로 정규화
         String internalKey = normalizeToInternalKey(metricKey);
 
-        // 3) 샘플 SQL: 연간(period=YYYY)인 경우 월별 집계
-        // DB가 MySQL이라고 가정하고 DATE_FORMAT/STR_TO_DATE 등을 사용합니다. (다른 DB인 경우 적절히 수정 필요)
-        // 주의: end는 computeRangeFromPeriod에서 inclusive 끝날로 반환되므로 SQL에서는 end+1 day(Exclusive) 로 사용
+        // 3) JDBC 사용을 위한 날짜 값 준비 (end는 inclusive였으므로 exclusive bound 계산)
         LocalDate endExclusive = end.plusDays(1);
         Date dStart = Date.valueOf(start);
         Date dEndExclusive = Date.valueOf(endExclusive);
 
-        // labels 생성 (연도 -> 1월..12월)
-        List<String> labels = null;
-        List<java.math.BigDecimal> values = null;
+        // 결과용 라벨/값 리스트 초기화
+        List<String> labels = new java.util.ArrayList<>();
+        List<java.math.BigDecimal> values = new java.util.ArrayList<>();
 
-        if (period != null && period.matches("\\d{4}")) {
-            int year = Integer.parseInt(period);
-            labels = new java.util.ArrayList<>() ;
+        // 연간: 12개월 레이블(1월..12월), 월간: 1일..N일 레이블
+        if (isYear) {
             for (int m = 1; m <= 12; m++) labels.add(m + "월");
+        } else if (isMonth) {
+            YearMonth ym = YearMonth.from(start);
+            int days = ym.lengthOfMonth();
+            for (int d = 1; d <= days; d++) labels.add(d + "일");
+        }
 
-            // 샘플 쿼리: 월별 합계/평균을 구하는 예시 (metric 별로 집계 방식 달라짐)
-            // 예: CHECKIN/COUNT 계열은 월별 COUNT, ADR은 월별 평균
-            String sql = "";
-            switch(internalKey) {
-                case "checkin":
-                    // 월별 체크인 수
-                    sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS month, COUNT(*) as cnt "
-                        + "FROM checkinout WHERE record_type='CHECK_IN' AND recorded_at >= ? AND recorded_at < ? GROUP BY month ORDER BY month";
-                    break;
-                case "checkout":
-                    sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS month, COUNT(*) as cnt "
-                        + "FROM checkinout WHERE record_type='CHECK_OUT' AND recorded_at >= ? AND recorded_at < ? GROUP BY month ORDER BY month";
-                    break;
-                case "adr":
-                    // ADR의 경우 예시: 월별 총매출 / 점유박수
-                    sql = "SELECT DATE_FORMAT(checkin_date, '%m') AS month, ROUND(COALESCE(SUM(reservation_room_price),0) / NULLIF(COALESCE(SUM(GREATEST(DATEDIFF(LEAST(checkout_date, ?), GREATEST(checkin_date, ?)),0)),0),0),2) as val "
-                        + "FROM reservation WHERE checkin_date < ? AND checkout_date > ? GROUP BY month ORDER BY month";
-                    break;
-                case "occ_rate":
-                case "occupancy":
-                case "occupancy_rate":
-                    // 점유율은 월별 점유박수 / (총객실수 * daysInMonth)
-                    sql = "SELECT DATE_FORMAT(checkin_date, '%m') AS month, 0 as val FROM reservation WHERE checkin_date < ? AND checkout_date > ? GROUP BY month ORDER BY month"; // placeholder
-                    break;
-                default:
-                    // 기본: 빈 값 리턴
-                    labels = new java.util.ArrayList<>() ;
-                    values = new java.util.ArrayList<>() ;
+        // 4) DB에서 집계 조회: metric별로 적절한 그룹화 SQL 사용 (월별은 DATE_FORMAT(...,'%m'), 일별은 DATE_FORMAT(...,'%d'))
+        try {
+            String sql = null;
+            java.util.List<java.util.Map<String,Object>> rows = java.util.Collections.emptyList();
+
+            if (isYear) {
+                // 월별 집계
+                switch(internalKey) {
+                    case "checkin":
+                        sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                            + "FROM checkinout WHERE record_type='CHECK_IN' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                        rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                        break;
+                    case "checkout":
+                        sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                            + "FROM checkinout WHERE record_type='CHECK_OUT' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                        rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                        break;
+                    case "adr":
+                        // 간단한 월별 ADR: 예약의 reservation_room_price 평균 (checkin_date 기준)
+                        sql = "SELECT DATE_FORMAT(checkin_date, '%m') AS bucket, ROUND(AVG(reservation_room_price),2) AS val "
+                            + "FROM reservation WHERE checkin_date >= ? AND checkin_date < ? GROUP BY bucket ORDER BY bucket";
+                        rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                        break;
+                    case "occ_rate":
+                        // 복잡한 계산은 생략: placeholder로 null/0 처리 (필요 시 별도 구현)
+                        rows = java.util.Collections.emptyList();
+                        break;
+                    default:
+                        // unsupported metric: 빈 rows
+                        rows = java.util.Collections.emptyList();
+                }
+
+                // map bucket -> value
+                java.util.Map<String, java.math.BigDecimal> bucketMap = new java.util.HashMap<>();
+                for (java.util.Map<String,Object> row : rows) {
+                    String bucket = String.valueOf(row.get("bucket"));
+                    Object valObj = row.get("val");
+                    java.math.BigDecimal v = null;
+                    if (valObj instanceof java.math.BigDecimal) v = (java.math.BigDecimal) valObj;
+                    else if (valObj instanceof Number) v = java.math.BigDecimal.valueOf(((Number) valObj).doubleValue());
+                    bucketMap.put(bucket, v);
+                }
+
+                // fill values for months 01..12
+                for (int m = 1; m <= 12; m++) {
+                    String mm = String.format("%02d", m);
+                    values.add(bucketMap.getOrDefault(mm, null));
+                }
+
+            } else if (isMonth) {
+                // 일별 집계
+                YearMonth ym = YearMonth.from(start);
+                int days = ym.lengthOfMonth();
+
+                switch(internalKey) {
+                    case "checkin":
+                        sql = "SELECT DATE_FORMAT(recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                            + "FROM checkinout WHERE record_type='CHECK_IN' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                        rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                        break;
+                    case "checkout":
+                        sql = "SELECT DATE_FORMAT(recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                            + "FROM checkinout WHERE record_type='CHECK_OUT' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                        rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                        break;
+                    case "adr":
+                        sql = "SELECT DATE_FORMAT(checkin_date, '%d') AS bucket, ROUND(AVG(reservation_room_price),2) AS val "
+                            + "FROM reservation WHERE checkin_date >= ? AND checkin_date < ? GROUP BY bucket ORDER BY bucket";
+                        rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                        break;
+                    case "occ_rate":
+                        rows = java.util.Collections.emptyList();
+                        break;
+                    default:
+                        rows = java.util.Collections.emptyList();
+                }
+
+                java.util.Map<String, java.math.BigDecimal> bucketMap = new java.util.HashMap<>();
+                for (java.util.Map<String,Object> row : rows) {
+                    String bucket = String.valueOf(row.get("bucket"));
+                    Object valObj = row.get("val");
+                    java.math.BigDecimal v = null;
+                    if (valObj instanceof java.math.BigDecimal) v = (java.math.BigDecimal) valObj;
+                    else if (valObj instanceof Number) v = java.math.BigDecimal.valueOf(((Number) valObj).doubleValue());
+                    bucketMap.put(bucket, v);
+                }
+
+                // fill values for days 01..days
+                for (int d = 1; d <= days; d++) {
+                    String dd = String.format("%02d", d);
+                    values.add(bucketMap.getOrDefault(dd, null));
+                }
             }
+        } catch (Exception ex) {
+            log.warn("Failed to build timeseries for metricKey={}: {}", metricKey, ex.getMessage());
+        }
 
-            if (sql != null && !sql.isEmpty()) {
-                try {
-                    // JDBC 결과를 List<Map>으로 조회하여 월별 값 맵을 구성합니다.
-                    java.util.Map<String, java.math.BigDecimal> monthMap = new java.util.HashMap<>();
-                    java.util.List<java.util.Map<String,Object>> rows = jdbc.queryForList(sql, dStart, dEndExclusive);
-                    for (java.util.Map<String,Object> row : rows) {
-                        // SQL에서 첫 칼럼은 month, 두번째 칼럼은 val로 가정합니다.
-                        String month = String.valueOf(row.get("month"));
-                        Object valObj = row.get("val") != null ? row.get("val") : row.get("cnt");
-                        java.math.BigDecimal v = null;
-                        if (valObj instanceof java.math.BigDecimal) v = (java.math.BigDecimal) valObj;
-                        else if (valObj instanceof Number) v = java.math.BigDecimal.valueOf(((Number) valObj).doubleValue());
-                        monthMap.put(month, v);
-                    }
-                     values = new java.util.ArrayList<>();
-                     for (int m = 1; m <= 12; m++) {
-                         String mm = String.format("%02d", m);
-                         values.add(monthMap.getOrDefault(mm, null));
-                     }
-                 } catch (Exception ex) {
-                     log.warn("Failed to build monthly timeseries for metricKey={}: {}", metricKey, ex.getMessage());
-                 }
-             }
-         }
+        // 5) MetricTimeSeries 생성 및 반환
+        MetricTimeSeries mts = new MetricTimeSeries();
+        mts.setLabels(labels);
+        if (values != null) {
+            MetricTimeSeries.Series s = new MetricTimeSeries.Series();
+            s.setName("actual");
+            s.setData(values);
+            mts.setSeries(java.util.Collections.singletonList(s));
+        }
 
-         // MetricTimeSeries 객체 생성
-         MetricTimeSeries mts = new MetricTimeSeries();
-         mts.setLabels(labels);
-         if (values != null) {
-             MetricTimeSeries.Series s = new MetricTimeSeries.Series();
-             s.setName("actual");
-             s.setData(values);
-             mts.setSeries(java.util.Collections.singletonList(s));
-         }
-
-         return mts;
-     }
+        return mts;
+    }
 }
