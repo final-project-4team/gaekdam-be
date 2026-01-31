@@ -1,21 +1,30 @@
 name: Create Release
 
 on:
-  push:
+  pull_request:
     branches: ["develop"]
-
+    types: [closed]
+  workflow_dispatch:
+#
 permissions:
   contents: write
 
+concurrency:
+  group: create-release-develop-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   release:
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: develop
 
-      - uses: softprops/action-gh-release@v2
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: develop-release-${{ github.run_number }}
           name: develop-release-${{ github.run_number }}
