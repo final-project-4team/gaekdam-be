@@ -6,20 +6,24 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.entity.ReportKPITarget;
-import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.repository.ReportKpiTargetRepository; // 엔티티 경로 맞출 것
+import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.repository.ReportKpiTargetRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class MetricQueryServiceImpl implements MetricQueryService {
+    private static final Logger log = LoggerFactory.getLogger(MetricQueryServiceImpl.class);
 
     private final JdbcTemplate jdbc;
     private final ReportKpiTargetRepository targetRepo;
@@ -31,6 +35,9 @@ public class MetricQueryServiceImpl implements MetricQueryService {
 
     @Override
     public MetricResult queryMetric(String metricKey, String period, Map<String, Object> filter) {
+        // 로그: 진입점
+        log.debug("queryMetric called: metricKey={}, period={}, filter={}", metricKey, period, filter);
+
         // 1) 날짜 범위 계산 (period like "2025" or "2025-12")
         LocalDate start;
         LocalDate end;
@@ -38,19 +45,24 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             LocalDate[] range = computeRangeFromPeriod(period);
             start = range[0];
             end = range[1];
+            log.debug("Computed date range from period: period={}, start={}, end={}", period, start, end);
         } catch (IllegalArgumentException ex) {
             // invalid period -> default to current month
             LocalDate now = LocalDate.now();
             start = now.withDayOfMonth(1);
             end = start.plusMonths(1);
+            log.debug("Invalid period provided, defaulting to current month: start={}, end={}", start, end);
         }
 
         // Normalize metric key to the internal aggregation key (so aliases like CHECKIN_COUNT, CHECKIN both work)
         String kpiCode = normalizeToKpiCode(metricKey);         // target lookup
         String internalKey = normalizeToInternalKey(metricKey); // DB aggregation key
+        log.debug("Normalized keys: metricKey={}, kpiCode={}, internalKey={}", metricKey, kpiCode, internalKey);
 
         // 2) actual 집계 (use internalKey so switch-case matches)
+        log.debug("Querying actual value: internalKey={}, start={}, end={}, filters={}", internalKey, start, end, filter);
         BigDecimal actual = queryActualFromDb(internalKey, start, end, filter);
+        log.debug("Actual value retrieved: {} -> {}", internalKey, actual);
 
         // 3) target 조회
 
@@ -58,20 +70,25 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         Object hotelGroupFilter = filter != null ? filter.get("hotelGroupCode") : null;
         BigDecimal target = null;
         if (hotelGroupFilter != null) {
+            log.debug("Looking up target by hotelGroup: kpiCode={}, period={}, hotelGroup={}", kpiCode, period, hotelGroupFilter);
             try {
                 target = jdbc.queryForObject(
                     "SELECT target_value FROM reportkpitarget WHERE kpi_code = ? AND period_value = ? AND hotel_group_code = ? ORDER BY created_at DESC LIMIT 1",
                     BigDecimal.class, kpiCode, period, hotelGroupFilter);
+                log.debug("Target found by hotelGroup: {}", target);
             } catch (EmptyResultDataAccessException ex) {
                 target = null;
+                log.debug("No target found for hotelGroup={}, will fallback to repository lookup", hotelGroupFilter);
             }
         }
 
         if (target == null) {
+            log.debug("Falling back to repository lookup for target: kpiCode={}, period={}", kpiCode, period);
             target = targetRepo.findFirstByKpiCodeAndPeriodValue(kpiCode, period)
                     .map(ReportKPITarget::getTargetValue)
                     .orElseGet(() -> targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(kpiCode)
                             .map(ReportKPITarget::getTargetValue).orElse(BigDecimal.ZERO));
+            log.debug("Target resolved from repository or default: {}", target);
         }
 
         // 4) changePct & trend 계산
@@ -95,24 +112,29 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         r.setFormattedTarget(formattedTarget);
         r.setChangePct(changePct);
         r.setTrend(trend);
+
+        log.debug("MetricResult prepared: actual={}, target={}, changePct={}, trend={}", actual, target, changePct, trend);
         return r;
     }
 
     // --- helper: compute date range from period string ---
     private LocalDate[] computeRangeFromPeriod(String period) {
         if (period == null) throw new IllegalArgumentException("period null");
-        // "2025" -> year range, "2025-12" -> month range
+        // 사용자 요구: period=YYYY -> start=YYYY-01-01, end=YYYY-12-31 (포함)
+        //            period=YYYY-MM -> start=YYYY-MM-01, end=해당월의 마지막날 (포함)
         if (period.matches("\\d{4}")) {
             int y = Integer.parseInt(period);
             LocalDate s = LocalDate.of(y, 1, 1);
-            LocalDate e = s.plusYears(1);
+            // 마지막날 포함(end = 12/31)
+            LocalDate e = s.plusYears(1).minusDays(1);
             return new LocalDate[]{s, e};
         } else if (period.matches("\\d{4}-\\d{1,2}")) {
             String[] parts = period.split("-");
             int y = Integer.parseInt(parts[0]);
             int m = Integer.parseInt(parts[1]);
             LocalDate s = LocalDate.of(y, m, 1);
-            LocalDate e = s.plusMonths(1);
+            // 해당월의 마지막날 포함
+            LocalDate e = s.plusMonths(1).minusDays(1);
             return new LocalDate[]{s, e};
         } else {
             throw new IllegalArgumentException("unsupported period: " + period);
@@ -121,10 +143,13 @@ public class MetricQueryServiceImpl implements MetricQueryService {
 
     // --- helper: query actual metric from DB (simple switch) ---
     private BigDecimal queryActualFromDb(String metricKey, LocalDate start, LocalDate end, Map<String, Object> filter) {
+        log.debug("queryActualFromDb called: metricKey={}, start={}, end={}, filter={}", metricKey, start, end, filter);
         Date dStart = Date.valueOf(start);
-        Date dEnd = Date.valueOf(end);
+        // compute exclusive upper bound for SQL queries (end is inclusive in our API contract)
+        LocalDate endExclusive = end.plusDays(1);
+        Date dEnd = Date.valueOf(endExclusive);
         Timestamp tsStart = Timestamp.valueOf(start.atStartOfDay());
-        Timestamp tsEnd = Timestamp.valueOf(end.atStartOfDay());
+        Timestamp tsEnd = Timestamp.valueOf(endExclusive.atStartOfDay());
 
         String mk = metricKey == null ? "" : metricKey.toLowerCase(Locale.ROOT);
         // common filters extracted once to avoid repeated declarations in each case
@@ -570,4 +595,108 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             default -> widgetKey.toLowerCase(Locale.ROOT);
         };
     }
+
+    @Override
+    public MetricTimeSeries queryMetricTimeSeries(String metricKey, String period, Map<String, Object> filter) {
+        // 로그: 진입
+        log.debug("queryMetricTimeSeries called: metricKey={}, period={}, filter={}", metricKey, period, filter);
+
+        // 1) 기간 범위 계산: year 단위이면 월별 레이블 생성, month 단위이면 일별 레이블(간단화 위해 month->일 처리 생략 가능)
+        LocalDate start;
+        LocalDate end;
+        try {
+            LocalDate[] range = computeRangeFromPeriod(period);
+            start = range[0];
+            end = range[1];
+            log.debug("Computed date range for timeseries: period={}, start={}, end={}", period, start, end);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("invalid period for time series: " + period);
+        }
+
+        // 2) 내부 메트릭 키로 정규화
+        String internalKey = normalizeToInternalKey(metricKey);
+
+        // 3) 샘플 SQL: 연간(period=YYYY)인 경우 월별 집계
+        // DB가 MySQL이라고 가정하고 DATE_FORMAT/STR_TO_DATE 등을 사용합니다. (다른 DB인 경우 적절히 수정 필요)
+        // 주의: end는 computeRangeFromPeriod에서 inclusive 끝날로 반환되므로 SQL에서는 end+1 day(Exclusive) 로 사용
+        LocalDate endExclusive = end.plusDays(1);
+        Date dStart = Date.valueOf(start);
+        Date dEndExclusive = Date.valueOf(endExclusive);
+
+        // labels 생성 (연도 -> 1월..12월)
+        List<String> labels = null;
+        List<java.math.BigDecimal> values = null;
+
+        if (period != null && period.matches("\\d{4}")) {
+            int year = Integer.parseInt(period);
+            labels = new java.util.ArrayList<>() ;
+            for (int m = 1; m <= 12; m++) labels.add(m + "월");
+
+            // 샘플 쿼리: 월별 합계/평균을 구하는 예시 (metric 별로 집계 방식 달라짐)
+            // 예: CHECKIN/COUNT 계열은 월별 COUNT, ADR은 월별 평균
+            String sql = "";
+            switch(internalKey) {
+                case "checkin":
+                    // 월별 체크인 수
+                    sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS month, COUNT(*) as cnt "
+                        + "FROM checkinout WHERE record_type='CHECK_IN' AND recorded_at >= ? AND recorded_at < ? GROUP BY month ORDER BY month";
+                    break;
+                case "checkout":
+                    sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS month, COUNT(*) as cnt "
+                        + "FROM checkinout WHERE record_type='CHECK_OUT' AND recorded_at >= ? AND recorded_at < ? GROUP BY month ORDER BY month";
+                    break;
+                case "adr":
+                    // ADR의 경우 예시: 월별 총매출 / 점유박수
+                    sql = "SELECT DATE_FORMAT(checkin_date, '%m') AS month, ROUND(COALESCE(SUM(reservation_room_price),0) / NULLIF(COALESCE(SUM(GREATEST(DATEDIFF(LEAST(checkout_date, ?), GREATEST(checkin_date, ?)),0)),0),0),2) as val "
+                        + "FROM reservation WHERE checkin_date < ? AND checkout_date > ? GROUP BY month ORDER BY month";
+                    break;
+                case "occ_rate":
+                case "occupancy":
+                case "occupancy_rate":
+                    // 점유율은 월별 점유박수 / (총객실수 * daysInMonth)
+                    sql = "SELECT DATE_FORMAT(checkin_date, '%m') AS month, 0 as val FROM reservation WHERE checkin_date < ? AND checkout_date > ? GROUP BY month ORDER BY month"; // placeholder
+                    break;
+                default:
+                    // 기본: 빈 값 리턴
+                    labels = new java.util.ArrayList<>() ;
+                    values = new java.util.ArrayList<>() ;
+            }
+
+            if (sql != null && !sql.isEmpty()) {
+                try {
+                    // JDBC 결과를 List<Map>으로 조회하여 월별 값 맵을 구성합니다.
+                    java.util.Map<String, java.math.BigDecimal> monthMap = new java.util.HashMap<>();
+                    java.util.List<java.util.Map<String,Object>> rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+                    for (java.util.Map<String,Object> row : rows) {
+                        // SQL에서 첫 칼럼은 month, 두번째 칼럼은 val로 가정합니다.
+                        String month = String.valueOf(row.get("month"));
+                        Object valObj = row.get("val") != null ? row.get("val") : row.get("cnt");
+                        java.math.BigDecimal v = null;
+                        if (valObj instanceof java.math.BigDecimal) v = (java.math.BigDecimal) valObj;
+                        else if (valObj instanceof Number) v = java.math.BigDecimal.valueOf(((Number) valObj).doubleValue());
+                        monthMap.put(month, v);
+                    }
+                     values = new java.util.ArrayList<>();
+                     for (int m = 1; m <= 12; m++) {
+                         String mm = String.format("%02d", m);
+                         values.add(monthMap.getOrDefault(mm, null));
+                     }
+                 } catch (Exception ex) {
+                     log.warn("Failed to build monthly timeseries for metricKey={}: {}", metricKey, ex.getMessage());
+                 }
+             }
+         }
+
+         // MetricTimeSeries 객체 생성
+         MetricTimeSeries mts = new MetricTimeSeries();
+         mts.setLabels(labels);
+         if (values != null) {
+             MetricTimeSeries.Series s = new MetricTimeSeries.Series();
+             s.setName("actual");
+             s.setData(values);
+             mts.setSeries(java.util.Collections.singletonList(s));
+         }
+
+         return mts;
+     }
 }

@@ -77,5 +77,7 @@ logging:
     org.apache.coyote.http11: INFO
     org.apache.tomcat.util.http.parser: DEBUG
     org.apache.tomcat.util.net: INFO
+    # 레포트 로직 테스트용
+    com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service: DEBUG
 
 
