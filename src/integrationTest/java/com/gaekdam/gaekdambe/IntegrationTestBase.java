@@ -9,6 +9,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public abstract class IntegrationTestBase {
 
+
     @Container
     static final MariaDBContainer<?> maria =
             new MariaDBContainer<>("mariadb:11.4")
