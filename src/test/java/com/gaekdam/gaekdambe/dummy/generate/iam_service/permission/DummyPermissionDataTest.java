@@ -18,11 +18,11 @@ public class DummyPermissionDataTest {
  @Transactional
   public void generate()
   {
+    if (permissionRepository.count() > 0) {
+      return;
+    }
     for(long hotel=1;hotel<=10;hotel++) {
 
-        if (permissionRepository.count() > 0) {
-            return;
-        }
 
       String []permissionDummy=
       {   "경영-총지배인",
