@@ -1,12 +1,16 @@
 server:
-  port: 0
+  port: 8082
 
 spring:
+  task:
+    scheduling:
+      enabled: false
+
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME:gaekdam123}
+    password: ${DB_PASSWORD:gaekdam123}
 
   jpa:
     hibernate:
@@ -32,3 +36,8 @@ mybatis:
     map-underscore-to-camel-case: true
   mapper-locations: classpath:/mappers/**/*.xml
   type-aliases-package: com.gaekdam.gaekdambe.**
+
+logging:
+  level:
+    org.springframework.jdbc.datasource: DEBUG
+    com.zaxxer.hikari: DEBUG
