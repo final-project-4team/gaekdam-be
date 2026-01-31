@@ -83,7 +83,6 @@ public class IncidentQueryService {
                 employeeName
         );
     }
-
     private IncidentDetailResponse toDetailDto(IncidentDetailEncResponse r) {
         String employeeName = decryptEmployeeName(r.employeeCode(), r.employeeDekEnc(), r.employeeNameEnc());
 

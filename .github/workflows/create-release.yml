@@ -1,18 +1,21 @@
 name: Create Release
 
 on:
-  push:
+  pull_request:
     branches: ["develop"]
+    types: [closed]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: create-release-develop-${{ github.ref_name }}
+  group: create-release-develop-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   release:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
