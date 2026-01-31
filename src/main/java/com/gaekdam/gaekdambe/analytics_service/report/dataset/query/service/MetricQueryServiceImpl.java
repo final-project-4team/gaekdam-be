@@ -703,7 +703,7 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                             rows = jdbc.queryForList(sql, tsStart, tsEnd);
                         }
                          break;
-                    case "adr":
+                    case "avg_daily_rate":
                         {
                             // ADR: 각 버킷(월)별로 "점유박수 가중 평균"으로 계산하여 KPI의 ADR 계산과 일치시킵니다.
                             // numerator = SUM(reservation_room_price * overlap_nights)
@@ -734,6 +734,9 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                                     Integer.class,
                                     hotelId != null ? new Object[]{meExDate, msDate, meExDate, msDate, hotelId} : (hotelGroup != null ? new Object[]{meExDate, msDate, meExDate, msDate, hotelGroup} : new Object[]{meExDate, msDate, meExDate, msDate})
                                 );
+
+                                // debug: log numerator/denom for this monthly bucket
+                                log.debug("ADR timeseries (monthly) bucket={} numerator={} denom={} hotelId={} hotelGroup={}", ms, numerator, denomNights, hotelId, hotelGroup);
 
                                 if (numerator == null) numerator = java.math.BigDecimal.ZERO;
                                 if (denomNights == null || denomNights == 0) {
@@ -819,8 +822,8 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 // fill values for months 01..12
                 for (int m = 1; m <= 12; m++) {
                     String mm = String.format("%02d", m);
-                    // 만약 occ_rate 같은 경우 values가 이미 채워져 있다면 bucketMap 무시
-                    if ("occ_rate".equals(internalKey) && !values.isEmpty() && values.size() == 12) continue;
+                    // 만약 occ_rate 또는 ADR(점유박수 기반 계산) 같은 경우 values가 이미 채워져 있다면 bucketMap 무시
+                    if (("occ_rate".equals(internalKey) || "avg_daily_rate".equals(internalKey) || "adr".equals(internalKey)) && !values.isEmpty() && values.size() == 12) continue;
                     values.add(bucketMap.getOrDefault(mm, null));
                 }
 
@@ -865,7 +868,7 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                             rows = jdbc.queryForList(sql, tsStart, tsEnd);
                         }
                          break;
-                    case "adr":
+                    case "avg_daily_rate":
                         // 일별 ADR: 각 일자별로 "점유박수 가중 평균"으로 계산합니다(예약의 실제 점유박 기준).
                         for (int d = 1; d <= days; d++) {
                             LocalDate dayStart = start.withDayOfMonth(d);
@@ -897,6 +900,9 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                                     "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
                                     Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate);
                             }
+
+                            // debug: log numerator/denom for this daily bucket
+                            log.debug("ADR timeseries (daily) bucket={} numerator={} denom={} hotelId={} hotelGroup={}", dayStart, numerator, denomNights, hotelId, hotelGroup);
 
                             if (numerator == null) numerator = java.math.BigDecimal.ZERO;
                             if (denomNights == null || denomNights == 0) {
@@ -974,8 +980,8 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 // fill values for days 01..days
                 for (int d = 1; d <= days; d++) {
                     String dd = String.format("%02d", d);
-                    // occ_rate 일별은 이미 values가 채워졌으므로 bucketMap 무시
-                    if ("occ_rate".equals(internalKey) && values.size() == days) continue;
+                    // occ_rate 또는 ADR(점유박수 기반 계산) 일별은 이미 values가 채워졌으므로 bucketMap 무시
+                    if (("occ_rate".equals(internalKey) || "avg_daily_rate".equals(internalKey) || "adr".equals(internalKey)) && values.size() == days) continue;
                      values.add(bucketMap.getOrDefault(dd, null));
                 }
             }
