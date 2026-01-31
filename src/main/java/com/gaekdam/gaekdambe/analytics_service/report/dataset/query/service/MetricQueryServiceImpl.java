@@ -5,21 +5,26 @@ import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.entity.ReportKPITarget;
-import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.repository.ReportKpiTargetRepository; // 엔티티 경로 맞출 것
+import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.repository.ReportKpiTargetRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class MetricQueryServiceImpl implements MetricQueryService {
+    private static final Logger log = LoggerFactory.getLogger(MetricQueryServiceImpl.class);
 
     private final JdbcTemplate jdbc;
     private final ReportKpiTargetRepository targetRepo;
@@ -31,6 +36,9 @@ public class MetricQueryServiceImpl implements MetricQueryService {
 
     @Override
     public MetricResult queryMetric(String metricKey, String period, Map<String, Object> filter) {
+        // 로그: 진입점
+        log.debug("queryMetric called: metricKey={}, period={}, filter={}", metricKey, period, filter);
+
         // 1) 날짜 범위 계산 (period like "2025" or "2025-12")
         LocalDate start;
         LocalDate end;
@@ -38,19 +46,24 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             LocalDate[] range = computeRangeFromPeriod(period);
             start = range[0];
             end = range[1];
+            log.debug("Computed date range from period: period={}, start={}, end={}", period, start, end);
         } catch (IllegalArgumentException ex) {
             // invalid period -> default to current month
             LocalDate now = LocalDate.now();
             start = now.withDayOfMonth(1);
             end = start.plusMonths(1);
+            log.debug("Invalid period provided, defaulting to current month: start={}, end={}", start, end);
         }
 
         // Normalize metric key to the internal aggregation key (so aliases like CHECKIN_COUNT, CHECKIN both work)
         String kpiCode = normalizeToKpiCode(metricKey);         // target lookup
         String internalKey = normalizeToInternalKey(metricKey); // DB aggregation key
+        log.debug("Normalized keys: metricKey={}, kpiCode={}, internalKey={}", metricKey, kpiCode, internalKey);
 
         // 2) actual 집계 (use internalKey so switch-case matches)
+        log.debug("Querying actual value: internalKey={}, start={}, end={}, filters={}", internalKey, start, end, filter);
         BigDecimal actual = queryActualFromDb(internalKey, start, end, filter);
+        log.debug("Actual value retrieved: {} -> {}", internalKey, actual);
 
         // 3) target 조회
 
@@ -58,20 +71,25 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         Object hotelGroupFilter = filter != null ? filter.get("hotelGroupCode") : null;
         BigDecimal target = null;
         if (hotelGroupFilter != null) {
+            log.debug("Looking up target by hotelGroup: kpiCode={}, period={}, hotelGroup={}", kpiCode, period, hotelGroupFilter);
             try {
                 target = jdbc.queryForObject(
                     "SELECT target_value FROM reportkpitarget WHERE kpi_code = ? AND period_value = ? AND hotel_group_code = ? ORDER BY created_at DESC LIMIT 1",
                     BigDecimal.class, kpiCode, period, hotelGroupFilter);
+                log.debug("Target found by hotelGroup: {}", target);
             } catch (EmptyResultDataAccessException ex) {
                 target = null;
+                log.debug("No target found for hotelGroup={}, will fallback to repository lookup", hotelGroupFilter);
             }
         }
 
         if (target == null) {
+            log.debug("Falling back to repository lookup for target: kpiCode={}, period={}", kpiCode, period);
             target = targetRepo.findFirstByKpiCodeAndPeriodValue(kpiCode, period)
                     .map(ReportKPITarget::getTargetValue)
                     .orElseGet(() -> targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(kpiCode)
                             .map(ReportKPITarget::getTargetValue).orElse(BigDecimal.ZERO));
+            log.debug("Target resolved from repository or default: {}", target);
         }
 
         // 4) changePct & trend 계산
@@ -95,24 +113,29 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         r.setFormattedTarget(formattedTarget);
         r.setChangePct(changePct);
         r.setTrend(trend);
+
+        log.debug("MetricResult prepared: actual={}, target={}, changePct={}, trend={}", actual, target, changePct, trend);
         return r;
     }
 
     // --- helper: compute date range from period string ---
     private LocalDate[] computeRangeFromPeriod(String period) {
         if (period == null) throw new IllegalArgumentException("period null");
-        // "2025" -> year range, "2025-12" -> month range
+        // 사용자 요구: period=YYYY -> start=YYYY-01-01, end=YYYY-12-31 (포함)
+        //            period=YYYY-MM -> start=YYYY-MM-01, end=해당월의 마지막날 (포함)
         if (period.matches("\\d{4}")) {
             int y = Integer.parseInt(period);
             LocalDate s = LocalDate.of(y, 1, 1);
-            LocalDate e = s.plusYears(1);
+            // 마지막날 포함(end = 12/31)
+            LocalDate e = s.plusYears(1).minusDays(1);
             return new LocalDate[]{s, e};
         } else if (period.matches("\\d{4}-\\d{1,2}")) {
             String[] parts = period.split("-");
             int y = Integer.parseInt(parts[0]);
             int m = Integer.parseInt(parts[1]);
             LocalDate s = LocalDate.of(y, m, 1);
-            LocalDate e = s.plusMonths(1);
+            // 해당월의 마지막날 포함
+            LocalDate e = s.plusMonths(1).minusDays(1);
             return new LocalDate[]{s, e};
         } else {
             throw new IllegalArgumentException("unsupported period: " + period);
@@ -121,10 +144,13 @@ public class MetricQueryServiceImpl implements MetricQueryService {
 
     // --- helper: query actual metric from DB (simple switch) ---
     private BigDecimal queryActualFromDb(String metricKey, LocalDate start, LocalDate end, Map<String, Object> filter) {
+        log.debug("queryActualFromDb called: metricKey={}, start={}, end={}, filter={}", metricKey, start, end, filter);
         Date dStart = Date.valueOf(start);
-        Date dEnd = Date.valueOf(end);
+        // compute exclusive upper bound for SQL queries (end is inclusive in our API contract)
+        LocalDate endExclusive = end.plusDays(1);
+        Date dEnd = Date.valueOf(endExclusive);
         Timestamp tsStart = Timestamp.valueOf(start.atStartOfDay());
-        Timestamp tsEnd = Timestamp.valueOf(end.atStartOfDay());
+        Timestamp tsEnd = Timestamp.valueOf(endExclusive.atStartOfDay());
 
         String mk = metricKey == null ? "" : metricKey.toLowerCase(Locale.ROOT);
         // common filters extracted once to avoid repeated declarations in each case
@@ -163,32 +189,35 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             }
             // 3. 평균객실단가
             case "adr", "avg_daily_rate", "average_daily_rate" -> {
-                // Use a single-query with two subqueries (total_revenue, occupied_nights) then compute adr safely
-                // Respect hotelId (property_code) and hotelGroup (hotel_group_code) filters when provided
-                String sql;
-                BigDecimal adrResult;
+                // KPI ADR 계산과 동일한 방식으로: 기간 내 점유박수에 대한 총요금 / 점유박수
+                java.math.BigDecimal totalRevenue;
+                Integer occupiedNights;
                 if (hotelId != null) {
-                    sql = "SELECT CASE WHEN occupied_nights = 0 THEN 0 ELSE ROUND(total_revenue / occupied_nights, 2) END FROM ("
-                        + " SELECT (SELECT COALESCE(SUM(r.reservation_room_price),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?) AS total_revenue,"
-                        + " (SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?) AS occupied_nights"
-                        + " ) t";
-                    adrResult = jdbc.queryForObject(sql, BigDecimal.class, dEnd, dStart, hotelId, dEnd, dStart, dEnd, dStart, hotelId);
+                    totalRevenue = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?",
+                        java.math.BigDecimal.class, dEnd, dStart, dEnd, dStart, hotelId);
+                    occupiedNights = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?",
+                        Integer.class, dEnd, dStart, dEnd, dStart, hotelId);
                 } else if (hotelGroup != null) {
-                    sql = "SELECT CASE WHEN occupied_nights = 0 THEN 0 ELSE ROUND(total_revenue / occupied_nights, 2) END FROM ("
-                        + " SELECT (SELECT COALESCE(SUM(r.reservation_room_price),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?) AS total_revenue,"
-                        + " (SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?) AS occupied_nights"
-                        + " ) t";
-                    adrResult = jdbc.queryForObject(sql, BigDecimal.class, dEnd, dStart, hotelGroup, dEnd, dStart, dEnd, dStart, hotelGroup);
+                    totalRevenue = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                        java.math.BigDecimal.class, dEnd, dStart, dEnd, dStart, hotelGroup);
+                    occupiedNights = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                        Integer.class, dEnd, dStart, dEnd, dStart, hotelGroup);
                 } else {
-                    sql = "SELECT CASE WHEN occupied_nights = 0 THEN 0 ELSE ROUND(total_revenue / occupied_nights, 2) END FROM ("
-                        + " SELECT (SELECT COALESCE(SUM(reservation_room_price),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL) AS total_revenue,"
-                        + " (SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(checkout_date, ?), GREATEST(checkin_date, ?)),0)),0) FROM reservation WHERE checkin_date < ? AND checkout_date > ? AND canceled_at IS NULL) AS occupied_nights"
-                        + " ) t";
-                    adrResult = jdbc.queryForObject(sql, BigDecimal.class, dEnd, dStart, dEnd, dStart, dEnd, dStart);
+                    totalRevenue = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        java.math.BigDecimal.class, dEnd, dStart, dEnd, dStart);
+                    occupiedNights = jdbc.queryForObject(
+                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                        Integer.class, dEnd, dStart, dEnd, dStart);
                 }
 
-                if (adrResult == null) return BigDecimal.ZERO;
-                // ensure scale 2
+                if (totalRevenue == null) totalRevenue = java.math.BigDecimal.ZERO;
+                if (occupiedNights == null || occupiedNights == 0) return BigDecimal.ZERO;
+                java.math.BigDecimal adrResult = totalRevenue.divide(java.math.BigDecimal.valueOf(occupiedNights), 2, RoundingMode.HALF_UP);
                 return adrResult.setScale(2, RoundingMode.HALF_UP);
             }
             // 4. 객실점유율
@@ -569,5 +598,407 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO" -> "non_room_revenue";
             default -> widgetKey.toLowerCase(Locale.ROOT);
         };
+    }
+
+    @Override
+    public MetricTimeSeries queryMetricTimeSeries(String metricKey, String period, Map<String, Object> filter) {
+        // 로그: 진입
+        log.debug("queryMetricTimeSeries called: metricKey={}, period={}, filter={}", metricKey, period, filter);
+
+        // 1) 기간 범위 계산: 연간(월별 bucket) 또는 월간(일별 bucket)
+        LocalDate start;
+        LocalDate end;
+        boolean isYear = false;
+        boolean isMonth = false;
+        try {
+            if (period != null && period.matches("\\d{4}")) {
+                // 연간: YYYY
+                int y = Integer.parseInt(period);
+                start = LocalDate.of(y, 1, 1);
+                end = LocalDate.of(y, 12, 31);
+                isYear = true;
+            } else if (period != null && period.matches("\\d{4}-\\d{1,2}")) {
+                // 월간: YYYY-MM
+                YearMonth ym = YearMonth.parse(period);
+                start = ym.atDay(1);
+                end = ym.atEndOfMonth();
+                isMonth = true;
+            } else {
+                throw new IllegalArgumentException("unsupported period: " + period);
+            }
+            log.debug("Computed date range for timeseries: period={}, start={}, end={}", period, start, end);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("invalid period for time series: " + period);
+        }
+
+        // 2) 내부 메트릭 키로 정규화
+        String internalKey = normalizeToInternalKey(metricKey);
+
+        // 3) JDBC 사용을 위한 날짜 값 준비 (end는 inclusive였으므로 exclusive bound 계산)
+        LocalDate endExclusive = end.plusDays(1);
+        Date dStart = Date.valueOf(start);
+        Date dEndExclusive = Date.valueOf(endExclusive);
+        // recorded_at 비교용으로 Timestamp도 준비 (DB의 timestamp 칼럼 비교에 사용)
+        Timestamp tsStart = Timestamp.valueOf(start.atStartOfDay());
+        Timestamp tsEnd = Timestamp.valueOf(endExclusive.atStartOfDay());
+
+        // 결과용 라벨/값 리스트 초기화
+        List<String> labels = new java.util.ArrayList<>();
+        List<java.math.BigDecimal> values = new java.util.ArrayList<>();
+
+        // 연간: 12개월 레이블(1월..12월), 월간: 1일..N일 레이블
+        if (isYear) {
+            for (int m = 1; m <= 12; m++) labels.add(m + "월");
+        } else if (isMonth) {
+            YearMonth ym = YearMonth.from(start);
+            int days = ym.lengthOfMonth();
+            for (int d = 1; d <= days; d++) labels.add(d + "일");
+        }
+
+        // 공통 필터: hotelGroup / hotelId
+        Object hotelGroup = filter != null ? filter.get("hotelGroupCode") : null;
+        Object hotelId = filter != null ? filter.get("hotelId") : null; // property_code
+
+        // 4) DB에서 집계 조회: metric별로 적절한 그룹화 SQL 사용 (월별은 DATE_FORMAT(...,'%m'), 일별은 DATE_FORMAT(...,'%d'))
+        try {
+            String sql = null;
+            java.util.List<java.util.Map<String,Object>> rows = java.util.Collections.emptyList();
+
+            if (isYear) {
+                // 월별 집계
+                switch(internalKey) {
+                    case "checkin":
+                        // 체크인: recorded_at 기반 월별 COUNT, hotelId/hotelGroup 필터 적용
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code "
+                                + "WHERE c.record_type='CHECK_IN' AND c.recorded_at >= ? AND c.recorded_at < ? AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelId);
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code "
+                                + "WHERE c.record_type='CHECK_IN' AND c.recorded_at >= ? AND c.recorded_at < ? AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelGroup);
+                        } else {
+                            sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout WHERE record_type='CHECK_IN' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd);
+                        }
+                         break;
+                    case "checkout":
+                        // 체크아웃: recorded_at 기반 월별 COUNT, hotel 필터 적용
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code "
+                                + "WHERE c.record_type='CHECK_OUT' AND c.recorded_at >= ? AND c.recorded_at < ? AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelId);
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code "
+                                + "WHERE c.record_type='CHECK_OUT' AND c.recorded_at >= ? AND c.recorded_at < ? AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelGroup);
+                        } else {
+                            sql = "SELECT DATE_FORMAT(recorded_at, '%m') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout WHERE record_type='CHECK_OUT' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd);
+                        }
+                         break;
+                    case "avg_daily_rate":
+                        {
+                            // ADR: 각 버킷(월)별로 "점유박수 가중 평균"으로 계산하여 KPI의 ADR 계산과 일치시킵니다.
+                            // numerator = SUM(reservation_room_price * overlap_nights)
+                            // denom = SUM(overlap_nights)
+                            // bucket마다 occ_nights가 0이면 null을 넣어 차트에서 값 없음으로 표시합니다.
+                            int year = start.getYear();
+                            for (int m = 1; m <= 12; m++) {
+                                LocalDate ms = LocalDate.of(year, m, 1);
+                                LocalDate meExclusive = ms.plusMonths(1);
+                                Date msDate = Date.valueOf(ms);
+                                Date meExDate = Date.valueOf(meExclusive);
+
+                                java.math.BigDecimal numerator = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r" +
+                                    (hotelGroup != null ? " JOIN property p ON r.property_code = p.property_code" : "") +
+                                    " WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL" +
+                                    (hotelId != null ? " AND r.property_code = ?" : (hotelGroup != null ? " AND p.hotel_group_code = ?" : "")),
+                                    java.math.BigDecimal.class,
+                                    // params order must match placeholders above
+                                    hotelId != null ? new Object[]{meExDate, msDate, meExDate, msDate, hotelId} : (hotelGroup != null ? new Object[]{meExDate, msDate, meExDate, msDate, hotelGroup} : new Object[]{meExDate, msDate, meExDate, msDate})
+                                );
+
+                                Integer denomNights = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r" +
+                                    (hotelGroup != null ? " JOIN property p ON r.property_code = p.property_code" : "") +
+                                    " WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL" +
+                                    (hotelId != null ? " AND r.property_code = ?" : (hotelGroup != null ? " AND p.hotel_group_code = ?" : "")),
+                                    Integer.class,
+                                    hotelId != null ? new Object[]{meExDate, msDate, meExDate, msDate, hotelId} : (hotelGroup != null ? new Object[]{meExDate, msDate, meExDate, msDate, hotelGroup} : new Object[]{meExDate, msDate, meExDate, msDate})
+                                );
+
+                                // debug: log numerator/denom for this monthly bucket
+                                log.debug("ADR timeseries (monthly) bucket={} numerator={} denom={} hotelId={} hotelGroup={}", ms, numerator, denomNights, hotelId, hotelGroup);
+
+                                if (numerator == null) numerator = java.math.BigDecimal.ZERO;
+                                if (denomNights == null || denomNights == 0) {
+                                    values.add(null);
+                                } else {
+                                    java.math.BigDecimal adrValue = numerator.divide(java.math.BigDecimal.valueOf(denomNights), 2, RoundingMode.HALF_UP);
+                                    values.add(adrValue);
+                                }
+                            }
+                        }
+                        break;
+                    case "occ_rate":
+                        // 객실점유율: 월별로 (occupied_nights) / (total_rooms * days_in_month) * 100 계산
+                        // 구현: 각 월별로 개별 쿼리를 수행하여 정확한 점유율을 계산합니다.
+                        {
+                            int year = start.getYear();
+                            for (int m = 1; m <= 12; m++) {
+                                LocalDate ms = LocalDate.of(year, m, 1);
+                                LocalDate meExclusive = ms.plusMonths(1);
+                                Date msDate = Date.valueOf(ms);
+                                Date meExDate = Date.valueOf(meExclusive);
+
+                                // 예약에서 해당 월에 해당하는 점유박수(occupied nights) 계산
+                                Integer occupiedNights = 0;
+                                if (hotelId != null) {
+                                    occupiedNights = jdbc.queryForObject(
+                                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?",
+                                        Integer.class, meExDate, msDate, meExDate, msDate, hotelId);
+                                } else if (hotelGroup != null) {
+                                    occupiedNights = jdbc.queryForObject(
+                                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                                        Integer.class, meExDate, msDate, meExDate, msDate, hotelGroup);
+                                } else {
+                                    occupiedNights = jdbc.queryForObject(
+                                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                                        Integer.class, meExDate, msDate, meExDate, msDate);
+                                }
+
+                                // 해당 호텔의 총 객실수 조회(필터 적용)
+                                Integer totalRooms;
+                                if (hotelId != null) {
+                                    totalRooms = jdbc.queryForObject(
+                                        "SELECT COALESCE(COUNT(rm.room_code),0) FROM room rm JOIN room_type rt ON rm.room_type_code = rt.room_type_code WHERE rt.property_code = ? AND rm.room_status = 'ACTIVE'",
+                                        Integer.class, hotelId);
+                                } else if (hotelGroup != null) {
+                                    totalRooms = jdbc.queryForObject(
+                                        "SELECT COALESCE(COUNT(rm.room_code),0) FROM room rm JOIN room_type rt ON rm.room_type_code = rt.room_type_code JOIN property p ON rt.property_code = p.property_code WHERE p.hotel_group_code = ? AND rm.room_status = 'ACTIVE'",
+                                        Integer.class, hotelGroup);
+                                } else {
+                                    totalRooms = jdbc.queryForObject(
+                                        "SELECT COALESCE(COUNT(rm.room_code),0) FROM room rm WHERE rm.room_status = 'ACTIVE'",
+                                        Integer.class);
+                                }
+
+                                int daysInMonth = ms.lengthOfMonth();
+                                java.math.BigDecimal occValue = java.math.BigDecimal.ZERO;
+                                if (totalRooms != null && totalRooms > 0) {
+                                    java.math.BigDecimal availableRoomNights = java.math.BigDecimal.valueOf((long) totalRooms * daysInMonth);
+                                    occValue = java.math.BigDecimal.valueOf(occupiedNights != null ? occupiedNights : 0)
+                                            .divide(availableRoomNights, 4, RoundingMode.HALF_UP)
+                                            .multiply(java.math.BigDecimal.valueOf(100));
+                                }
+                                values.add(occValue);
+                            }
+                        }
+                        break;
+                    default:
+                        // unsupported metric: 빈 rows
+                        rows = java.util.Collections.emptyList();
+                }
+
+                // map bucket -> value
+                java.util.Map<String, java.math.BigDecimal> bucketMap = new java.util.HashMap<>();
+                for (java.util.Map<String,Object> row : rows) {
+                    String bucket = String.valueOf(row.get("bucket"));
+                    Object valObj = row.get("val");
+                    java.math.BigDecimal v = null;
+                    if (valObj instanceof java.math.BigDecimal) v = (java.math.BigDecimal) valObj;
+                    else if (valObj instanceof Number) v = java.math.BigDecimal.valueOf(((Number) valObj).doubleValue());
+                    bucketMap.put(bucket, v);
+                }
+
+                // fill values for months 01..12
+                for (int m = 1; m <= 12; m++) {
+                    String mm = String.format("%02d", m);
+                    // 만약 occ_rate 또는 ADR(점유박수 기반 계산) 같은 경우 values가 이미 채워져 있다면 bucketMap 무시
+                    if (("occ_rate".equals(internalKey) || "avg_daily_rate".equals(internalKey) || "adr".equals(internalKey)) && !values.isEmpty() && values.size() == 12) continue;
+                    values.add(bucketMap.getOrDefault(mm, null));
+                }
+
+            } else if (isMonth) {
+                // 일별 집계
+                YearMonth ym = YearMonth.from(start);
+                int days = ym.lengthOfMonth();
+
+                switch(internalKey) {
+                    case "checkin":
+                        // 일별 체크인: recorded_at 기반 COUNT, 필터 적용
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code "
+                                + "WHERE c.record_type='CHECK_IN' AND c.recorded_at >= ? AND c.recorded_at < ? AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelId);
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code "
+                                + "WHERE c.record_type='CHECK_IN' AND c.recorded_at >= ? AND c.recorded_at < ? AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelGroup);
+                        } else {
+                            sql = "SELECT DATE_FORMAT(recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout WHERE record_type='CHECK_IN' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd);
+                        }
+                         break;
+                    case "checkout":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code "
+                                + "WHERE c.record_type='CHECK_OUT' AND c.recorded_at >= ? AND c.recorded_at < ? AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelId);
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(c.recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout c JOIN stay s ON c.stay_code = s.stay_code JOIN reservation r ON s.reservation_code = r.reservation_code JOIN property p ON r.property_code = p.property_code "
+                                + "WHERE c.record_type='CHECK_OUT' AND c.recorded_at >= ? AND c.recorded_at < ? AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd, hotelGroup);
+                        } else {
+                            sql = "SELECT DATE_FORMAT(recorded_at, '%d') AS bucket, COUNT(*) AS val "
+                                + "FROM checkinout WHERE record_type='CHECK_OUT' AND recorded_at >= ? AND recorded_at < ? GROUP BY bucket ORDER BY bucket";
+                            rows = jdbc.queryForList(sql, tsStart, tsEnd);
+                        }
+                         break;
+                    case "avg_daily_rate":
+                        // 일별 ADR: 각 일자별로 "점유박수 가중 평균"으로 계산합니다(예약의 실제 점유박 기준).
+                        for (int d = 1; d <= days; d++) {
+                            LocalDate dayStart = start.withDayOfMonth(d);
+                            LocalDate dayEndExclusive = dayStart.plusDays(1);
+                            Date dayStartDate = Date.valueOf(dayStart);
+                            Date dayEndExDate = Date.valueOf(dayEndExclusive);
+
+                            java.math.BigDecimal numerator;
+                            Integer denomNights;
+                            if (hotelId != null) {
+                                numerator = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?",
+                                    java.math.BigDecimal.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate, hotelId);
+                                denomNights = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?",
+                                    Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate, hotelId);
+                            } else if (hotelGroup != null) {
+                                numerator = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                                    java.math.BigDecimal.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate, hotelGroup);
+                                denomNights = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                                    Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate, hotelGroup);
+                            } else {
+                                numerator = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(r.reservation_room_price * GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                                    java.math.BigDecimal.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate);
+                                denomNights = jdbc.queryForObject(
+                                    "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                                    Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate);
+                            }
+
+                            // debug: log numerator/denom for this daily bucket
+                            log.debug("ADR timeseries (daily) bucket={} numerator={} denom={} hotelId={} hotelGroup={}", dayStart, numerator, denomNights, hotelId, hotelGroup);
+
+                            if (numerator == null) numerator = java.math.BigDecimal.ZERO;
+                            if (denomNights == null || denomNights == 0) {
+                                values.add(null);
+                            } else {
+                                java.math.BigDecimal adrValue = numerator.divide(java.math.BigDecimal.valueOf(denomNights), 2, RoundingMode.HALF_UP);
+                                values.add(adrValue);
+                            }
+                        }
+                        break;
+                    case "occ_rate":
+                        // 일별 점유율: 각 일자별로 occupied_nights / (total_rooms) * 100 계산
+                        {
+                            for (int d = 1; d <= days; d++) {
+                                LocalDate dayStart = start.withDayOfMonth(d);
+                                LocalDate dayEndExclusive = dayStart.plusDays(1);
+                                Date dayStartDate = Date.valueOf(dayStart);
+                                Date dayEndExDate = Date.valueOf(dayEndExclusive);
+
+                                Integer occupiedNights;
+                                if (hotelId != null) {
+                                    occupiedNights = jdbc.queryForObject(
+                                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND r.property_code = ?",
+                                        Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate, hotelId);
+                                } else if (hotelGroup != null) {
+                                    occupiedNights = jdbc.queryForObject(
+                                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL AND p.hotel_group_code = ?",
+                                        Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate, hotelGroup);
+                                } else {
+                                    occupiedNights = jdbc.queryForObject(
+                                        "SELECT COALESCE(SUM(GREATEST(DATEDIFF(LEAST(r.checkout_date, ?), GREATEST(r.checkin_date, ?)),0)),0) FROM reservation r WHERE r.checkin_date < ? AND r.checkout_date > ? AND r.canceled_at IS NULL",
+                                        Integer.class, dayEndExDate, dayStartDate, dayEndExDate, dayStartDate);
+                                }
+
+                                Integer totalRooms;
+                                if (hotelId != null) {
+                                    totalRooms = jdbc.queryForObject(
+                                        "SELECT COALESCE(COUNT(rm.room_code),0) FROM room rm JOIN room_type rt ON rm.room_type_code = rt.room_type_code WHERE rt.property_code = ? AND rm.room_status = 'ACTIVE'",
+                                        Integer.class, hotelId);
+                                } else if (hotelGroup != null) {
+                                    totalRooms = jdbc.queryForObject(
+                                        "SELECT COALESCE(COUNT(rm.room_code),0) FROM room rm JOIN room_type rt ON rm.room_type_code = rt.room_type_code JOIN property p ON rt.property_code = p.property_code WHERE p.hotel_group_code = ? AND rm.room_status = 'ACTIVE'",
+                                        Integer.class, hotelGroup);
+                                } else {
+                                    totalRooms = jdbc.queryForObject(
+                                        "SELECT COALESCE(COUNT(rm.room_code),0) FROM room rm WHERE rm.room_status = 'ACTIVE'",
+                                        Integer.class);
+                                }
+
+                                java.math.BigDecimal occValue = java.math.BigDecimal.ZERO;
+                                if (totalRooms != null && totalRooms > 0) {
+                                    java.math.BigDecimal available = java.math.BigDecimal.valueOf(totalRooms);
+                                    occValue = java.math.BigDecimal.valueOf(occupiedNights != null ? occupiedNights : 0)
+                                        .divide(available, 4, RoundingMode.HALF_UP)
+                                        .multiply(java.math.BigDecimal.valueOf(100));
+                                }
+                                values.add(occValue);
+                            }
+                        }
+                        break;
+                    default:
+                        rows = java.util.Collections.emptyList();
+                }
+
+                java.util.Map<String, java.math.BigDecimal> bucketMap = new java.util.HashMap<>();
+                for (java.util.Map<String,Object> row : rows) {
+                    String bucket = String.valueOf(row.get("bucket"));
+                    Object valObj = row.get("val");
+                    java.math.BigDecimal v = null;
+                    if (valObj instanceof java.math.BigDecimal) v = (java.math.BigDecimal) valObj;
+                    else if (valObj instanceof Number) v = java.math.BigDecimal.valueOf(((Number) valObj).doubleValue());
+                    bucketMap.put(bucket, v);
+                }
+
+                // fill values for days 01..days
+                for (int d = 1; d <= days; d++) {
+                    String dd = String.format("%02d", d);
+                    // occ_rate 또는 ADR(점유박수 기반 계산) 일별은 이미 values가 채워졌으므로 bucketMap 무시
+                    if (("occ_rate".equals(internalKey) || "avg_daily_rate".equals(internalKey) || "adr".equals(internalKey)) && values.size() == days) continue;
+                     values.add(bucketMap.getOrDefault(dd, null));
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to build timeseries for metricKey={}: {}", metricKey, ex.getMessage());
+        }
+
+        // 5) MetricTimeSeries 생성 및 반환
+        MetricTimeSeries mts = new MetricTimeSeries();
+        mts.setLabels(labels);
+        if (values != null) {
+            MetricTimeSeries.Series s = new MetricTimeSeries.Series();
+            s.setName("actual");
+            s.setData(values);
+            mts.setSeries(java.util.Collections.singletonList(s));
+        }
+
+        return mts;
     }
 }
