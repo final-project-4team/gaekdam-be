@@ -24,7 +24,6 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:gaekdam0110}
 
   jpa:
     hibernate:
@@ -79,3 +78,16 @@ logging:
     org.apache.tomcat.util.net: INFO
 
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+  health:
+    redis:
+      enabled: true
+    db:
+      enabled: true

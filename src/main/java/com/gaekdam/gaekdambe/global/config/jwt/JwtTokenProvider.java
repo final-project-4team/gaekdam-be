@@ -22,6 +22,8 @@ public class JwtTokenProvider {
       @Value("${jwt.access-expiration}") long accessTokenValidity,
       @Value("${jwt.refresh-expiration}") long refreshTokenValidity
   ) {
+
+      System.out.println("JWT_SECRET RAW = [" + secretKeyBase64 + "]");
     byte[] decodedKey = Base64.getDecoder().decode(secretKeyBase64);
     this.key = Keys.hmacShaKeyFor(decodedKey);
 

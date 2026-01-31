@@ -29,6 +29,11 @@ public class JwtFilter extends OncePerRequestFilter {
   private final JwtTokenProvider jwtTokenProvider;
   private final CustomUserDetailsService customUserDetailsService;
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/actuator");
+    }
 
 
   @Override
