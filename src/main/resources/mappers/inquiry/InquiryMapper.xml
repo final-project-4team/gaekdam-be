@@ -94,7 +94,7 @@
             </if>
 
             <choose>
-                <!-- ✅ 고객명: customer.customer_name_hash 가 String 이므로 String 비교 -->
+                <!-- 고객명: customer.customer_name_hash 가 String 이므로 String 비교 -->
                 <when test="search.searchType == 'CUSTOMER_NAME'">
                     <choose>
                         <when test="search.customerNameHash != null and search.customerNameHash != ''">
@@ -104,7 +104,7 @@
                     </choose>
                 </when>
 
-                <!-- ✅ 담당자명: employee.employee_name_hash 는 VARBINARY(byte[]) -->
+                <!-- 담당자명: employee.employee_name_hash 는 VARBINARY(byte[]) -->
                 <when test="search.searchType == 'EMPLOYEE_NAME'">
                     <choose>
                         <when test="search.employeeNameHash != null and search.employeeNameHash.length > 0">
