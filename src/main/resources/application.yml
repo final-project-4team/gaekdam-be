@@ -5,8 +5,8 @@ spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}
-    username: ${DB_USERNAME:gaekdam}
-    password: ${DB_PASSWORD:gaekdam}
+    username: ${DB_USERNAME:gaekdam123}
+    password: ${DB_PASSWORD:gaekdam123}
 
   mail:
     host: smtp.gmail.com
@@ -24,7 +24,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PORT:gaekdam0110}
+      password: ${REDIS_PASSWORD:gaekdam0110}
 
   jpa:
     hibernate:
