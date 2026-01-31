@@ -4,13 +4,12 @@ on:
   pull_request:
     branches: ["develop"]
     types: [closed]
-  workflow_dispatch:
-#
+
 permissions:
   contents: write
 
 concurrency:
-  group: create-release-develop-${{ github.event.pull_request.number || github.run_id }}
+  group: create-release-develop-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
@@ -26,7 +25,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: develop-release-${{ github.run_number }}
-          name: develop-release-${{ github.run_number }}
+          tag_name: develop-release-${{ github.run_id }}
+          name: develop-release-${{ github.run_id }}
           prerelease: true
           generate_release_notes: true
+          target_commitish: develop
