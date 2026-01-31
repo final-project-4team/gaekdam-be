@@ -3,7 +3,7 @@ name: Create Release
 on:
   push:
     branches: ["develop"]
-    workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: write
