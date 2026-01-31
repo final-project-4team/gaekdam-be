@@ -41,3 +41,4 @@ logging:
   level:
     org.springframework.jdbc.datasource: DEBUG
     com.zaxxer.hikari: DEBUG
+
