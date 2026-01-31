@@ -6,12 +6,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,25 +37,25 @@ public class PermissionType {
   @Column(name="permission_type_action",nullable = false)
   private String permissionTypeAction;//행위 종류
 
-  @ManyToOne(fetch = FetchType.LAZY)
+/*  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name="hotel_group_code",nullable = false)
-  private HotelGroup hotelGroup;
+  private HotelGroup hotelGroup;*/
 
-  private PermissionType(PermissionTypeKey permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction, HotelGroup hotelGroup) {
+  private PermissionType(PermissionTypeKey permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction) {
     if (permissionTypeKey == null) throw new IllegalArgumentException("permissionTypeKey is required");
     if (permissionTypeName == null || permissionTypeName.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
     if (permissionTypeResource == null || permissionTypeResource.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
     if (permissionTypeAction == null || permissionTypeAction.isBlank()) throw new IllegalArgumentException("permissionTypeKey is required");
-    if (hotelGroup == null) throw new IllegalArgumentException("hotelGroupCode is required");
+ //   if (hotelGroup == null) throw new IllegalArgumentException("hotelGroupCode is required");
 
     this.permissionTypeKey = permissionTypeKey;
     this.permissionTypeName = permissionTypeName;
     this.permissionTypeResource = permissionTypeResource;
     this.permissionTypeAction = permissionTypeAction;
-    this.hotelGroup=hotelGroup;
+   // this.hotelGroup=hotelGroup;
   }
 
-  public static PermissionType createPermissionType(PermissionTypeKey permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction, HotelGroup hotelGroup) {
-    return new PermissionType(permissionTypeKey,permissionTypeName,permissionTypeResource,permissionTypeAction,hotelGroup);
+  public static PermissionType createPermissionType(PermissionTypeKey permissionTypeKey,String permissionTypeName,String permissionTypeResource,String permissionTypeAction) {
+    return new PermissionType(permissionTypeKey,permissionTypeName,permissionTypeResource,permissionTypeAction);
   }
 }

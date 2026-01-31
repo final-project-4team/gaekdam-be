@@ -36,7 +36,7 @@ public class Permission {
   @Column(name = "permission_status",nullable = false)
   private PermissionStatus permissionStatus;
 
-  @Column(name = "permission_name", nullable = false, unique = true)
+  @Column(name = "permission_name", nullable = false)
   private String permissionName;
 
   @ManyToOne(fetch = FetchType.LAZY)
