@@ -3,8 +3,3 @@ spring:
     scheduling:
       enabled: false
 
-  datasource:
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:mariadb:11.8.3:///gaekdam_project
-    username: gaekdam
-    password: gaekdam

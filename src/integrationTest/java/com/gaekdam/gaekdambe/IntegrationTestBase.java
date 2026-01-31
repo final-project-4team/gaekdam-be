@@ -21,7 +21,6 @@ public abstract class IntegrationTestBase {
         r.add("spring.datasource.url", maria::getJdbcUrl);
         r.add("spring.datasource.username", maria::getUsername);
         r.add("spring.datasource.password", maria::getPassword);
-
         r.add("spring.datasource.driver-class-name", () -> "org.mariadb.jdbc.Driver");
     }
 }
