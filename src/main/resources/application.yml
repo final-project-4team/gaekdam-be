@@ -25,6 +25,9 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
 
+  flyway:
+    enabled: false
+
   jpa:
     open-in-view: false
     properties:
@@ -69,3 +72,6 @@ management:
   health:
     redis.enabled: true
     db.enabled: true
+
+
+
