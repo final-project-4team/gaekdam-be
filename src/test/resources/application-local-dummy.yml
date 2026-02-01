@@ -12,6 +12,24 @@ spring:
     username: gaekdam123
     password: gaekdam123
 
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: insupmail09@gmail.com
+    password: tlgy qhll hhsw zzwi
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
+      mail.smtp:
+        auth: true
+        timeout: 5000
+        starttls.enable: true
+
   data:
     redis:
       host: localhost
@@ -38,15 +56,15 @@ mybatis:
 
 
 jwt:
-  secret-b64: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+  secret-b64: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30t
   access-expiration: 900000
   refresh-expiration: 259200000
 
 crypto:
   hmac:
-    pepper-b64: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    pepper-b64: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=
   local-kek:
-    key-b64: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    key-b64: P32UXwOxycfN2L772hcLLC+jPcaaOzAzWiL2jdjPm+o=
 
 management:
   health:
