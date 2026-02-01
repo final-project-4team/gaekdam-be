@@ -77,6 +77,8 @@ dependencies {
     testImplementation platform("org.testcontainers:testcontainers-bom:1.21.4")
     testImplementation "org.testcontainers:junit-jupiter"
     testImplementation "org.testcontainers:mariadb"
+    testImplementation "org.testcontainers:testcontainers"
+
 
     mockitoAgent "net.bytebuddy:byte-buddy-agent:1.17.8"
 }
@@ -131,11 +133,11 @@ tasks.named('jacocoTestReport') {
     }
 }
 
-// integrationTest sourceSet + task
 sourceSets {
     integrationTest {
         java.srcDir file('src/integrationTest/java')
         resources.srcDir file('src/integrationTest/resources')
+        resources.srcDir file('src/test/resources')
         compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
     }
@@ -152,6 +154,7 @@ tasks.register('integrationTest', Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnitPlatform()
+    include '**/*IT.class'
     shouldRunAfter tasks.named('test')
     jvmArgs "-javaagent:${configurations.mockitoAgent.singleFile}"
 }
