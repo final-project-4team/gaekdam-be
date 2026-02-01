@@ -41,4 +41,7 @@ jobs:
             -DCRYPTO_LOCAL_KEK_B64=${CRYPTO_LOCAL_KEK_B64} \
             -Dspring.data.redis.host=localhost \
             -Dspring.data.redis.port=6379 \
-            -Dmanagement.health.redis.enabled=false
+            -Dmanagement.health.redis.enabled=false \
+            -DDB_HOST=localhost \
+            -DDB_PORT=3306 \
+            -DDB_NAME=dummy
