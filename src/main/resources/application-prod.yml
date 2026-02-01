@@ -7,3 +7,12 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+
+jwt:
+  secret-b64: ${JWT_SECRET_B64}
+
+crypto:
+  hmac:
+    pepper-b64: ${CRYPTO_HMAC_PEPPER_B64}
+  local-kek:
+    key-b64: ${CRYPTO_LOCAL_KEK_B64}
