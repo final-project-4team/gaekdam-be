@@ -38,3 +38,4 @@ public abstract class IntegrationTestBase {
         r.add("spring.data.redis.password", () -> "testpass");
     }
 }
+
