@@ -24,6 +24,12 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     needs: unit-test
+
+    env:
+      JWT_SECRET_B64: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=
+      CRYPTO_HMAC_PEPPER_B64: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=
+      CRYPTO_LOCAL_KEK_B64: P32UXwOxycfN2L772hcLLC+jPcaaOzAzWiL2jdjPm+o=
+
     steps:
       - uses: actions/checkout@v4
 
