@@ -36,9 +36,9 @@ jobs:
 
       - run: |
           ./gradlew integrationTest --no-daemon \
-            -DJWT_SECRET_B64=${JWT_SECRET_B64} \
-            -DCRYPTO_HMAC_PEPPER_B64=${CRYPTO_HMAC_PEPPER_B64} \
-            -DCRYPTO_LOCAL_KEK_B64=${CRYPTO_LOCAL_KEK_B64} \
+            -Djwt.secret-b64=${JWT_SECRET_B64} \
+            -Dcrypto.hmac.pepper-b64=${CRYPTO_HMAC_PEPPER_B64} \
+            -Dcrypto.local-kek.key-b64=${CRYPTO_LOCAL_KEK_B64} \
             -Dspring.data.redis.host=localhost \
             -Dspring.data.redis.port=6379 \
             -Dmanagement.health.redis.enabled=false \
