@@ -17,19 +17,21 @@ public class JwtTokenProvider {
   private final long accessTokenValidity;
   private final long refreshTokenValidity;
 
-  public JwtTokenProvider(
-      @Value("${jwt.secret}") String secretKeyBase64,
-      @Value("${jwt.access-expiration}") long accessTokenValidity,
-      @Value("${jwt.refresh-expiration}") long refreshTokenValidity
-  ) {
+    public JwtTokenProvider(
+            @Value("${jwt.secret-b64}") String secretKeyBase64,
+            @Value("${jwt.access-expiration}") long accessTokenValidity,
+            @Value("${jwt.refresh-expiration}") long refreshTokenValidity
+    ) {
 
-      System.out.println("JWT_SECRET RAW = [" + secretKeyBase64 + "]");
-    byte[] decodedKey = Base64.getDecoder().decode(secretKeyBase64);
-    this.key = Keys.hmacShaKeyFor(decodedKey);
+        // 디버그용 (CI에서 값 들어오는지 확인)
+        System.out.println("JWT_SECRET_B64 RAW = [" + secretKeyBase64 + "]");
 
-    this.accessTokenValidity = accessTokenValidity;
-    this.refreshTokenValidity = refreshTokenValidity;
-  }
+        byte[] decodedKey = Base64.getDecoder().decode(secretKeyBase64);
+        this.key = Keys.hmacShaKeyFor(decodedKey);
+
+        this.accessTokenValidity = accessTokenValidity;
+        this.refreshTokenValidity = refreshTokenValidity;
+    }
 
   // Access Token 생성
   public String createAccessToken(String userId, String role,Long hotelGroupCode,Long propertyCode) {

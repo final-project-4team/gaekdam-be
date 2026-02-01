@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: ${SERVER_PORT:8082}
 
 spring:
   datasource:
@@ -14,12 +14,11 @@ spring:
     username:
     password:
     properties:
-      mail:
-        smtp:
-          auth: true
-          timeout: 5000
-          starttls:
-            enable: true
+      mail.smtp:
+        auth: true
+        timeout: 5000
+        starttls.enable: true
+
   data:
     redis:
       host: ${REDIS_HOST}
@@ -27,34 +26,20 @@ spring:
       password: ${REDIS_PASSWORD:}
 
   jpa:
-    hibernate:
-      ddl-auto: update
     open-in-view: false
     properties:
       hibernate:
-        # saveAll()을 실제 JDBC batch insert로 묶어주는 옵션
         jdbc:
           time_zone: Asia/Seoul
           batch_size: 500
-        # 같은 테이블 insert/update를 묶어 배치 효율 증가
         order_inserts: true
         order_updates: true
-
-        # 더미 생성시 SQL 로그가 (속도 위해 OFF )
         format_sql: false
         show_sql: false
-
-        dialect: org.hibernate.dialect.MariaDBDialect
-
-  flyway:
-    enabled: false
 
   sql:
     init:
       mode: never
-
-
-
 
 mybatis:
   configuration:
@@ -62,27 +47,16 @@ mybatis:
   mapper-locations: classpath:/mappers/**/*.xml
   type-aliases-package: com.gaekdam.gaekdambe.**
 
-
 jwt:
-  secret: ${JWT_SECRET}
-  access-expiration: 900000      # 15?
-  #  access-expiration: 10000      # 10초
-  refresh-expiration: 259200000   # 3일
+  secret-b64: ${JWT_SECRET_B64}
+  access-expiration: 900000
+  refresh-expiration: 259200000
 
 crypto:
   hmac:
     pepper-b64: ${CRYPTO_HMAC_PEPPER_B64}
   local-kek:
     key-b64: ${CRYPTO_LOCAL_KEK_B64}
-
-logging:
-  level:
-    org.apache.coyote.http11: INFO
-    org.apache.tomcat.util.http.parser: DEBUG
-    org.apache.tomcat.util.net: INFO
-    # 레포트 로직 테스트용
-    com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service: DEBUG
-
 
 management:
   endpoints:
@@ -93,7 +67,5 @@ management:
     health:
       show-details: always
   health:
-    redis:
-      enabled: true
-    db:
-      enabled: true
+    redis.enabled: true
+    db.enabled: true

@@ -12,13 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: gradle
-
       - run: ./gradlew test --no-daemon
 
   integration-test:
@@ -26,17 +24,16 @@ jobs:
     needs: unit-test
 
     env:
-      JWT_SECRET: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=
+      JWT_SECRET_B64: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=
       CRYPTO_HMAC_PEPPER_B64: og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=
       CRYPTO_LOCAL_KEK_B64: P32UXwOxycfN2L772hcLLC+jPcaaOzAzWiL2jdjPm+o=
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: gradle
-
+      - run: env | sort
       - run: ./gradlew integrationTest --no-daemon
