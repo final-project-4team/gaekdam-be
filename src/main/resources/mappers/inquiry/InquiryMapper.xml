@@ -141,9 +141,23 @@
                         AND (
                         i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
                         OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
+
+                        <if test="search.customerNameHash != null and search.customerNameHash != ''">
+                            OR cu.customer_name_hash = #{search.customerNameHash}
+                        </if>
+
+                        <if test="search.employeeNameHash != null and search.employeeNameHash.length > 0">
+                            OR e.employee_name_hash =
+                            #{search.employeeNameHash, jdbcType=VARBINARY, typeHandler=org.apache.ibatis.type.ByteArrayTypeHandler}
+                        </if>
+
+                        <if test="search.employeeLoginId != null and search.employeeLoginId != ''">
+                            OR e.login_id = #{search.employeeLoginId}
+                        </if>
                         )
                     </if>
                 </otherwise>
+
             </choose>
 
             <if test="search.fromDate != null">

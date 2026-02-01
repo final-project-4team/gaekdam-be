@@ -8,6 +8,7 @@ import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.I
 import com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryListRow;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
 import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
+import com.gaekdam.gaekdambe.global.crypto.Normalizer;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
@@ -20,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Service
@@ -57,37 +57,43 @@ public class InquiryQueryService {
         String type = trim(search.getSearchType());
         String keyword = trim(search.getKeyword());
 
-        // keyword 없으면 파생필드 전부 비움
         if (keyword == null) {
             clearSearchDerivedFields(search);
             return;
         }
 
-        // 기본은 ALL
         if (type == null) type = "ALL";
         search.setSearchType(type);
 
-        // 먼저 파생필드 클리어
         clearSearchDerivedFields(search);
 
         switch (type) {
             case "CUSTOMER_NAME" -> {
-                // customer.customer_name_hash 가 String 컬럼이라 String으로 만들어서 세팅해야 함
                 search.setCustomerNameHash(toCustomerNameHashString(keyword));
             }
             case "EMPLOYEE_NAME" -> {
-                // employee.employee_name_hash 가 VARBINARY(byte[]) 라면 byte[] 그대로
-                search.setEmployeeNameHash(searchHashService.nameHash(keyword));
+                String normalized = Normalizer.name(keyword);
+                search.setEmployeeNameHash(searchHashService.nameHash(normalized));
             }
             case "EMPLOYEE_ID" -> {
                 search.setEmployeeLoginId(keyword);
             }
-            case "TITLE", "ALL" -> {
-                // keyword는 mapper에서 LIKE로 사용
+            case "TITLE" -> {
+                // keyword LIKE만 사용
+            }
+            case "ALL" -> {
+                // 전체검색: 제목/내용 LIKE + 고객명 hash 일치 + 담당자명 hash 일치 + 담당자ID 일치
+                search.setCustomerNameHash(toCustomerNameHashString(keyword));
+
+                String normalized = Normalizer.name(keyword);
+                search.setEmployeeNameHash(searchHashService.nameHash(normalized));
+
+                search.setEmployeeLoginId(keyword);
             }
             default -> search.setSearchType("ALL");
         }
     }
+
 
     private void clearSearchDerivedFields(InquiryListSearchRequest search) {
         search.setCustomerNameHash(null);
@@ -101,13 +107,9 @@ public class InquiryQueryService {
         return t.isEmpty() ? null : t;
     }
 
-    /**
-     * customer_name_hash 저장 포맷과 반드시 동일해야 함.
-     * 지금은 "HMAC 결과(byte[])"를 HEX 문자열로 변환하는 방식으로 작성.
-     * (customer_name_hash가 base64면 여기만 base64로 바꾸면 됨)
-     */
     private String toCustomerNameHashString(String plainName) {
-        byte[] h = searchHashService.nameHash(plainName);
+        String normalized = Normalizer.name(plainName);
+        byte[] h = searchHashService.nameHash(normalized);
         return bytesToHex(h);
     }
 
@@ -118,7 +120,7 @@ public class InquiryQueryService {
         return sb.toString();
     }
 
-    @LogPersonalInfo(type = PermissionTypeKey.CUSTOMER_READ, purpose = "고객 정보 조회")
+    @LogPersonalInfo(type = PermissionTypeKey.INQUIRY_READ, purpose = "문의 상세 조회")
     public InquiryDetailResponse getInquiryDetail(Long hotelGroupCode, Long inquiryCode) {
         InquiryDetailRow detailRow = inquiryMapper.findInquiryDetail(hotelGroupCode, inquiryCode);
         if (detailRow == null) {
@@ -161,13 +163,12 @@ public class InquiryQueryService {
         String customerName = decryptCustomerName(r.customerCode(), r.dekEnc(), r.customerNameEnc());
         customerName = MaskingUtils.maskName(customerName);
 
-        // 담당자 미지정 처리
         String employeeName;
         String employeeLoginId = r.employeeLoginId();
 
         if (r.employeeCode() == null) {
             employeeName = UNASSIGNED;
-            employeeLoginId = null; // 원하면 "-" 로 바꿔도 됨
+            employeeLoginId = null;
         } else {
             employeeName = decryptEmployeeName(r.employeeCode(), r.employeeDekEnc(), r.employeeNameEnc());
             employeeName = MaskingUtils.maskName(employeeName);
