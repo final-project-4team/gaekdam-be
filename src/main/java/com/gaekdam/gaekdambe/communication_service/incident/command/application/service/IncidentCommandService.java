@@ -45,6 +45,7 @@ public class IncidentCommandService {
         return incidentRepository.save(incident).getIncidentCode();
     }
 
+    @Transactional
     public void closeIncident(Long incidentCode) {
 
         Incident incident = incidentRepository.findById(incidentCode)
