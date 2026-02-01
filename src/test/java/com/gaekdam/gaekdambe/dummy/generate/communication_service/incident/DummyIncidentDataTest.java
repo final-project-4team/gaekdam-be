@@ -42,14 +42,11 @@ public class DummyIncidentDataTest {
 
         Random random = new Random();
 
-        // inquiry_code는 연속 ID가 아닐 수 있으니 DB에서 실제 id 목록을 가져와서 사용
         List<Long> inquiryIds = loadIds("select inquiry_code from inquiry");
 
-        // employee_code도 1L 고정 금지: 실제 직원 id에서 랜덤 선택
         List<Long> employeeIds = loadIds("select employee_code from employee");
         if (employeeIds.isEmpty() && employeeRepository.count() == 0) return;
 
-        // property_code도 실제 목록에서 랜덤 선택 (없으면 1L fallback)
         List<Long> propertyIds = loadIds("select property_code from property");
         if (propertyIds.isEmpty()) propertyIds = List.of(1L);
 
@@ -86,8 +83,15 @@ public class DummyIncidentDataTest {
                     inquiryRef
             );
 
-            // create()가 now 찍는 값 덮어서 기간 분포 맞춤
+            // createdAt/updatedAt 기간 분포 맞춤
             setCreatedAt(incident, occurredAt);
+
+            // 50% 종결 상태 만들기
+            if (random.nextInt(100) < 50) {
+                incident.close(); // incidentStatus=CLOSED + updatedAt=now 찍힘
+            }
+
+            // close()가 updatedAt=now 찍은 값 덮어서 기간 분포 맞춤
             setUpdatedAt(incident, occurredAt.plusHours(random.nextInt(72)));
 
             incidentBuffer.add(incident);
