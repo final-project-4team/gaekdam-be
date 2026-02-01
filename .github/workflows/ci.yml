@@ -4,9 +4,6 @@ on:
   pull_request:
     branches: ["develop", "main"]
 
-permissions:
-  contents: read
-
 jobs:
   unit-test:
     runs-on: ubuntu-latest
@@ -35,5 +32,10 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
-      - run: env | sort
-      - run: ./gradlew integrationTest --no-daemon
+
+
+      - run: |
+          ./gradlew integrationTest --no-daemon \
+            -DJWT_SECRET_B64=${JWT_SECRET_B64} \
+            -DCRYPTO_HMAC_PEPPER_B64=${CRYPTO_HMAC_PEPPER_B64} \
+            -DCRYPTO_LOCAL_KEK_B64=${CRYPTO_LOCAL_KEK_B64}
