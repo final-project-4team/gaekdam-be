@@ -1,12 +1,9 @@
-server:
-  port: ${SERVER_PORT:8082}
-
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}
-    username: ${DB_USERNAME:gaekdam123}
-    password: ${DB_PASSWORD:gaekdam123}
+    url: jdbc:mariadb://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   mail:
     host: smtp.gmail.com
@@ -20,10 +17,19 @@ spring:
           timeout: 5000
           starttls:
             enable: true
+      mail.smtp:
+        auth: true
+        timeout: 5000
+        starttls.enable: true
+
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+
+  flyway:
+    enabled: false
 
   jpa:
     hibernate:
@@ -60,16 +66,15 @@ mybatis:
 
 
 jwt:
-  secret: ${JWT_SECRET:og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30t}
-  access-expiration: 900000      # 15?
-  #  access-expiration: 10000      # 10초
-  refresh-expiration: 259200000   # 3일
+  secret-b64: ${JWT_SECRET_B64}
+  access-expiration: 900000
+  refresh-expiration: 259200000
 
 crypto:
   hmac:
-    pepper-b64: ${CRYPTO_HMAC_PEPPER_B64:og9OBhk6xH4Quwa+mWk37sISpvQ2C0ONg5l6jJRCf30=}
+    pepper-b64: ${CRYPTO_HMAC_PEPPER_B64}
   local-kek:
-    key-b64: ${CRYPTO_LOCAL_KEK_B64:P32UXwOxycfN2L772hcLLC+jPcaaOzAzWiL2jdjPm+o=}
+    key-b64: ${CRYPTO_LOCAL_KEK_B64}
 
 logging:
   level:
@@ -82,14 +87,8 @@ logging:
 
 management:
   endpoints:
-    web:
-      exposure:
-        include: health
-  endpoint:
     health:
       show-details: always
   health:
-    redis:
-      enabled: true
-    db:
-      enabled: true
+    redis.enabled: true
+    db.enabled: true
