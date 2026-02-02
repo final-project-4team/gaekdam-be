@@ -90,8 +90,7 @@ public class SecurityConfig {
         "http://localhost:*",
         "http://127.0.0.1:*",
         "http://localhost:5173",
-        "http://jimwhere.local",
-        "https://jimwhere.local"
+        "https://gaekdam.cloud"
     ));
     c.setAllowedMethods(java.util.List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
     c.setAllowedHeaders(java.util.List.of("Authorization","Content-Type","X-Requested-With","Origin"));
