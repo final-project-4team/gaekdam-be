@@ -29,6 +29,7 @@ public class EmployeeCommandController {
   @PostMapping("/add")
   @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
   public ResponseEntity<ApiResponse<String>> registerEmployee(
+      @Valid
       @RequestBody EmployeeSecureRegistrationRequest request,
       @AuthenticationPrincipal CustomUser customUser
       ) {
