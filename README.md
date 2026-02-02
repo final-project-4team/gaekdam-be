@@ -128,18 +128,18 @@
   <br>
 
 - ### 단위테스트 결과서
-<details> <summary>단위테스트 결과서</summary>
-[바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1492834519#gid=1492834519
-<br>
+  <details> <summary>단위테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1492834519#gid=1492834519
+  <br>
 
 - ### UI/UX 단위 테스트 결과서
-<details> <summary>UI/UX 단위 테스트 결과서</summary>
-[바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1079372133#gid=1079372133
-<br>
+  <details> <summary>UI/UX 단위 테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1079372133#gid=1079372133
+  <br>
 
 - ### 통합 테스트 결과서
-<details> <summary>통합 테스트 결과서</summary>
-[바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
-<br>
+  <details> <summary>통합 테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
+  <br>
 
 
