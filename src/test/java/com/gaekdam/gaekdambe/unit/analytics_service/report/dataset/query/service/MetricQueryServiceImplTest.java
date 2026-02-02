@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Optional;
 import java.util.Map;
 
@@ -53,10 +54,10 @@ class MetricQueryServiceImplTest {
     @Test
     void queryMetric_checkin_callsJdbcAndReturnsBigDecimal() {
         // given
-        // match two timestamp args used by the service implementation
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), any(), any())).thenReturn(5);
         when(targetRepo.findFirstByKpiCodeAndPeriodValue(anyString(), anyString())).thenReturn(Optional.empty());
         when(targetRepo.findFirstByKpiCodeOrderByCreatedAtDesc(anyString())).thenReturn(Optional.empty());
+        // stub the JdbcTemplate overload that accepts two Timestamp params (used by the service)
+        when(jdbc.queryForObject(anyString(), eq(Integer.class), org.mockito.ArgumentMatchers.any(java.sql.Timestamp.class), org.mockito.ArgumentMatchers.any(java.sql.Timestamp.class))).thenReturn(5);
 
         // when
         com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service.MetricResult r = service.queryMetric("checkin", "2025-01", Map.of());
@@ -142,18 +143,24 @@ class MetricQueryServiceImplTest {
 
     @Test
     void queryMetric_membershipRate_nonNull() {
-        when(jdbc.queryForObject(anyString(), eq(BigDecimal.class), any(), any())).thenReturn(BigDecimal.valueOf(12));
+        // JDBC returns total then member -> membership = member/total*100
+        when(jdbc.queryForObject(anyString(), eq(BigDecimal.class), any(), any())).thenReturn(BigDecimal.valueOf(100), BigDecimal.valueOf(12));
+        when(jdbc.queryForObject(anyString(), eq(BigDecimal.class), any(), any(), any())).thenReturn(BigDecimal.valueOf(100), BigDecimal.valueOf(12));
+
         com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service.MetricResult r = service.queryMetric("membership_rate", "2025", Map.of());
         assertThat(r).isNotNull();
-        assertThat(r.getActual()).isEqualByComparingTo(BigDecimal.valueOf(12));
+        assertThat(r.getActual()).isEqualByComparingTo(BigDecimal.valueOf(12).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
     }
 
     @Test
     void queryMetric_foreignRate_nonNull() {
-        when(jdbc.queryForObject(anyString(), eq(BigDecimal.class), any(), any())).thenReturn(BigDecimal.valueOf(3));
+        // JDBC returns foreignCount then totalCount -> foreign_rate = foreign/total*100
+        when(jdbc.queryForObject(anyString(), eq(BigDecimal.class), any(), any())).thenReturn(BigDecimal.valueOf(3), BigDecimal.valueOf(100));
+        when(jdbc.queryForObject(anyString(), eq(BigDecimal.class), any(), any(), any())).thenReturn(BigDecimal.valueOf(3), BigDecimal.valueOf(100));
+
         com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service.MetricResult r = service.queryMetric("foreign_rate", "2025", Map.of());
         assertThat(r).isNotNull();
-        assertThat(r.getActual()).isEqualByComparingTo(BigDecimal.valueOf(3));
+        assertThat(r.getActual()).isEqualByComparingTo(BigDecimal.valueOf(3).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)));
     }
 
     @Test
