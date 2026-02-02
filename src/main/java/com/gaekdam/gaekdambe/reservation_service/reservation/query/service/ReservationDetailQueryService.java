@@ -21,6 +21,10 @@ public class ReservationDetailQueryService {
 
                 CustomerCryptoRow row = mapper.findCustomerCrypto(reservationCode);
 
+                if (row == null) {
+                        throw new IllegalArgumentException("Customer crypto row not found for reservationCode: " + reservationCode);
+                }
+
                 String decryptedName = decryptionService.decrypt(
                                 row.getCustomerCode(),
                                 row.getDekEnc(),

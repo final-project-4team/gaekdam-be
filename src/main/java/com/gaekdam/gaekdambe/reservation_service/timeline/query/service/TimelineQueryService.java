@@ -9,6 +9,7 @@ import com.gaekdam.gaekdambe.reservation_service.timeline.query.mapper.TimelineM
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -58,15 +59,18 @@ public class TimelineQueryService {
             int totalFacilityUsage,
             List<String> facilities
     ) {
+        String safeCustomerType = customerType == null ? "" : customerType;
+        List<String> safeFacilities = facilities == null ? new ArrayList<>() : facilities;
+
         if (totalFacilityUsage == 0) {
-            return customerType + "으로, 투숙 기간 동안 부대시설 이용은 없었습니다.";
+            return safeCustomerType + "으로, 투숙 기간 동안 부대시설 이용은 없었습니다.";
         }
 
-        return customerType +
+        return safeCustomerType +
                 "으로, 투숙 기간 동안 총 " +
                 totalFacilityUsage +
                 "회의 부대시설(" +
-                String.join(", ", facilities) +
+                String.join(", ", safeFacilities) +
                 ")을 이용했습니다.";
     }
 }
