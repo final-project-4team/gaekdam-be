@@ -19,7 +19,7 @@ public class DecryptionService {
 
     // DEK 캐시: employeeCode → 복호화된 평문 DEK
     private final Cache<Long, byte[]> dekCache = Caffeine.newBuilder()
-            .maximumSize(1000)
+            .maximumSize(500_000)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .recordStats()
             .build();
