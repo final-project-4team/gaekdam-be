@@ -44,6 +44,11 @@ public class EmployeeQueryService {
   @AuditLog(details = "", type = PermissionTypeKey.EMPLOYEE_LIST)
   public PageResponse<EmployeeListResponse> searchEmployees(Long hotelGroupCode,
       EmployeeQuerySearchRequest request, PageRequest page, SortRequest sort) {
+
+    if (page.getSize() >50) {
+      page.setSize(50);
+    }
+
     byte[] nameHash = (request.name() != null) ? searchHashService.nameHash(request.name()) : null;
     byte[] phoneHash = (request.phone() != null) ? searchHashService.phoneHash(request.phone()) : null;
     byte[] emailHash = (request.email() != null) ? searchHashService.emailHash(request.email()) : null;
