@@ -25,11 +25,17 @@ public class RefreshTokenService {
 
     String key = getKey(userId);
 
-    redisTemplate.opsForValue().set(
-        key,
-        refreshToken,
-        Duration.ofMillis(expireTimeMillis)
-    );
+      try {
+          redisTemplate.opsForValue().set(
+                  key,
+                  refreshToken,
+                  Duration.ofMillis(expireTimeMillis)
+          );
+          log.info("Redis save OK. key={}", key);
+      } catch (Exception e) {
+          log.error("Redis save FAILED", e);
+          throw e;
+      }
 
     log.debug("RefreshToken 저장 완료. userId={}, expire={}ms", userId, expireTimeMillis);
   }

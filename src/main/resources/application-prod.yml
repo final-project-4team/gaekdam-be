@@ -12,11 +12,7 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: 6379
-      ssl:
-        enabled: true
-        protocols: TLSv1.2
+      url: rediss://${REDIS_HOST}:${REDIS_PORT}
       timeout: 3s
 
   flyway:
