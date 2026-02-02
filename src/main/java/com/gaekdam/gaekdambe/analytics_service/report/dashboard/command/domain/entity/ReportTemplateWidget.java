@@ -56,6 +56,9 @@ public class ReportTemplateWidget {
     @Column(name = "default_filter_json", columnDefinition = "json")
     private String defaultFilterJson;
 
+    @Column(name = "hotel_group_code", length = 50)
+    private String hotelGroupCode;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

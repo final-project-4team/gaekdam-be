@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContactTyp
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType;
+import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityCode;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.Customer;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.CustomerContact;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity.CustomerMemo;
@@ -116,11 +117,30 @@ public class DummyCustomerDataTest {
             // ✅ nameHash는 SearchHashService(HMAC) + Hex 문자열
             String nameHash = HexUtils.toHex(searchHashService.nameHash(name));
 
+            // --- NEW: compute nationality code (enum) to pass into Customer.createCustomer ---
+            NationalityCode nationalityCode;
+            if (nationality == NationalityType.DOMESTIC) {
+                nationalityCode = NationalityCode.KR;
+            } else {
+                int pick = random.nextInt(100);
+                if (pick < 35) nationalityCode = NationalityCode.CN;
+                else if (pick < 65) nationalityCode = NationalityCode.JP;
+                else if (pick < 90) nationalityCode = NationalityCode.TW;
+                else {
+                    NationalityCode[] others = new NationalityCode[]{
+                            NationalityCode.US, NationalityCode.VN, NationalityCode.TH,
+                            NationalityCode.PH, NationalityCode.ID, NationalityCode.IN
+                    };
+                    nationalityCode = others[random.nextInt(others.length)];
+                }
+            }
+
             Customer customer = Customer.createCustomer(
                     hotelGroupCode,
                     nameEnc,
                     nameHash,
                     nationality,
+                    nationalityCode,
                     contractType,
                     KMS_KEY_ID,
                     dekEnc,

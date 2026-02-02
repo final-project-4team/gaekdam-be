@@ -1,6 +1,8 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,7 +64,11 @@ public class ReportTemplateWidgetResponseDto {
     private String widgetKey;       // metricKey (ex: "checkin")
     private String title;           // 표시명
     private String value;           // 포맷된 실제값 ("123" / "182,000원")
+    // rawValue: 계산/CSV/다운로드용 원시 숫자값 (nullable)
+    private BigDecimal rawValue;
     private String targetValue;     // 목표값(문자열)
+    // 목표값의 원시 숫자 형태 (nullable)
+    private BigDecimal targetValueRaw;
     private Double changePct;       // 목표 대비 증감율 (예: -4.2 or 23.0)
     private String trend;           // "up" / "down" / "neutral"
     private Integer sortOrder;
@@ -78,6 +84,9 @@ public class ReportTemplateWidgetResponseDto {
     // series: 시계열 값 리스트. 각 SeriesDto는 이름(name)과 숫자 배열(data)을 가집니다.
     // 프론트에서 series.data 값이 숫자 또는 null이면 Chart.js에서 제대로 핸들링합니다.
     private List<SeriesDto> series;
+
+    // meta: 추가 메타정보를 담는 맵. (chartKind, valueType, topN 등)
+    private Map<String, Object> meta;
 
     // SeriesDto는 같은 패키지에 별도 파일로 정의됩니다.
 }
