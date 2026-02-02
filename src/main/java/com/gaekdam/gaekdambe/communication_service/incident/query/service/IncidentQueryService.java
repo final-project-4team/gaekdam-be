@@ -4,6 +4,8 @@ import com.gaekdam.gaekdambe.communication_service.incident.query.dto.request.In
 import com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.*;
 import com.gaekdam.gaekdambe.communication_service.incident.query.mapper.IncidentMapper;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
@@ -14,8 +16,8 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import com.gaekdam.gaekdambe.global.crypto.MaskingUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -24,10 +26,27 @@ public class IncidentQueryService {
 
     private final IncidentMapper incidentMapper;
     private final DecryptionService decryptionService;
+    private final SearchHashService searchHashService;
 
     public PageResponse<IncidentListResponse> getIncidents(PageRequest page,
                                                            IncidentListSearchRequest search,
                                                            SortRequest sort) {
+
+        // ✅ 핵심: EMPLOYEE_NAME / ALL이면 employeeNameHash 세팅
+        String keyword = trim(search.getKeyword());
+        String searchType = trim(search.getSearchType());
+        if (searchType == null) searchType = "ALL";
+
+        if (keyword != null && !keyword.isBlank()) {
+            if ("EMPLOYEE_NAME".equals(searchType) || "ALL".equals(searchType)) {
+                search.setEmployeeNameHash(searchHashService.nameHash(keyword));
+            } else {
+                // 다른 타입일 때는 hash 비교 안 함
+                search.setEmployeeNameHash(null);
+            }
+        } else {
+            search.setEmployeeNameHash(null);
+        }
 
         List<IncidentListEncResponse> rows = incidentMapper.findIncidents(page, search, sort);
         long total = incidentMapper.countIncidents(search);
@@ -48,8 +67,6 @@ public class IncidentQueryService {
         return toDetailDto(row);
     }
 
-    // 조치 이력 조회
-
     public List<IncidentActionHistoryResponse> getIncidentActionHistories(Long hotelGroupCode, Long incidentCode) {
         List<IncidentActionHistoryEncResponse> rows =
                 incidentMapper.findIncidentActionHistories(hotelGroupCode, incidentCode);
@@ -66,7 +83,6 @@ public class IncidentQueryService {
 
     private IncidentListResponse toListDto(IncidentListEncResponse r) {
         String employeeName = decryptEmployeeName(r.employeeCode(), r.employeeDekEnc(), r.employeeNameEnc());
-
         employeeName = MaskingUtils.maskName(employeeName);
 
         return new IncidentListResponse(
@@ -83,6 +99,7 @@ public class IncidentQueryService {
                 employeeName
         );
     }
+
     private IncidentDetailResponse toDetailDto(IncidentDetailEncResponse r) {
         String employeeName = decryptEmployeeName(r.employeeCode(), r.employeeDekEnc(), r.employeeNameEnc());
 
@@ -108,5 +125,9 @@ public class IncidentQueryService {
     private String decryptEmployeeName(Long employeeCode, byte[] dekEnc, byte[] nameEnc) {
         if (employeeCode == null || dekEnc == null || nameEnc == null) return null;
         return decryptionService.decrypt(employeeCode, dekEnc, nameEnc);
+    }
+
+    private String trim(String v) {
+        return (v == null) ? null : v.trim();
     }
 }
