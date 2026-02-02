@@ -30,7 +30,6 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
 
   flyway:
     enabled: false
@@ -94,5 +93,10 @@ management:
     health:
       show-details: always
   health:
-    redis.enabled: true
+    redis.enabled: false
     db.enabled: true
+
+app:
+  cookie:
+    secure: false
+    same-site: Lax
