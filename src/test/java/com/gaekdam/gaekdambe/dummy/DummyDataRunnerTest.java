@@ -50,159 +50,160 @@ import org.springframework.util.StopWatch;
 @Tag("dummy")
 class DummyDataRunnerTest {
 
-  // 호텔서비스
-  @Autowired
-  DummyHotelGroupDataTest hotelGroupDataTest;
-  @Autowired
-  DummyDepartmentDataTest departmentDataTest;
-  @Autowired
-  DummyPositionDataTest positionDataTest;
-  @Autowired
-  DummyPropertyDataTest propertyDataTest;
+    // 호텔서비스
+    @Autowired
+    DummyHotelGroupDataTest hotelGroupDataTest;
+    @Autowired
+    DummyDepartmentDataTest departmentDataTest;
+    @Autowired
+    DummyPositionDataTest positionDataTest;
+    @Autowired
+    DummyPropertyDataTest propertyDataTest;
 
-  // iam서비스
-  @Autowired
-  DummyPermissionTypeDataTest permissionTypeDataTest;
-  @Autowired
-  DummyPermissionDataTest permissionDataTest;
-  @Autowired
-  EmployeeEncryptedRegistrationTest employeeDataTest;
-  @Autowired
-  DummyPermissionMappingDataTest permissionMappingDataTest;
-
-  // 오퍼레이션 서비스
-  @Autowired
-  DummyFacilityDataTest facilityDataTest;
-  @Autowired
-  DummyReservationPackageDataTest reservationPackageDataTest;
-  @Autowired
-  DummyRoomDataTest roomDataTest;
-  @Autowired
-  DummyRoomTypeDataTest roomTypeDataTest;
-
-
-  // 고객 서비스
-  @Autowired
-  DummyCustomerDataTest customerDataTest;
-  @Autowired
-  DummyMembershipDataTest membershipDataTest;
-  @Autowired
-  DummyLoyaltyDataTest loyaltyDataTest;
-  @Autowired
-  DummyCustomerStatusPostProcess customerStatusPostProcess;
-  @Autowired
-  DummyMemberDataTest memberDataTest;
-  @Autowired
-  DummyMembershipGradeDataTest membershipGradeDataTest;
-  @Autowired
-  DummyLoyaltyGradeDataTest loyaltyGradeDataTest;
-
-  // 예약 서비스
-  @Autowired
-  DummyReservationDataTest reservationDataTest;
-  @Autowired
-  DummyStayDataTest stayDataTest;
-  @Autowired
-  DummyCheckInOutDataTest checkInOutDataTest;
-
-
-  @Autowired
-  DummyFacilityUsageDataTest facilityUsageDataTest;
-
-  // 커뮤니케이션 서비스 (문의, 사건, 메세지 더미데이터 생성)
-  @Autowired
-  DummyIncidentDataTest incidentDataTest;
-  @Autowired
-  DummyInquiryDataTest inquiryDataTest;
-  @Autowired
-  DummyInquiryCategoryDataTest inquiryCategoryDataTest;
-  @Autowired
-  DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
-  @Autowired
-  DummyMessageTemplateSetupTest messageTemplateSetupTest;
-  @Autowired
-  DummyMessageRuleSetupTest messageRuleSetupTest;
-  @Autowired
-  DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
-
-  // 분석 서비스
-  @Autowired
-  ReportKpiDatasetGenerator reportKpiDatasetGenerator;
-  @Autowired
-  ReportTemplateGenerator reportTemplateGenerator;
-  @Autowired
-  ReportTemplateWidgetGenerator reportTemplateWidgetGenerator;
-
-
-  // 시간측정위한 메서드
-  private void run(StopWatch sw, String name, Runnable task) {
-    sw.start(name);
-    try {
-      task.run();
-    } finally {
-      sw.stop();
-    }
-  }
-
-  @Test
-  void generateAll() {
-    StopWatch sw = new StopWatch("DummyDataGenerate");
-
-    System.out.println(">>> generateAll called");
-
-    // 호텔 서비스
-    run(sw, "hotelGroup", hotelGroupDataTest::generate);
-    run(sw, "property", propertyDataTest::generate);
-    run(sw, "department", departmentDataTest::generate);
-    run(sw, "position", positionDataTest::generate);
-
-    // IAM 서비스
-    run(sw, "permissionType", permissionTypeDataTest::generate);
-    run(sw, "permission", permissionDataTest::generate);
-    run(sw, "permissionMapping", permissionMappingDataTest::generate);
-    run(sw, "employee", employeeDataTest::generate);
+    // iam서비스
+    @Autowired
+    DummyPermissionTypeDataTest permissionTypeDataTest;
+    @Autowired
+    DummyPermissionDataTest permissionDataTest;
+    @Autowired
+    EmployeeEncryptedRegistrationTest employeeDataTest;
+    @Autowired
+    DummyPermissionMappingDataTest permissionMappingDataTest;
 
     // 오퍼레이션 서비스
-    run(sw, "facility", facilityDataTest::generate);
-    run(sw, "reservationPackage", reservationPackageDataTest::generate);
-    run(sw, "room", roomDataTest::generate);
-    run(sw, "roomType", roomTypeDataTest::generate);
+    @Autowired
+    DummyFacilityDataTest facilityDataTest;
+    @Autowired
+    DummyReservationPackageDataTest reservationPackageDataTest;
+    @Autowired
+    DummyRoomDataTest roomDataTest;
+    @Autowired
+    DummyRoomTypeDataTest roomTypeDataTest;
+
 
     // 고객 서비스
-    run(sw, "customer", customerDataTest::generate);
-    run(sw, "membershipGrade", membershipGradeDataTest::generate);
-    run(sw, "loyaltyGrade", loyaltyGradeDataTest::generate);
-    run(sw, "membership", membershipDataTest::generate);
-    run(sw, "member", memberDataTest::generate);
-    run(sw, "loyalty", loyaltyDataTest::generate);
+    @Autowired
+    DummyCustomerDataTest customerDataTest;
+    @Autowired
+    DummyMembershipDataTest membershipDataTest;
+    @Autowired
+    DummyLoyaltyDataTest loyaltyDataTest;
+    @Autowired
+    DummyCustomerStatusPostProcess customerStatusPostProcess;
+    @Autowired
+    DummyMemberDataTest memberDataTest;
+    @Autowired
+    DummyMembershipGradeDataTest membershipGradeDataTest;
+    @Autowired
+    DummyLoyaltyGradeDataTest loyaltyGradeDataTest;
 
     // 예약 서비스
-    run(sw, "reservation(100k)", reservationDataTest::generate);
-    run(sw, "stay", stayDataTest::generate);
-    run(sw, "checkInOut", checkInOutDataTest::generate);
+    @Autowired
+    DummyReservationDataTest reservationDataTest;
+    @Autowired
+    DummyStayDataTest stayDataTest;
+    @Autowired
+    DummyCheckInOutDataTest checkInOutDataTest;
 
-    // 고객 상태 후처리 (StayStatus : 마지막 COMPLETED 기준)
-    run(sw, "customerStatusPostProcess", customerStatusPostProcess::generate);
 
-    // 부대시설 이용
-    run(sw, "facilityUsage", facilityUsageDataTest::generate);
+    @Autowired
+    DummyFacilityUsageDataTest facilityUsageDataTest;
 
-    // 커뮤니케이션 서비스
-    run(sw, "inquiryCategory", inquiryCategoryDataTest::generate);
-    run(sw, "inquiry", inquiryDataTest::generate);
-    run(sw, "incident", incidentDataTest::generate);
-    run(sw, "messageStage", messageJourneyStageSetupTest::generate);
-//        run(sw, "messageTemplate", messageTemplateSetupTest::generate);
-//        run(sw, "messageRule", messageRuleSetupTest::generate);
-    // 메세지 히스토리 더미데이터 생성x
-//        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
+    // 커뮤니케이션 서비스 (문의, 사건, 메세지 더미데이터 생성)
+    @Autowired
+    DummyIncidentDataTest incidentDataTest;
+    @Autowired
+    DummyInquiryDataTest inquiryDataTest;
+    @Autowired
+    DummyInquiryCategoryDataTest inquiryCategoryDataTest;
+    @Autowired
+    DummyMessageJourneyStageSetupTest messageJourneyStageSetupTest;
+    @Autowired
+    DummyMessageTemplateSetupTest messageTemplateSetupTest;
+    @Autowired
+    DummyMessageRuleSetupTest messageRuleSetupTest;
+    @Autowired
+    DummyMessageSendHistoryDataTest messageSendHistoryDataTest;
 
     // 분석 서비스
-    run(sw, "reportKpiDataset", reportKpiDatasetGenerator::generate);
-    run(sw, "reportTemplate", reportTemplateGenerator::generate);
-    run(sw, "reportTemplateWidget", reportTemplateWidgetGenerator::generate);
+    @Autowired
+    ReportKpiDatasetGenerator reportKpiDatasetGenerator;
+    @Autowired
+    ReportTemplateGenerator reportTemplateGenerator;
+    @Autowired
+    ReportTemplateWidgetGenerator reportTemplateWidgetGenerator;
 
-    System.out.println(sw.prettyPrint());
-  }
+
+    // 시간측정위한 메서드
+    private void run(StopWatch sw, String name, Runnable task) {
+        sw.start(name);
+        try {
+            task.run();
+        } finally {
+            sw.stop();
+        }
+    }
+
+    @Test
+    void generateAll() {
+        StopWatch sw = new StopWatch("DummyDataGenerate");
+
+        System.out.println(">>> generateAll called");
+
+        // 호텔 서비스
+        run(sw, "hotelGroup", hotelGroupDataTest::generate);
+        run(sw, "property", propertyDataTest::generate);
+        run(sw, "department", departmentDataTest::generate);
+        run(sw, "position", positionDataTest::generate);
+
+        // IAM 서비스
+        run(sw, "permissionType", permissionTypeDataTest::generate);
+        run(sw, "permission", permissionDataTest::generate);
+        run(sw, "permissionMapping", permissionMappingDataTest::generate);
+        run(sw, "employee", employeeDataTest::generate);
+
+        // 오퍼레이션 서비스
+        run(sw, "facility", facilityDataTest::generate);
+        run(sw, "reservationPackage", reservationPackageDataTest::generate);
+        run(sw, "roomType", roomTypeDataTest::generate);
+        run(sw, "room", roomDataTest::generate);
+
+
+        // 고객 서비스
+        run(sw, "customer", customerDataTest::generate);
+        run(sw, "membershipGrade", membershipGradeDataTest::generate);
+        run(sw, "loyaltyGrade", loyaltyGradeDataTest::generate);
+        run(sw, "membership", membershipDataTest::generate);
+        run(sw, "member", memberDataTest::generate);
+        run(sw, "loyalty", loyaltyDataTest::generate);
+
+        // 예약 서비스
+        run(sw, "reservation(100k)", reservationDataTest::generate);
+        run(sw, "stay", stayDataTest::generate);
+        run(sw, "checkInOut", checkInOutDataTest::generate);
+
+        // 고객 상태 후처리 (StayStatus : 마지막 COMPLETED 기준)
+        run(sw, "customerStatusPostProcess", customerStatusPostProcess::generate);
+
+        // 부대시설 이용
+        run(sw, "facilityUsage", facilityUsageDataTest::generate);
+
+        // 커뮤니케이션 서비스
+        run(sw, "inquiryCategory", inquiryCategoryDataTest::generate);
+        run(sw, "inquiry", inquiryDataTest::generate);
+        run(sw, "incident", incidentDataTest::generate);
+        run(sw, "messageStage", messageJourneyStageSetupTest::generate);
+//        run(sw, "messageTemplate", messageTemplateSetupTest::generate);
+//        run(sw, "messageRule", messageRuleSetupTest::generate);
+        // 메세지 히스토리 더미데이터 생성x
+//        run(sw, "messageSendHistory", messageSendHistoryDataTest::generate);
+
+        // 분석 서비스
+        run(sw, "reportKpiDataset", reportKpiDatasetGenerator::generate);
+        run(sw, "reportTemplate", reportTemplateGenerator::generate);
+        run(sw, "reportTemplateWidget", reportTemplateWidgetGenerator::generate);
+
+        System.out.println(sw.prettyPrint());
+    }
 
 }

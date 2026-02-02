@@ -21,6 +21,8 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -53,6 +55,13 @@ public class AuthController {
   private static final String COOKIE_NAME = "refreshToken";
   private final long REFRESH_TOKEN_EXPIRE = 1000 * 60 * 60;
   private final IpLogging ipLogging;
+
+
+    @Value("${app.cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.same-site}")
+    private String sameSite;
 
   // 직원 로그인
   @PostMapping("/login")
@@ -103,10 +112,10 @@ public class AuthController {
     // 1) refreshToken을 HttpOnly 쿠키에 넣기
     ResponseCookie refreshCookie = ResponseCookie.from(COOKIE_NAME, refreshToken)
         .httpOnly(true)
-        .secure(false) // 개발 환경: false, 배포시 true + https
+        .secure(cookieSecure) // 개발 환경: false, 배포시 true + https
         .path("/")
         .maxAge(REFRESH_TOKEN_EXPIRE / 1000) // 초 단위
-        .sameSite("Lax")
+        .sameSite(sameSite)
         .build();
 
     // 2) body에는 accessToken만 내려주기
@@ -130,10 +139,10 @@ public class AuthController {
 
     ResponseCookie deleteCookie = ResponseCookie.from(COOKIE_NAME, "")
         .httpOnly(true)
-        .secure(false) // 개발 환경에서는 false
+        .secure(cookieSecure) // 개발 환경에서는 false
         .path("/")
         .maxAge(0)
-        .sameSite("Lax")
+        .sameSite(sameSite)
         .build();
 
     return ResponseEntity.ok()
@@ -171,10 +180,10 @@ public class AuthController {
 
     ResponseCookie refreshCookie = ResponseCookie.from(COOKIE_NAME, newRefreshToken)
         .httpOnly(true)
-        .secure(false)
+        .secure(cookieSecure)
         .path("/")
         .maxAge(REFRESH_TOKEN_EXPIRE / 1000)
-        .sameSite("Lax")
+        .sameSite(sameSite)
         .build();
 
     TokenResponse body = TokenResponse.builder()

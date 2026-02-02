@@ -6,6 +6,12 @@ spring:
     scheduling:
       enabled: false
 
+#  datasource:
+#    driver-class-name: org.mariadb.jdbc.Driver
+#    url: jdbc:mariadb://127.0.0.1:13306/gaekdam_project
+#    username: gaekdam
+#    password: gaekdam123
+
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: jdbc:mariadb://localhost:3306/gaekdam_project
@@ -41,7 +47,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     open-in-view: false
 
   sql:
