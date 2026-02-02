@@ -24,6 +24,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:gaekdam0110}  # 성현 - RedisConnectionFailure 뜨길래 추가했습니다.
 
   jpa:
     hibernate:

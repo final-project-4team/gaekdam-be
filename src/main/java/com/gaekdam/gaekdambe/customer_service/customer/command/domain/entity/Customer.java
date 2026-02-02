@@ -1,14 +1,23 @@
 package com.gaekdam.gaekdambe.customer_service.customer.command.domain.entity;
 
+import java.time.LocalDateTime;
+
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.ContractType;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.CustomerStatus;
+import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityCode;
 import com.gaekdam.gaekdambe.customer_service.customer.command.domain.NationalityType;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -33,6 +42,10 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     @Column(name = "nationality_type", nullable = false, length = 30)
     private NationalityType nationalityType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "nationality_code", nullable = false, length = 8)
+    private NationalityCode nationalityCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "contract_type", nullable = false, length = 30)
@@ -65,6 +78,7 @@ public class Customer {
             byte[] customerNameEnc,
             String customerNameHash,
             NationalityType nationalityType,
+            NationalityCode nationalityCode,
             ContractType contractType,
             String kmsKeyId,
             byte[] dekEnc,
@@ -74,6 +88,7 @@ public class Customer {
         this.customerNameEnc = customerNameEnc;
         this.customerNameHash = customerNameHash;
         this.nationalityType = nationalityType;
+        this.nationalityCode = nationalityCode;
         this.contractType = contractType;
         this.customerStatus = CustomerStatus.ACTIVE;
         this.kmsKeyId = kmsKeyId;
@@ -87,6 +102,7 @@ public class Customer {
             byte[] customerNameEnc,
             String customerNameHash,
             NationalityType nationalityType,
+            NationalityCode nationalityCode,
             ContractType contractType,
             String kmsKeyId,
             byte[] dekEnc,
@@ -97,6 +113,7 @@ public class Customer {
                 customerNameEnc,
                 customerNameHash,
                 nationalityType,
+                nationalityCode,
                 contractType,
                 kmsKeyId,
                 dekEnc,

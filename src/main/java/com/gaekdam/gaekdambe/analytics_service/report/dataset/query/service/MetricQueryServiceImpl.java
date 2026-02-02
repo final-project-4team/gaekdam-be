@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ChartWidgetDto;
 import com.gaekdam.gaekdambe.analytics_service.report.dataset.command.domain.entity.ReportKPITarget;
 import com.gaekdam.gaekdambe.analytics_service.report.dataset.query.repository.ReportKpiTargetRepository;
 
@@ -1000,5 +1001,172 @@ public class MetricQueryServiceImpl implements MetricQueryService {
         }
 
         return mts;
+    }
+
+    // --- 고객유형(개인/법인) 분포 집계 ---
+    /**
+     * 고객 테이블에서 contract_type별 건수를 집계하여 ChartWidgetDto 형태로 반환합니다.
+     * 필터에서 hotelGroupCode가 주어지면 해당 호텔그룹으로 제한합니다.
+     * 반환 형식: widgetType="GAUGE", labels=["INDIVIDUAL","CORPORATE"], series=[{name:"actual", data:[..]}], meta.total
+     */
+    public ChartWidgetDto queryCustomerContractDistribution(Map<String, Object> filter) {
+        Object hotelGroup = filter != null ? filter.get("hotelGroupCode") : null;
+        Object periodObj = filter != null ? filter.get("period") : null;
+        String period = periodObj == null ? null : String.valueOf(periodObj);
+
+        // period가 제공되면 customer.created_at을 기준으로 기간 필터를 적용합니다.
+        boolean hasPeriod = false;
+        java.sql.Date dStart = null;
+        java.sql.Date dEndExclusive = null;
+        if (period != null) {
+            try {
+                java.time.LocalDate[] range = computeRangeFromPeriod(period);
+                java.time.LocalDate s = range[0];
+                java.time.LocalDate e = range[1];
+                dStart = java.sql.Date.valueOf(s);
+                dEndExclusive = java.sql.Date.valueOf(e.plusDays(1)); // exclusive bound
+                hasPeriod = true;
+            } catch (Exception ex) {
+                log.warn("Invalid period passed to queryCustomerContractDistribution: {}", period);
+                hasPeriod = false;
+            }
+        }
+
+        String sql;
+        java.util.List<java.util.Map<String, Object>> rows;
+
+        if (hotelGroup != null) {
+            if (hasPeriod) {
+                sql = "SELECT c.contract_type AS label, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.hotel_group_code = ? AND c.created_at >= ? AND c.created_at < ? GROUP BY c.contract_type";
+                rows = jdbc.queryForList(sql, hotelGroup, dStart, dEndExclusive);
+            } else {
+                sql = "SELECT c.contract_type AS label, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.hotel_group_code = ? GROUP BY c.contract_type";
+                rows = jdbc.queryForList(sql, hotelGroup);
+            }
+        } else {
+            if (hasPeriod) {
+                sql = "SELECT c.contract_type AS label, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.created_at >= ? AND c.created_at < ? GROUP BY c.contract_type";
+                rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+            } else {
+                sql = "SELECT c.contract_type AS label, COALESCE(COUNT(*),0) AS cnt FROM customer c GROUP BY c.contract_type";
+                rows = jdbc.queryForList(sql);
+            }
+        }
+
+        long individual = 0L;
+        long corporate = 0L;
+        long other = 0L;
+
+        for (java.util.Map<String, Object> r : rows) {
+            String label = r.get("label") == null ? "OTHER" : String.valueOf(r.get("label"));
+            Number cntNum = (Number) r.get("cnt");
+            long cnt = cntNum == null ? 0L : cntNum.longValue();
+            if ("INDIVIDUAL".equalsIgnoreCase(label)) individual = cnt;
+            else if ("CORPORATE".equalsIgnoreCase(label)) corporate = cnt;
+            else other += cnt;
+        }
+
+        java.util.List<String> labels = java.util.Arrays.asList("INDIVIDUAL", "CORPORATE");
+        java.util.List<java.math.BigDecimal> data = new java.util.ArrayList<>();
+        data.add(java.math.BigDecimal.valueOf(individual));
+        data.add(java.math.BigDecimal.valueOf(corporate));
+
+        java.util.Map<String, Object> meta = new java.util.HashMap<>();
+        meta.put("total", individual + corporate + other);
+        meta.put("other", other);
+
+        // 프론트에서 기대하는 widgetType이 "GAUGE" 이므로, ChartWidgetDto의 widgetType을 "gauge"로 명시합니다.
+        // series는 이름을 "actual"로 하고 숫자 배열을 전달합니다.
+        java.util.List<ChartWidgetDto.Series> series = new java.util.ArrayList<>();
+        series.add(new ChartWidgetDto.Series("actual", data));
+
+        ChartWidgetDto dto = new ChartWidgetDto("gauge", labels, series, meta);
+        return dto;
+    }
+
+    // --- 외국인 TOP3 국가 집계 ---
+    /**
+     * 상위 3개 외국인 고객 국가별 건수를 조회하여 Bar 차트용 ChartWidgetDto로 반환합니다.
+     * 필터에서 hotelGroupCode가 주어지면 해당 호텔그룹으로 제한합니다.
+     * period가 주어지면 customer.created_at 기준으로 기간 필터를 적용합니다.
+     */
+    public ChartWidgetDto queryForeignTop3(Map<String, Object> filter) {
+        Object hotelGroup = filter != null ? filter.get("hotelGroupCode") : null;
+        Object periodObj = filter != null ? filter.get("period") : null;
+        String period = periodObj == null ? null : String.valueOf(periodObj);
+
+        // period가 제공되면 customer.created_at을 기준으로 기간 필터를 적용합니다.
+        boolean hasPeriod = false;
+        java.sql.Date dStart = null;
+        java.sql.Date dEndExclusive = null;
+        if (period != null) {
+            try {
+                java.time.LocalDate[] range = computeRangeFromPeriod(period);
+                java.time.LocalDate s = range[0];
+                java.time.LocalDate e = range[1];
+                dStart = java.sql.Date.valueOf(s);
+                dEndExclusive = java.sql.Date.valueOf(e.plusDays(1)); // exclusive bound
+                hasPeriod = true;
+            } catch (Exception ex) {
+                log.warn("Invalid period passed to queryForeignTop3: {}", period);
+                hasPeriod = false;
+            }
+        }
+
+        String sql;
+        java.util.List<java.util.Map<String,Object>> rows;
+
+        if (hotelGroup != null) {
+            if (hasPeriod) {
+                sql = "SELECT c.nationality_code AS code, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.nationality_type = 'FOREIGN' AND c.hotel_group_code = ? AND c.created_at >= ? AND c.created_at < ? GROUP BY c.nationality_code ORDER BY cnt DESC LIMIT 3";
+                rows = jdbc.queryForList(sql, hotelGroup, dStart, dEndExclusive);
+            } else {
+                sql = "SELECT c.nationality_code AS code, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.nationality_type = 'FOREIGN' AND c.hotel_group_code = ? GROUP BY c.nationality_code ORDER BY cnt DESC LIMIT 3";
+                rows = jdbc.queryForList(sql, hotelGroup);
+            }
+        } else {
+            if (hasPeriod) {
+                sql = "SELECT c.nationality_code AS code, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.nationality_type = 'FOREIGN' AND c.created_at >= ? AND c.created_at < ? GROUP BY c.nationality_code ORDER BY cnt DESC LIMIT 3";
+                rows = jdbc.queryForList(sql, dStart, dEndExclusive);
+            } else {
+                sql = "SELECT c.nationality_code AS code, COALESCE(COUNT(*),0) AS cnt FROM customer c WHERE c.nationality_type = 'FOREIGN' GROUP BY c.nationality_code ORDER BY cnt DESC LIMIT 3";
+                rows = jdbc.queryForList(sql);
+            }
+        }
+        
+        java.util.List<String> labels = new java.util.ArrayList<>();
+        java.util.List<java.math.BigDecimal> data = new java.util.ArrayList<>();
+
+        for (java.util.Map<String,Object> r : rows) {
+            String code = r.get("code") == null ? "OTHER" : String.valueOf(r.get("code"));
+            Number cntNum = (Number) r.get("cnt");
+            long cnt = cntNum == null ? 0L : cntNum.longValue();
+            String label;
+            switch(code.toUpperCase(Locale.ROOT)) {
+                case "CN": label = "중국"; break;
+                case "JP": label = "일본"; break;
+                case "TW": label = "대만"; break;
+                case "US": label = "미국"; break;
+                case "VN": label = "베트남"; break;
+                case "TH": label = "태국"; break;
+                case "PH": label = "필리핀"; break;
+                case "ID": label = "인도네시아"; break;
+                case "IN": label = "인도"; break;
+                default: label = code; break;
+            }
+            labels.add(label);
+            data.add(java.math.BigDecimal.valueOf(cnt));
+        }
+
+        java.util.Map<String,Object> meta = new java.util.HashMap<>();
+        meta.put("chartKind","bar");
+        meta.put("topN", rows.size());
+
+        // series 생성
+        java.util.List<ChartWidgetDto.Series> series = new java.util.ArrayList<>();
+        series.add(new ChartWidgetDto.Series("actual", data));
+
+        // widgetType은 'bar'로 반환
+        return new ChartWidgetDto("bar", labels, series, meta);
     }
 }
