@@ -121,5 +121,9 @@
   <details> <summary>아키텍처 구조도</summary>
   <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
 
+
+- ### 프로그램 사양서
+  <details> <summary>프로그램 사양서</summary>
+  <img width="1823" height="1881" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46](https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=784246878#gid=784246878" />
     </details> 
 
