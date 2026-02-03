@@ -1,5 +1,9 @@
 package com.gaekdam.gaekdambe.analytics_service.report.dashboard.api;
 
+import com.gaekdam.gaekdambe.global.config.swagger.SpecResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -21,6 +25,7 @@ import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.Pe
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "리포트 템플릿")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/report/templates")
@@ -34,9 +39,11 @@ public class ReportTemplateController {
     @GetMapping("/{templateId}/widgets")
     @PreAuthorize("hasAuthority('REPORT_LAYOUT_TEMPLATE_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.REPORT_LAYOUT_TEMPLATE_READ)
+    @Operation(summary = "리포트 템플릿 조회 ", description = "리포트 템플릿을 조회합니다.")
+    @SpecResponse( description = "수정 성공")
     public ResponseEntity<ApiResponse<List<ReportTemplateWidgetResponseDto>>> listWidgets(
-        @PathVariable Long templateId,
-        @RequestParam(required = false) String period,
+        @Parameter(description = "템플릿 ID")@PathVariable Long templateId,
+        @Parameter(description = "period")@RequestParam(required = false) String period,
         HttpServletRequest request
     ) {
         logger.debug("[Controller] listWidgets called. templateId={}, periodParam={}, rawQuery={}",

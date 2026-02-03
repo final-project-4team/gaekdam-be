@@ -1,14 +1,15 @@
 package com.gaekdam.gaekdambe.communication_service.messaging.command.application.controller;
 
-import com.gaekdam.gaekdambe.communication_service.messaging.command.application.dto.request.MessageRuleCreateRequest;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.application.dto.request.MessageRuleUpdateRequest;
 import com.gaekdam.gaekdambe.communication_service.messaging.command.application.service.MessageRuleCommandService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
-import com.gaekdam.gaekdambe.global.config.security.CustomUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name="메시지 규칙")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/message-rules")
@@ -26,8 +27,9 @@ public class MessageRuleCommandController {
 //    }
 
     @PutMapping("/{ruleCode}")
+    @Operation(summary = "메시지 규칙 업데이트", description = "메시지 전송 규칙을 업데이트 한다.")
     public ApiResponse<Void> update(
-            @PathVariable Long ruleCode,
+            @Parameter(description = "규칙 코드") @PathVariable Long ruleCode,
             @RequestBody MessageRuleUpdateRequest req
     ) {
 
@@ -37,6 +39,7 @@ public class MessageRuleCommandController {
     }
 
     @PatchMapping("/{ruleCode}/disable")
+    @Operation(summary = "메시지 규정 비활성화", description = "특정 메시지 전송 규칙을 비활성화 한다.")
     public ApiResponse<Void> disable(@PathVariable Long ruleCode) {
 
         service.disableRule(ruleCode);
