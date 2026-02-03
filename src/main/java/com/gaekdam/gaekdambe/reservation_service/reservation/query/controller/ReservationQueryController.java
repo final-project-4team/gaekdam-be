@@ -71,7 +71,7 @@ public class ReservationQueryController {
 
                 if (sort == null || sort.getSortBy() == null) {
                         sort = new SortRequest();
-                        sort.setSortBy("r.reservationCode");
+                        sort.setSortBy("r.reservation_code");
                         sort.setDirection("DESC");
                 }
 
