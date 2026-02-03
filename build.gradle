@@ -79,6 +79,9 @@ dependencies {
     testImplementation "org.testcontainers:mariadb"
 
     mockitoAgent "net.bytebuddy:byte-buddy-agent:1.17.8"
+    //swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
+
 }
 
 tasks.named('test') {
