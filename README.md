@@ -121,5 +121,25 @@
   <details> <summary>아키텍처 구조도</summary>
   <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
 
-    </details> 
+
+- ### 프로그램 사양서
+  <details> <summary>프로그램 사양서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=784246878#gid=784246878
+  <br>
+
+- ### 단위테스트 결과서
+  <details> <summary>단위테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1492834519#gid=1492834519
+  <br>
+
+- ### UI/UX 단위 테스트 결과서
+  <details> <summary>UI/UX 단위 테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1079372133#gid=1079372133
+  <br>
+
+- ### 통합 테스트 결과서
+  <details> <summary>통합 테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
+  <br>
+
 
