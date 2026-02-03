@@ -2,11 +2,25 @@ server:
   port: 8082
 
 spring:
+  mvc:
+    servlet:
+      load-on-startup: 1
+
   jpa:
     hibernate:
       ddl-auto: validate
+
+  data:
+    redis:
+      url: rediss://${REDIS_HOST}:${REDIS_PORT}
+      timeout: 3s
 
   flyway:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+
+app:
+  cookie:
+    secure: true
+    same-site: None

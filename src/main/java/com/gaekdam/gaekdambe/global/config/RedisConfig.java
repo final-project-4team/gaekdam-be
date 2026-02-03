@@ -1,56 +1,50 @@
 package com.gaekdam.gaekdambe.global.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import jakarta.annotation.PostConstruct;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.core.env.Environment;
+
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.util.StringUtils;
+
 
 @Configuration
+@Slf4j
 public class RedisConfig {
 
-  @Value("${spring.data.redis.host}")
-  private String redisHost;
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(
+            LettuceConnectionFactory connectionFactory) {
 
-  @Value("${spring.data.redis.port}")
-  private int redisPort;
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
 
-  @Value("${spring.data.redis.password:}")
-  private String redisPassword;
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(RedisSerializer.json());
 
-  @Bean
-  public LettuceConnectionFactory redisConnectionFactory() {
-    RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
-    redisStandaloneConfiguration.setPort(redisPort);
-    redisStandaloneConfiguration.setHostName(redisHost);
+        return template;
+    }
 
-      if (StringUtils.hasText(redisPassword)) {
-          redisStandaloneConfiguration.setPassword(redisPassword);
-      }
+    @Autowired
+    private Environment environment;
 
-    return new LettuceConnectionFactory(
-        redisStandaloneConfiguration
-    // new RedisStandaloneConfiguration(redisHost, redisPort)
-    );
-  }
+    public RedisConfig(Environment environment) {
+        this.environment = environment;
+    }
 
-  @Bean
-  public RedisTemplate<String, Object> redisTemplate(
-      LettuceConnectionFactory connectionFactory) {
-    RedisTemplate<String, Object> template = new RedisTemplate<>();
-
-    template.setConnectionFactory(connectionFactory);
-
-    // key는 String
-    template.setKeySerializer(new StringRedisSerializer());
-
-    // value는 JSON 직렬화  RedisSerializer.json()
-    template.setValueSerializer(RedisSerializer.json());
-
-    return template;
-  }
+    @PostConstruct
+    public void logRedisConfig() {
+        log.info(
+                "Redis SSL enabled = {}, protocols = {}",
+                environment.getProperty("spring.data.redis.ssl.enabled"),
+                environment.getProperty("spring.data.redis.ssl.protocols")
+        );
+    }
 }
