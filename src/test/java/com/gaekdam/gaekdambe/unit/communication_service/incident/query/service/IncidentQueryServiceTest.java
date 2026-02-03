@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.*
 import com.gaekdam.gaekdambe.communication_service.incident.query.mapper.IncidentMapper;
 import com.gaekdam.gaekdambe.communication_service.incident.query.service.IncidentQueryService;
 import com.gaekdam.gaekdambe.global.crypto.DecryptionService;
+import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
@@ -24,13 +25,15 @@ class IncidentQueryServiceTest {
 
     private IncidentMapper incidentMapper;
     private DecryptionService decryptionService;
+    private SearchHashService searchHashService;
     private IncidentQueryService service;
 
     @BeforeEach
     void setUp() {
         incidentMapper = mock(IncidentMapper.class);
         decryptionService = mock(DecryptionService.class);
-        service = new IncidentQueryService(incidentMapper, decryptionService);
+        searchHashService = mock(SearchHashService.class);
+        service = new IncidentQueryService(incidentMapper, decryptionService, searchHashService);
     }
 
     @Test
@@ -68,6 +71,7 @@ class IncidentQueryServiceTest {
         verify(incidentMapper).countIncidents(search);
         verify(decryptionService).decrypt(eq(10L), any(), any());
         verifyNoMoreInteractions(incidentMapper, decryptionService);
+        verifyNoInteractions(searchHashService);
     }
 
     @Test
@@ -90,7 +94,7 @@ class IncidentQueryServiceTest {
 
         verify(incidentMapper).findIncidentDetail(hotelGroupCode, incidentCode);
         verifyNoMoreInteractions(incidentMapper);
-        verifyNoInteractions(decryptionService);
+        verifyNoInteractions(decryptionService, searchHashService);
     }
 
     @Test
@@ -117,6 +121,7 @@ class IncidentQueryServiceTest {
         verify(incidentMapper).findIncidentDetail(hotelGroupCode, incidentCode);
         verify(decryptionService).decrypt(eq(10L), any(), any());
         verifyNoMoreInteractions(incidentMapper, decryptionService);
+        verifyNoInteractions(searchHashService);
     }
 
     @Test
@@ -148,5 +153,6 @@ class IncidentQueryServiceTest {
         verify(incidentMapper).findIncidentActionHistories(hotelGroupCode, incidentCode);
         verify(decryptionService).decrypt(eq(10L), any(), any());
         verifyNoMoreInteractions(incidentMapper, decryptionService);
+        verifyNoInteractions(searchHashService);
     }
 }

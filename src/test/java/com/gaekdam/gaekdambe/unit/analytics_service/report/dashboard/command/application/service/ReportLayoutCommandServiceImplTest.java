@@ -3,7 +3,6 @@ package com.gaekdam.gaekdambe.unit.analytics_service.report.dashboard.command.ap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +12,6 @@ import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.applicat
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.domain.entity.ReportLayout;
 import com.gaekdam.gaekdambe.analytics_service.report.dashboard.command.infrastructure.repository.ReportLayoutRepository;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
-import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,14 +24,16 @@ class ReportLayoutCommandServiceImplTest {
 
     @Mock
     ReportLayoutRepository repository;
-    @Mock
-    ObjectMapper objectMapper;
+
+    // ObjectMapper는 mock하지 말고 실인스턴스 사용(인라인 mock-maker 이슈 회피)
+    private ObjectMapper objectMapper;
 
     private ReportLayoutCommandServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        objectMapper = new ObjectMapper();
         service = new ReportLayoutCommandServiceImpl(repository, objectMapper);
     }
 
@@ -58,16 +58,17 @@ class ReportLayoutCommandServiceImplTest {
     }
 
     @Test
-    void create_throwsCustomException_whenDefaultFilterJson_notSerializable() throws Exception {
+    void create_throwsCustomException_whenDefaultFilterJson_notSerializable() {
         ReportLayoutCreateDto dto = new ReportLayoutCreateDto();
         dto.setEmployeeCode(1L);
         dto.setName("Name");
         dto.setIsDefault(false);
 
-        Object badObj = new Object();
+        // Jackson이 직렬화 실패하는 타입(순환 참조)
+        Object badObj = new Object() {
+            public Object self = this;
+        };
         dto.setDefaultFilterJson(badObj);
-
-        when(objectMapper.writeValueAsString(badObj)).thenThrow(JsonProcessingException.class);
 
         assertThrows(CustomException.class, () -> service.create(dto));
     }

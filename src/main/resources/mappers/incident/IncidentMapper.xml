@@ -97,11 +97,38 @@
             </if>
 
             <if test="search.keyword != null and search.keyword != ''">
-                AND (
-                i.incident_title LIKE CONCAT('%', #{search.keyword}, '%')
-                OR i.incident_content LIKE CONCAT('%', #{search.keyword}, '%')
-                )
+                <choose>
+
+                    <!-- 제목 -->
+                    <when test="search.searchType == 'TITLE'">
+                        AND i.incident_title LIKE CONCAT('%', #{search.keyword}, '%')
+                    </when>
+
+                    <!-- 담당자ID(login_id) -->
+                    <when test="search.searchType == 'EMPLOYEE_ID'">
+                        AND e.login_id LIKE CONCAT('%', #{search.keyword}, '%')
+                    </when>
+
+                    <!-- 담당자명(해시 exact match) -->
+                    <when test="search.searchType == 'EMPLOYEE_NAME'">
+                        AND e.employee_name_hash = #{search.employeeNameHash}
+                    </when>
+
+                    <!-- 전체(ALL): 제목/내용/담당자ID + (가능하면)담당자명 hash -->
+                    <otherwise>
+                        AND (
+                        i.incident_title LIKE CONCAT('%', #{search.keyword}, '%')
+                        OR i.incident_content LIKE CONCAT('%', #{search.keyword}, '%')
+                        OR e.login_id LIKE CONCAT('%', #{search.keyword}, '%')
+                        <if test="search.employeeNameHash != null">
+                            OR e.employee_name_hash = #{search.employeeNameHash}
+                        </if>
+                        )
+                    </otherwise>
+
+                </choose>
             </if>
+
 
             <if test="search.fromDate != null">
                 AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
