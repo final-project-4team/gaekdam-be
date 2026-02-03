@@ -9,11 +9,14 @@ import com.gaekdam.gaekdambe.iam_service.employee.query.dto.request.EmployeeQuer
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeDetailResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeListResponse;
 import com.gaekdam.gaekdambe.iam_service.employee.query.service.EmployeeQueryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
+@Tag(name="직원")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/employee")
@@ -24,10 +27,11 @@ public class EmployeeQueryController {
   // 다른 직원 상세 조회
   @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
   @GetMapping("/detail/{employeeCode}")
+  @Operation(summary = "직원 상세 조회", description = "특정 직원을 상세 조회한다.")
   public ApiResponse<EmployeeDetailResponse> getEmployee(
       @AuthenticationPrincipal CustomUser employee,
-      @PathVariable Long employeeCode,
-      @RequestParam(required = false) String reason) {
+      @Parameter(description = "직원 코드") @PathVariable Long employeeCode,
+      @Parameter(description = "조회 사유") @RequestParam(required = false) String reason) {
     Long hotelGroupCode = employee.getHotelGroupCode();
     return ApiResponse.success(employeeQueryService.getEmployeeDetail(hotelGroupCode, employeeCode, reason));
   }
@@ -35,6 +39,7 @@ public class EmployeeQueryController {
   // 직원 리스트 조회
   @PreAuthorize("hasAuthority('EMPLOYEE_LIST')")
   @GetMapping("")
+  @Operation(summary = "직원 리스트 조회", description = "직원 리스트를 조회한다.")
   public ApiResponse<PageResponse<EmployeeListResponse>> searchEmployee(
       @AuthenticationPrincipal CustomUser employee,
       PageRequest page,
@@ -51,8 +56,9 @@ public class EmployeeQueryController {
         employeeQueryService.searchEmployees(hotelGroupCode, search, page, sort));
   }
 
-  // 직원 상세 조회
+  // 마이페이지
   @GetMapping("/detail")
+  @Operation(summary = "마이페이지", description = "직원은 본인의 상세정보를 조회할 수 있다,")
   public ApiResponse<EmployeeDetailResponse> getMyPage(
       @AuthenticationPrincipal CustomUser employee) {
     Long hotelGroupCode = employee.getHotelGroupCode();

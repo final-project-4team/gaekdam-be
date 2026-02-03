@@ -18,6 +18,9 @@ import com.gaekdam.gaekdambe.iam_service.permission.command.infrastructure.Permi
 import com.gaekdam.gaekdambe.iam_service.permission_mapping.command.domain.entity.PermissionMapping;
 import com.gaekdam.gaekdambe.iam_service.permission_mapping.command.infrastructure.PermissionMappingRepository;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +42,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name="인증")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
@@ -65,8 +69,9 @@ public class AuthController {
 
   // 직원 로그인
   @PostMapping("/login")
+  @Operation(summary = "로그인", description = "직원은 로그인 할 수 있다.")
   public ResponseEntity<ApiResponse<TokenResponse>> login(
-      @RequestBody LoginRequest request) {
+      @Parameter(description = "로그인 아이디,비밀번호") @RequestBody LoginRequest request) {
     String loginId = request.loginId();
     String password = request.password();
     String ip = ipLogging.searchIp();
@@ -129,6 +134,7 @@ public class AuthController {
   }
 
   @DeleteMapping("/logout")
+  @Operation(summary = "로그아웃", description = "직원은 로그아웃 할 수 있다.")
   public ResponseEntity<ApiResponse<Void>> logout(
       @AuthenticationPrincipal UserDetails userDetails,
       @CookieValue(name = COOKIE_NAME, required = false) String refreshToken) {
@@ -152,6 +158,7 @@ public class AuthController {
 
   //
   @PostMapping("/refresh")
+  @Operation(summary = "refresh토큰 발급", description = "리프레시 토큰을 발급 받을 수 있다.")
   public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
       @CookieValue(name = COOKIE_NAME, required = false) String refreshToken) {
     if (refreshToken == null || refreshToken.isBlank()) {
@@ -213,6 +220,7 @@ public class AuthController {
   }
 
   @GetMapping("/permissions")
+  @Operation(summary = "권한 리스트 조회(프론트)", description = "직원 본인의 권한 리스트를 조회한다")
   public ResponseEntity<ApiResponse<List<PermissionTypeKey>>> getPermissions(
       @AuthenticationPrincipal UserDetails userDetails) {
     if (userDetails == null) {

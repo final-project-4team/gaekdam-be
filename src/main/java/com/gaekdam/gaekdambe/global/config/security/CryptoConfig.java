@@ -15,6 +15,8 @@ public class CryptoConfig {
 
     private Hmac hmac = new Hmac();
     private LocalKek localKek = new LocalKek();
+    private AwsKms awsKms=new AwsKms();
+
 
     @Getter
     @Setter
@@ -34,5 +36,12 @@ public class CryptoConfig {
         public byte[] getKeyBytes() {
             return Base64.getDecoder().decode(keyB64);
         }
+    }
+    @Getter
+    @Setter
+    public static class AwsKms {
+        private String KeyId;
+        private String secretAccessKey;
+
     }
 }
