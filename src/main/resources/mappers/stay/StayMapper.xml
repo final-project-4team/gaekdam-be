@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.stay.query.mapper.StayMapper">
+
+    <select id="findStays"
+            resultType="com.gaekdam.gaekdambe.reservation_service.stay.query.dto.response.StayResponse">
+
+        SELECT
+        s.stay_code AS stayCode,
+        s.stay_status AS stayStatus,
+        s.actual_checkin_at AS actualCheckinAt,
+        s.actual_checkout_at AS actualCheckoutAt,
+        s.guest_count AS guestCount,
+        s.reservation_code AS reservationCode,
+        s.room_code AS roomCode,
+        s.customer_code AS customerCode,
+        s.created_at AS createdAt
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
+
+        <where>
+            <!-- 호텔그룹 기준 필수 -->
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <!-- 선택: 지점 -->
+            <if test="search.propertyCode != null">
+                AND r.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.stayStatus != null">
+                AND s.stay_status = #{search.stayStatus}
+            </if>
+
+            <if test="search.reservationCode != null">
+                AND s.reservation_code = #{search.reservationCode}
+            </if>
+
+            <if test="search.roomCode != null">
+                AND s.room_code = #{search.roomCode}
+            </if>
+
+            <if test="search.customerCode != null">
+                AND s.customer_code = #{search.customerCode}
+            </if>
+
+            <if test="search.fromDate != null">
+                AND s.actual_checkin_at <![CDATA[ >= ]]> #{search.fromDate}
+            </if>
+
+            <if test="search.toDate != null">
+                AND s.actual_checkin_at <![CDATA[ <= ]]> #{search.toDate}
+            </if>
+        </where>
+
+        <if test="sort != null and sort.sortBy != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+
+    <select id="countStays" resultType="long">
+        SELECT COUNT(*)
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
+
+        <where>
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND r.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.stayStatus != null">
+                AND s.stay_status = #{search.stayStatus}
+            </if>
+
+            <if test="search.reservationCode != null">
+                AND s.reservation_code = #{search.reservationCode}
+            </if>
+
+            <if test="search.roomCode != null">
+                AND s.room_code = #{search.roomCode}
+            </if>
+
+            <if test="search.customerCode != null">
+                AND s.customer_code = #{search.customerCode}
+            </if>
+
+            <if test="search.fromDate != null">
+                AND s.actual_checkin_at <![CDATA[ >= ]]> #{search.fromDate}
+            </if>
+
+            <if test="search.toDate != null">
+                AND s.actual_checkin_at <![CDATA[ <= ]]> #{search.toDate}
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

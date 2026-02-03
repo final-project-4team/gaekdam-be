@@ -1,8 +1,10 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.entity;
 
+import com.gaekdam.gaekdambe.reservation_service.reservation.command.domain.enums.*;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -10,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @Table(name = "reservation")
 public class Reservation {
 
@@ -19,8 +21,9 @@ public class Reservation {
     @Column(name = "reservation_code")
     private Long reservationCode;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "reservation_status", nullable = false, length = 20)
-    private String reservationStatus;
+    private ReservationStatus reservationStatus;
 
     @Column(name = "checkin_date", nullable = false)
     private LocalDate checkinDate;
@@ -29,17 +32,30 @@ public class Reservation {
     private LocalDate checkoutDate;
 
     @Column(name = "guest_count", nullable = false)
-    private Integer guestCount;
+    private int guestCount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "guest_type", nullable = false, length = 20)
-    private String guestType;
+    private GuestType guestType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "reservation_channel", nullable = false, length = 20)
-    private String reservationChannel;
+    private ReservationChannel reservationChannel;
 
     @Column(name = "request_note", length = 255)
     private String requestNote;
 
+    // 금액
+    @Column(name = "reservation_room_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal reservationRoomPrice;
+
+    @Column(name = "reservation_package_price", precision = 10, scale = 2)
+    private BigDecimal reservationPackagePrice;
+
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice;
+
+    // 시간
     @Column(name = "reserved_at", nullable = false)
     private LocalDateTime reservedAt;
 
@@ -49,51 +65,58 @@ public class Reservation {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "tenant_code", nullable = false)
-    private Long tenantCode;
+    // 느슨한 FK
+    @Column(name = "property_code", nullable = false)
+    private Long propertyCode;
 
     @Column(name = "room_code", nullable = false)
     private Long roomCode;
 
-    @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    @Column(name = "customer_code", nullable = false)
+    private Long customerCode;
 
     @Column(name = "package_code")
     private Long packageCode;
 
-    // 생성 메서드 (예약 생성)
+    /* 생성 메서드 */
     public static Reservation createReservation(
-            Long tenantCode,
+            LocalDate checkin,
+            LocalDate checkout,
+            int guestCount,
+            GuestType guestType,
+            ReservationChannel reservationChannel,
+            BigDecimal roomPrice,
+            BigDecimal packagePrice,
+            Long propertyCode,
             Long roomCode,
-            Long customerId,
-            LocalDate checkinDate,
-            LocalDate checkoutDate,
-            Integer guestCount,
-            String guestType,
-            String reservationChannel,
-            String requestNote,
-            Long packageCode
+            Long customerCode,
+            Long packageCode,
+            ReservationStatus reservationStatus
     ) {
         LocalDateTime now = LocalDateTime.now();
 
+        BigDecimal totalPrice =
+                roomPrice.add(packagePrice != null ? packagePrice : BigDecimal.ZERO);
+
         return Reservation.builder()
-                .tenantCode(tenantCode)
-                .roomCode(roomCode)
-                .customerId(customerId)
-                .checkinDate(checkinDate)
-                .checkoutDate(checkoutDate)
-                .guestCount(guestCount != null ? guestCount : 1)
+                .reservationStatus(reservationStatus)
+                .checkinDate(checkin)
+                .checkoutDate(checkout)
+                .guestCount(guestCount)
                 .guestType(guestType)
                 .reservationChannel(reservationChannel)
-                .requestNote(requestNote)
-                .packageCode(packageCode)
-                .reservationStatus("RESERVED")
+                .reservationRoomPrice(roomPrice)
+                .reservationPackagePrice(packagePrice)
+                .totalPrice(totalPrice)
                 .reservedAt(now)
                 .createdAt(now)
-                .updatedAt(now)
+                .propertyCode(propertyCode)
+                .roomCode(roomCode)
+                .customerCode(customerCode)
+                .packageCode(packageCode)
                 .build();
     }
 }

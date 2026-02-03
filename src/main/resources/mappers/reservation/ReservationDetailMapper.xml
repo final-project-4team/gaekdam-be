@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.ReservationDetailMapper">
+
+    <!-- 예약 기본 정보 -->
+    <select id="findReservationInfo"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.ReservationInfo">
+
+        SELECT
+            reservation_code              AS reservationCode,
+            reservation_status            AS reservationStatus,
+            reservation_channel           AS reservationChannel,
+
+            checkin_date                  AS checkinDate,
+            checkout_date                 AS checkoutDate,
+
+            guest_count                   AS guestCount,
+            guest_type                    AS guestType,
+            request_note                  AS requestNote,
+
+            reservation_room_price        AS reservationRoomPrice,
+            reservation_package_price     AS reservationPackagePrice,
+            total_price                   AS totalPrice,
+
+            created_at                    AS createdAt
+        FROM reservation
+        WHERE reservation_code = #{reservationCode}
+    </select>
+
+    <!-- 고객 정보 -->
+    <select id="findCustomerCrypto"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CustomerCryptoRow">
+
+        SELECT c.customer_code      AS customerCode,
+               c.customer_name_enc  AS customerNameEnc,
+               c.dek_enc            AS dekEnc,
+               c.customer_name_hash AS customerNameHash,
+               c.nationality_type   AS nationalityType,
+               c.contract_type      AS contractType,
+               c.customer_status    AS customerStatus
+        FROM reservation r
+                 JOIN customer c ON r.customer_code = c.customer_code
+        WHERE r.reservation_code = #{reservationCode}
+    </select>
+
+    <!-- 객실 정보 -->
+    <select id="findRoomInfo"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.RoomInfo">
+
+        SELECT
+            rm.room_code    AS roomCode,
+            rm.room_number  AS roomNumber,
+            rm.floor        AS floor,
+            rt.type_name    AS roomTypeName,
+            rt.base_price   AS roomBasePrice
+        FROM reservation r
+                 JOIN room rm
+                      ON r.room_code = rm.room_code
+                 JOIN room_type rt
+                      ON rm.room_type_code = rt.room_type_code
+        WHERE r.reservation_code = #{reservationCode}
+
+    </select>
+    <!-- 투숙 정보 -->
+    <select id="findStayInfo"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.StayInfo">
+        SELECT stay_status        AS stayStatus,
+               guest_count        AS guestCount,
+               actual_checkin_at  AS actualCheckinAt,
+               actual_checkout_at AS actualCheckoutAt
+        FROM stay
+        WHERE reservation_code = #{reservationCode}
+    </select>
+
+    <!-- 체크인 / 체크아웃 요약 -->
+    <select id="findCheckInOutInfo"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CheckInOutInfo">
+
+        SELECT
+            MAX(CASE WHEN cio.record_type = 'CHECK_IN'
+                         THEN cio.recorded_at END) AS checkInAt,
+
+            MAX(CASE WHEN cio.record_type = 'CHECK_OUT'
+                         THEN cio.recorded_at END) AS checkOutAt
+        FROM checkinout cio
+                 JOIN stay s ON cio.stay_code = s.stay_code
+        WHERE s.reservation_code = #{reservationCode}
+    </select>
+
+    <!-- 부대시설 이용 요약 -->
+    <select id="findFacilityUsageSummary"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.FacilityUsageInfo">
+        SELECT f.facility_name  AS facilityName,
+               COUNT(*)         AS usageCount,
+               MAX(fu.usage_at) AS lastUsedAt
+        FROM facility_usage fu
+                 JOIN facility f ON fu.facility_code = f.facility_code
+                 JOIN stay s ON fu.stay_code = s.stay_code
+        WHERE s.reservation_code = #{reservationCode}
+        GROUP BY f.facility_name
+    </select>
+
+    <!-- 패키지정보 -->
+    <select id="findPackageInfo"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.PackageInfo">
+        SELECT rp.package_name    AS packageName,
+               rp.package_content AS packageContent,
+               rp.package_price   AS packagePrice
+        FROM reservation r
+                 JOIN reservation_package rp
+                      ON r.package_code = rp.package_code
+        WHERE r.reservation_code = #{reservationCode}
+    </select>
+
+    <select id="findPackageFacilities"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.PackageFacilityInfo">
+        SELECT f.facility_name        AS facilityName,
+               pf.included_quantity  AS includedQuantity
+        FROM reservation r
+                 JOIN package_facility pf
+                      ON r.package_code = pf.package_code
+                 JOIN facility f
+                      ON pf.facility_code = f.facility_code
+        WHERE r.reservation_code = #{reservationCode}
+    </select>
+
+
+    <select id="existsMember"
+            resultType="java.lang.Boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM member
+            WHERE customer_code = #{customerCode}
+        )
+    </select>
+
+    <select id="findPrimaryPhone"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.detail.CustomerContactCryptoRow">
+        SELECT
+            contact_value_enc AS contactValueEnc,
+            contact_value_hash AS contactValueHash
+        FROM customer_contact
+        WHERE customer_code = #{customerCode}
+          AND contact_type = 'PHONE'
+          AND is_primary = true
+            LIMIT 1
+    </select>
+
+</mapper>

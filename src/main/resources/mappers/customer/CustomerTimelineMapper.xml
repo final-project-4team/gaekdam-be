@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerTimelineMapper">
+
+    <select id="findCustomerTimeline"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerTimelineRow">
+        SELECT *
+        FROM (
+                 /* ===================== */
+                 /* 1) MEMO */
+                 /* ===================== */
+                 SELECT
+                     'MEMO' AS eventType,
+                     cm.created_at AS occurredAt,
+                     cm.customer_memo_code AS refId,
+                     '메모' AS title,
+                     CONCAT('메모 작성: ', LEFT(cm.customer_memo_content, 40)) AS summary
+                 FROM customer_memo cm
+                          JOIN customer c ON c.customer_code = cm.customer_code
+                 WHERE cm.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 2) RESERVATION CREATED */
+                 /* ===================== */
+                 SELECT
+                     'RESERVATION_CREATED' AS eventType,
+                     r.reserved_at AS occurredAt,
+                     r.reservation_code AS refId,
+                     '예약' AS title,
+                     CONCAT('예약 생성 (', r.reservation_status, ') / ', r.checkin_date, ' ~ ', r.checkout_date) AS summary
+                 FROM reservation r
+                          JOIN customer c ON c.customer_code = r.customer_code
+                 WHERE r.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+                   AND r.reservation_status != 'CANCELED'
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 3) RESERVATION CANCELED */
+                 /* ===================== */
+                 SELECT
+                     'RESERVATION_CANCELED' AS eventType,
+                     r.canceled_at AS occurredAt,
+                     r.reservation_code AS refId,
+                     '예약 취소' AS title,
+                     CONCAT('예약 취소 / ', r.checkin_date, ' ~ ', r.checkout_date) AS summary
+                 FROM reservation r
+                     JOIN customer c ON c.customer_code = r.customer_code
+                 WHERE r.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+                   AND r.reservation_status = 'CANCELED'
+                   AND r.canceled_at IS NOT NULL
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 4) STAY */
+                 /* ===================== */
+                 SELECT
+                     'STAY' AS eventType,
+                     COALESCE(s.actual_checkout_at, s.actual_checkin_at, s.created_at) AS occurredAt,
+                     s.stay_code AS refId,
+                     '투숙' AS title,
+                     CONCAT('투숙 상태: ', s.stay_status) AS summary
+                 FROM stay s
+                     JOIN customer c ON c.customer_code = s.customer_code
+                 WHERE s.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 5) INQUIRY CREATED (FIX) */
+                 /* ===================== */
+                 SELECT
+                     'INQUIRY_CREATED' AS eventType,
+                     i.created_at AS occurredAt,
+                     i.inquiry_code AS refId,
+                     '문의' AS title,
+                     CONCAT('문의 등록 (', i.inquiry_status, '): ', LEFT(i.inquiry_title, 50)) AS summary
+                 FROM inquiry i
+                     JOIN customer c ON c.customer_code = i.customer_code
+                 WHERE i.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 6) INQUIRY ANSWERED (FIX) */
+                 /* ===================== */
+                 SELECT
+                     'INQUIRY_ANSWERED' AS eventType,
+                     i.updated_at AS occurredAt,
+                     i.inquiry_code AS refId,
+                     '문의 답변완료' AS title,
+                     CONCAT('답변 완료: ', LEFT(i.inquiry_title, 50)) AS summary
+                 FROM inquiry i
+                     JOIN customer c ON c.customer_code = i.customer_code
+                 WHERE i.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+                   AND i.inquiry_status = 'ANSWERED'
+                   AND i.answer_content IS NOT NULL
+                   AND i.updated_at IS NOT NULL
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 7) MEMBERSHIP HISTORY */
+                 /* ===================== */
+                 SELECT
+                     'MEMBERSHIP' AS eventType,
+                     mh.changed_at AS occurredAt,
+                     mh.membership_history_code AS refId,
+                     '멤버십' AS title,
+                     CONCAT('등급 변경: ', IFNULL(mh.before_grade, '-'), ' -> ', mh.after_grade) AS summary
+                 FROM membership_history mh
+                     JOIN customer c ON c.customer_code = mh.customer_code
+                 WHERE mh.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 8) LOYALTY HISTORY */
+                 /* ===================== */
+                 SELECT
+                     'LOYALTY' AS eventType,
+                     lh.changed_at AS occurredAt,
+                     lh.loyalty_history_code AS refId,
+                     '로열티' AS title,
+                     CONCAT(
+                     '등급 변경: ',
+                     IFNULL(bg.loyalty_grade_name, '-'),
+                     ' -> ',
+                     IFNULL(ag.loyalty_grade_name, CONCAT('#', lh.after_loyalty_grade_code))
+                     ) AS summary
+                 FROM loyalty_history lh
+                     JOIN customer c ON c.customer_code = lh.customer_code
+                     LEFT JOIN loyalty_grade bg
+                     ON bg.loyalty_grade_code = lh.before_loyalty_grade_code
+                     AND bg.hotel_group_code = c.hotel_group_code
+                     LEFT JOIN loyalty_grade ag
+                     ON ag.loyalty_grade_code = lh.after_loyalty_grade_code
+                     AND ag.hotel_group_code = c.hotel_group_code
+                 WHERE lh.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+
+                 UNION ALL
+
+                 /* ===================== */
+                 /* 9) CUSTOMER STATUS HISTORY */
+                 /* ===================== */
+                 SELECT
+                     'CUSTOMER_STATUS' AS eventType,
+                     csh.changed_at AS occurredAt,
+                     csh.customer_status_history_code AS refId,
+                     '고객 상태' AS title,
+                     CONCAT('상태 변경: ', csh.before_status, ' -> ', csh.after_status) AS summary
+                 FROM customer_status_history csh
+                     JOIN customer c ON c.customer_code = csh.customer_code
+                 WHERE csh.customer_code = #{customerCode}
+                   AND c.hotel_group_code = #{hotelGroupCode}
+             ) t
+        WHERE t.occurredAt IS NOT NULL
+        ORDER BY t.occurredAt DESC
+            LIMIT #{limit}
+    </select>
+
+</mapper>

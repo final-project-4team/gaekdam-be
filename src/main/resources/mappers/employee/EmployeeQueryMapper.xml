@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.employee.query.mapper.EmployeeQueryMapper">
+  <sql id="EmployeeOrderBy">
+    ORDER BY
+    <choose>
+      <!-- 예외 처리: createdAt / updatedAt -->
+      <when test="sort != null and sort.sortBy == 'createdAt'"> e.created_at </when>
+      <when test="sort != null and sort.sortBy == 'updatedAt'"> e.updated_at </when>
+
+      <!-- 그 외 허용 컬럼들 -->
+      <when test="sort != null and sort.sortBy == 'employeeNumber'"> e.employee_number </when>
+      <when test="sort != null and sort.sortBy == 'departmentName'"> d.department_name </when>
+      <when test="sort != null and sort.sortBy == 'hotelPositionName'"> p.hotel_position_name </when>
+      <when test="sort != null and sort.sortBy == 'permissionName'"> perm.permission_name </when>
+
+      <!-- 기본값 -->
+      <otherwise> e.created_at </otherwise>
+    </choose>
+
+    <choose>
+      <when test="sort != null and sort.direction != null and sort.direction.toUpperCase() == 'ASC'"> ASC </when>
+      <otherwise> DESC </otherwise>
+    </choose>
+  </sql>
+
+
+
+    <select id="findByEmployeeCode" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse">
+      SELECT
+        e.employee_code      AS employeeCode,
+        e.employee_number    AS employeeNumber,
+        e.login_id           AS loginId,
+        e.employee_name_enc  AS employeeNameEnc,
+        e.phone_number_enc   AS phoneNumberEnc,
+        e.email_enc          AS emailEnc,
+        e.dek_enc            AS dekEnc,
+
+        d.department_name    AS departmentName,
+        p.hotel_position_name AS hotelPositionName,
+        pr.property_name     AS propertyName,
+        hg.hotel_group_name  AS hotelGroupName,
+        perm.permission_name AS permissionName,
+
+        e.hired_at           AS hiredAt,
+        e.employee_status    AS employeeStatus,
+        e.created_at         AS createdAt,
+        e.updated_at         AS updatedAt,
+
+        e.department_code    AS departmentCode,
+        e.hotel_position_code AS hotelPositionCode,
+        e.property_code      AS propertyCode,
+        e.hotel_group_code   AS hotelGroupCode,
+        e.permission_code    AS permissionCode,
+        e.failed_login_count AS failedLoginCount,
+        e.last_login_at      AS lastLoginAt
+    FROM employee e
+    LEFT JOIN department d ON e.department_code = d.department_code
+    LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
+    LEFT JOIN property pr ON e.property_code = pr.property_code
+    LEFT JOIN hotel_group hg ON e.hotel_group_code = hg.hotel_group_code
+    LEFT JOIN permission perm ON e.permission_code = perm.permission_code
+    WHERE e.employee_code = #{employeeCode}
+      LIMIT 1
+    </select>
+
+    <select id="searchEmployees" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryListEncResponse">
+      SELECT
+      e.employee_code AS employeeCode,
+      e.employee_number AS employeeNumber,
+      e.employee_name_enc AS employeeNameEnc,
+      e.phone_number_enc AS phoneNumberEnc,
+      e.email_enc AS emailEnc,
+      e.login_id AS loginId,
+      e.employee_status AS employeeStatus,
+      perm.permission_name AS permissionName,
+      e.dek_enc AS dekEnc
+      FROM employee e
+      LEFT JOIN department d ON e.department_code = d.department_code
+      LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
+      LEFT JOIN permission perm ON e.permission_code = perm.permission_code
+
+
+      <where>
+        e.hotel_group_code = #{hotelGroupCode}
+        <if test="nameHash != null">
+          AND e.employee_name_hash = #{nameHash}
+        </if>
+        <if test="phoneHash != null">
+          AND e.phone_number_hash = #{phoneHash}
+        </if>
+        <if test="emailHash != null">
+          AND e.email_hash = #{emailHash}
+        </if>
+        <if test="search.departmentName != null and search.departmentName != ''">
+          AND d.department_name = #{search.departmentName}
+        </if>
+        <if test="search.hotelPositionName != null and search.hotelPositionName != ''">
+          AND p.hotel_position_name = #{search.hotelPositionName}
+        </if>
+        <if test="search.employeeStatus != null">
+          AND e.employee_status = #{search.employeeStatus}
+        </if>
+      </where>
+      <include refid="EmployeeOrderBy"/>
+      LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countSearchEmployees" resultType="long">
+        SELECT COUNT(*)
+        FROM employee e
+        LEFT JOIN department d ON e.department_code = d.department_code
+        LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
+        <where>
+            e.hotel_group_code = #{hotelGroupCode}
+            <if test="nameHash != null">
+                AND e.employee_name_hash = #{nameHash}
+            </if>
+            <if test="phoneHash != null">
+                AND e.phone_number_hash = #{phoneHash}
+            </if>
+            <if test="emailHash != null">
+                AND e.email_hash = #{emailHash}
+            </if>
+            <if test="search.departmentName != null and search.departmentName != ''">
+                AND d.department_name = #{search.departmentName}
+            </if>
+            <if test="search.hotelPositionName != null and search.hotelPositionName != ''">
+                AND p.hotel_position_name = #{search.hotelPositionName}
+            </if>
+            <if test="search.employeeStatus != null">
+                AND e.employee_status = #{search.employeeStatus}
+            </if>
+        </where>
+    </select>
+
+
+  <select id="findMyPage" resultType="com.gaekdam.gaekdambe.iam_service.employee.query.dto.response.EmployeeQueryEncResponse">
+    SELECT
+      e.employee_code      AS employeeCode,
+      e.employee_number    AS employeeNumber,
+      e.login_id           AS loginId,
+      e.employee_name_enc  AS employeeNameEnc,
+      e.phone_number_enc   AS phoneNumberEnc,
+      e.email_enc          AS emailEnc,
+      e.dek_enc            AS dekEnc,
+
+      d.department_name    AS departmentName,
+      p.hotel_position_name AS hotelPositionName,
+      pr.property_name     AS propertyName,
+      hg.hotel_group_name  AS hotelGroupName,
+      perm.permission_name AS permissionName,
+
+      e.hired_at           AS hiredAt,
+      e.employee_status    AS employeeStatus,
+      e.created_at         AS createdAt,
+      e.updated_at         AS updatedAt,
+
+      e.department_code    AS departmentCode,
+      e.hotel_position_code AS hotelPositionCode,
+      e.property_code      AS propertyCode,
+      e.hotel_group_code   AS hotelGroupCode,
+      e.permission_code    AS permissionCode,
+      e.failed_login_count AS failedLoginCount,
+      e.last_login_at      AS lastLoginAt
+    FROM employee e
+           LEFT JOIN department d ON e.department_code = d.department_code
+           LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
+           LEFT JOIN property pr ON e.property_code = pr.property_code
+           LEFT JOIN hotel_group hg ON e.hotel_group_code = hg.hotel_group_code
+           LEFT JOIN permission perm ON e.permission_code = perm.permission_code
+    WHERE e.hotel_group_code = #{hotelGroupCode}
+    AND e.login_id = #{loginId}
+      LIMIT 1
+  </select>
+
+</mapper>

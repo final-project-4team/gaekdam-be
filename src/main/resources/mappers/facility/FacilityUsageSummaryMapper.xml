@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityUsageSummaryMapper">
+
+    <!-- =========================
+         오늘 부대시설 이용 현황 (SUMMARY)
+         - LIST 기준과 100% 동일
+         ========================= -->
+    <select id="findTodayUsageSummary"
+            resultType="com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageSummaryResponse">
+
+        SELECT
+        f.facility_code   AS facilityCode,
+        f.facility_name   AS facilityName,
+        COUNT(*)          AS usageCount
+
+        FROM facility_usage fu
+
+        /* === LIST 기준 JOIN 시작 === */
+        INNER JOIN stay s
+        ON fu.stay_code = s.stay_code
+
+        INNER JOIN reservation r
+        ON s.reservation_code = r.reservation_code
+
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+
+        INNER JOIN facility f
+        ON fu.facility_code = f.facility_code
+
+        INNER JOIN property p
+        ON f.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        /* === LIST 기준 JOIN 끝 === */
+
+        WHERE 1=1
+
+        <if test="propertyCode != null">
+            AND p.property_code = #{propertyCode}
+        </if>
+
+        AND fu.usage_at <![CDATA[ >= ]]> #{startAt}
+        AND fu.usage_at <![CDATA[ < ]]> #{endAt}
+
+        GROUP BY
+        f.facility_code,
+        f.facility_name
+
+        ORDER BY usageCount DESC
+    </select>
+
+</mapper>

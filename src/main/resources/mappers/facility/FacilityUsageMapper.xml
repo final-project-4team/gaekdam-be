@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityUsageMapper">
+
+    <!-- =========================
+         부대시설 이용내역 조회 (LIST)
+         - 예약쪽 패턴: CryptoRow로 조회
+         ========================= -->
+    <select id="findFacilityUsages"
+            resultType="com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityUsageCryptoRow">
+
+        SELECT
+        fu.facility_usage_code   AS facilityUsageCode,
+        fu.usage_at              AS usageAt,
+        fu.usage_type            AS usageType,
+        fu.used_person_count     AS usedPersonCount,
+        fu.usage_quantity        AS usageQuantity,
+        fu.usage_price           AS usagePrice,
+        fu.price_source          AS priceSource,
+
+        s.stay_code              AS stayCode,
+
+        c.customer_code          AS customerCode,
+        c.customer_name_enc      AS customerNameEnc,
+        c.customer_name_hash     AS customerNameHash,
+        c.dek_enc                AS dekEnc,
+
+        ro.room_number           AS roomNumber,
+
+        f.facility_code          AS facilityCode,
+        f.facility_name          AS facilityName,
+        f.facility_type          AS facilityType
+
+        FROM facility_usage fu
+
+        INNER JOIN stay s
+        ON fu.stay_code = s.stay_code
+
+        INNER JOIN reservation r
+        ON s.reservation_code = r.reservation_code
+
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{search.hotelGroupCode}
+
+        INNER JOIN facility f
+        ON fu.facility_code = f.facility_code
+
+        INNER JOIN property p
+        ON f.property_code = p.property_code
+        AND p.hotel_group_code = #{search.hotelGroupCode}
+
+        LEFT JOIN room ro
+        ON s.room_code = ro.room_code
+
+        <where>
+            <if test="search.propertyCode != null">
+                AND p.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.stayCode != null">
+                AND s.stay_code = #{search.stayCode}
+            </if>
+
+            <if test="search.stayCodeLike != null and search.stayCodeLike != ''">
+                AND CAST(s.stay_code AS CHAR)
+                LIKE CONCAT('%', #{search.stayCodeLike}, '%')
+            </if>
+
+            <if test="search.facilityCode != null">
+                AND f.facility_code = #{search.facilityCode}
+            </if>
+
+            <if test="search.customerNameHash != null">
+                AND c.customer_name_hash = #{search.customerNameHash}
+            </if>
+
+            <if test="search.usageType != null and search.usageType != ''">
+                AND fu.usage_type = #{search.usageType}
+            </if>
+
+            <if test="search.priceSource != null and search.priceSource != ''">
+                AND fu.price_source = #{search.priceSource}
+            </if>
+
+            AND fu.usage_at <![CDATA[ >= ]]> #{search.startAt}
+            AND fu.usage_at <![CDATA[ < ]]> #{search.endAt}
+        </where>
+
+        ORDER BY fu.usage_at DESC
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         총 개수 (COUNT)
+         ========================= -->
+    <select id="countFacilityUsages" resultType="long">
+
+        SELECT COUNT(*)
+        FROM facility_usage fu
+
+        INNER JOIN stay s
+        ON fu.stay_code = s.stay_code
+
+        INNER JOIN reservation r
+        ON s.reservation_code = r.reservation_code
+
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{search.hotelGroupCode}
+
+        INNER JOIN facility f
+        ON fu.facility_code = f.facility_code
+
+        INNER JOIN property p
+        ON f.property_code = p.property_code
+        AND p.hotel_group_code = #{search.hotelGroupCode}
+
+        LEFT JOIN room ro
+        ON s.room_code = ro.room_code
+
+        <where>
+            <if test="search.propertyCode != null">
+                AND p.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.stayCode != null">
+                AND s.stay_code = #{search.stayCode}
+            </if>
+
+            <if test="search.stayCodeLike != null and search.stayCodeLike != ''">
+                AND CAST(s.stay_code AS CHAR)
+                LIKE CONCAT('%', #{search.stayCodeLike}, '%')
+            </if>
+
+            <if test="search.facilityCode != null">
+                AND f.facility_code = #{search.facilityCode}
+            </if>
+
+            <if test="search.customerNameHash != null">
+                AND c.customer_name_hash = #{search.customerNameHash}
+            </if>
+
+            <if test="search.usageType != null and search.usageType != ''">
+                AND fu.usage_type = #{search.usageType}
+            </if>
+
+            <if test="search.priceSource != null and search.priceSource != ''">
+                AND fu.price_source = #{search.priceSource}
+            </if>
+
+            AND fu.usage_at <![CDATA[ >= ]]> #{search.startAt}
+            AND fu.usage_at <![CDATA[ < ]]> #{search.endAt}
+        </where>
+    </select>
+
+</mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.hotel_service.property.query.mapper.PropertyMapper">
+
+
+    <select id="findPropertyList"
+            resultType="com.gaekdam.gaekdambe.hotel_service.property.query.dto.response.PropertyListResponse">
+
+        SELECT
+        p.property_code AS propertyCode,
+        p.property_city AS propertyCity,
+        p.property_name AS propertyName,
+        p.property_status AS propertyStatus,
+        hg.hotel_group_name AS hotelGroupName
+        FROM property p
+        JOIN hotel_group hg ON hg.hotel_group_code=p.hotel_group_code
+
+        <where>
+            <if test="search.propertyCode != null">
+                AND p.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.propertyCity != null and search.propertyCity != ''">
+                AND p.property_city LIKE CONCAT('%', #{search.propertyCity}, '%')
+            </if>
+            <if test="search.propertyName != null and search.propertyName != ''">
+                AND p.property_name LIKE CONCAT('%', #{search.propertyName}, '%')
+            </if>
+            <if test="search.propertyStatus != null">
+                AND p.property_status = #{search.propertyStatus}
+            </if>
+        </where>
+
+        <choose>
+            <when test="sort.sortBy != null and sort.sortBy != ''">
+                ORDER BY ${sort.sortBy} ${sort.direction}
+            </when>
+            <otherwise>
+                ORDER BY p.property_code DESC
+            </otherwise>
+        </choose>
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countPropertyList" resultType="long">
+        SELECT COUNT(*)
+        FROM property p
+        JOIN hotel_group hg ON hg.hotel_group_code= p.hotel_group_code
+
+        <where>
+            <if test="search.propertyCode != null">
+                AND p.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.propertyCity != null and search.propertyCity != ''">
+                AND p.property_city LIKE CONCAT('%', #{search.propertyCity}, '%')
+            </if>
+            <if test="search.propertyName != null and search.propertyName != ''">
+                AND p.property_name LIKE CONCAT('%', #{search.propertyName}, '%')
+            </if>
+            <if test="search.propertyStatus != null">
+                AND p.property_status = #{search.propertyStatus}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="findByHotelGroup"
+            resultType="com.gaekdam.gaekdambe.hotel_service.property.query.dto.response.PropertyListResponse">
+
+        SELECT p.property_code     AS propertyCode,
+               p.property_city     AS propertyCity,
+               p.property_name     AS propertyName,
+               p.property_status   AS propertyStatus,
+               hg.hotel_group_name AS hotelGroupName
+        FROM property p
+                 INNER JOIN hotel_group hg
+                            ON p.hotel_group_code = hg.hotel_group_code
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+        ORDER BY p.property_name ASC
+
+    </select>
+
+</mapper>

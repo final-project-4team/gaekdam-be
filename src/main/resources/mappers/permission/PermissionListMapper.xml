@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.permission.query.mapper.PermissionMapper">
+
+  <resultMap id="PermissionListMap" type="com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionListResponse">
+    <id     property="permissionCode" column="permission_code"/>
+    <result property="permissionName" column="permission_name"/>
+    <result property="hotelGroupCode" column="hotel_group_code"/>
+
+    <!-- notNullColumn: LEFT JOIN으로 null일 때 리스트에 빈 객체 들어가는 것 방지 -->
+    <collection property="permissionTypes"
+      ofType="com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionTypeListResponse"
+      notNullColumn="permission_type_code">
+      <id     property="permissionTypeCode" column="permission_type_code"/>
+      <result property="permissionTypeKey"  column="permission_type_key"/>
+    </collection>
+  </resultMap>
+
+  <resultMap id="PermissionNameListMap"
+    type="com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionNameListResponse">
+    <id     property="permissionCode" column="permission_code"/>
+    <result property="permissionName" column="permission_name"/>
+  </resultMap>
+
+
+  <select id="findPermissionList" resultMap="PermissionListMap">
+    SELECT
+    p.permission_code,
+    p.permission_name,
+    pt.permission_type_code,
+    pt.permission_type_key
+    FROM (
+    SELECT
+    p.permission_code,
+    p.permission_name,
+    p.hotel_group_code
+    FROM permission p
+    <where>
+        AND p.hotel_group_code=#{hotelGroupCode}
+        AND p.permission_status = 'ACTIVE'
+      <if test="search != null and search.permissionName != null and search.permissionName != ''">
+        AND p.permission_name LIKE CONCAT('%', #{search.permissionName}, '%')
+      </if>
+
+      <if test="search != null and search.resourceName != null and search.resourceName.size() > 0">
+        AND EXISTS (
+        SELECT 1
+        FROM permission_mapping pm2
+        JOIN permission_type pt2
+        ON pt2.permission_type_code = pm2.permission_type_code
+        WHERE pm2.permission_code = p.permission_code
+        AND pt2.permission_type_resource IN
+        <foreach collection="search.resourceName" item="rn" open="(" separator="," close=")">
+          #{rn}
+        </foreach>
+        )
+      </if>
+    </where>
+
+    ORDER BY ${sort.sortBy} ${sort.direction}
+
+
+    LIMIT #{page.size} OFFSET #{page.offset}
+    ) p
+    LEFT JOIN permission_mapping pm
+    ON pm.permission_code = p.permission_code
+    LEFT JOIN permission_type pt
+    ON pt.permission_type_code = pm.permission_type_code
+    <if test="search != null and search.resourceName != null and search.resourceName.size() > 0">
+      AND pt.permission_type_resource IN
+      <foreach collection="search.resourceName" item="rn" open="(" separator="," close=")">
+        #{rn}
+      </foreach>
+    </if>
+
+    ORDER BY ${sort.sortBy} ${sort.direction}, pt.permission_type_code ASC
+  </select>
+
+
+
+
+  <select id="countPermissionList" resultType="long">
+    SELECT COUNT(*)
+    FROM permission p
+    <where>
+      AND p.permission_status = 'ACTIVE'
+      <if test="search != null and search.permissionName != null and search.permissionName != ''">
+        AND p.permission_name LIKE CONCAT('%', #{search.permissionName}, '%')
+      </if>
+      <if test="search != null and search.resourceName != null and search.resourceName.size() > 0">
+        AND EXISTS (
+          SELECT 1
+          FROM permission_mapping pm2
+          JOIN permission_type pt2
+            ON pt2.permission_type_code = pm2.permission_type_code
+          WHERE pm2.permission_code = p.permission_code
+            AND pt2.permission_type_resource IN
+            <foreach collection="search.resourceName" item="rn" open="(" separator="," close=")">
+              #{rn}
+            </foreach>
+        )
+      </if>
+    </where>
+  </select>
+
+
+
+
+  <select id="findPermissionNameList"
+    resultType="com.gaekdam.gaekdambe.iam_service.permission.query.dto.response.PermissionNameListResponse">
+    SELECT
+      p.permission_code AS permissionCode,
+      p.permission_name AS permissionName
+    FROM permission p
+    WHERE p.hotel_group_code = #{hotelGroupCode}
+      AND p.permission_status = 'ACTIVE'
+  </select>
+
+
+</mapper>

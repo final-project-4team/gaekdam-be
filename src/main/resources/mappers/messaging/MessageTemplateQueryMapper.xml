@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageTemplateQueryMapper">
+
+    <!-- =================================================
+         기존: 메시지 템플릿 리스트
+         ================================================= -->
+    <select id="findTemplates"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateResponse">
+
+        SELECT
+        template_code AS templateCode,
+        stage_code AS stageCode,
+        visitor_type AS visitorType,
+        language_code AS languageCode,
+        title,
+        is_active AS isActive,
+        FROM message_template
+        WHERE hotel_group_code = #{search.hotelGroupCode}
+
+        <if test="search.stageCode != null">
+            AND stage_code = #{search.stageCode}
+        </if>
+
+        <if test="search.isActive != null">
+            AND is_active = #{search.isActive}
+        </if>
+
+        <if test="sort != null and sort.sortBy != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countTemplates" resultType="long">
+        SELECT COUNT(*)
+        FROM message_template
+        <where>
+            <if test="search.stageCode != null">
+                AND stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isActive != null">
+                AND is_active = #{search.isActive}
+            </if>
+        </where>
+    </select>
+
+    <!-- =================================================
+          설정 화면 전용 (여정 기준)
+         ================================================= -->
+    <select id="findSettingTemplates"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateSettingResponse">
+
+        SELECT s.stage_code     AS stageCode,
+               s.stage_name_eng AS stageNameEng,
+               s.stage_name_kor AS stageNameKor,
+
+               t.template_code  AS templateCode,
+               t.visitor_type   AS visitorType,
+               t.is_active      AS isActive,
+               t.title          AS title
+        FROM message_journey_stage s
+                 LEFT JOIN message_template t
+                           ON t.stage_code = s.stage_code
+                               AND t.hotel_group_code = #{hotelGroupCode}
+
+        WHERE s.is_active = true
+
+        ORDER BY s.stage_code ASC,
+                 t.visitor_type ASC
+    </select>
+
+
+
+    <select id="findTemplateDetail"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateDetailResponse">
+
+        SELECT
+            mt.template_code      AS templateCode,
+            mt.stage_code         AS stageCode,
+            st.stage_name_kor     AS stageNameKor,
+
+            mt.visitor_type       AS visitorType,
+            mt.language_code      AS languageCode,
+
+            mt.title              AS title,
+            mt.content            AS content,
+            mt.condition_expr     AS conditionExpr,
+
+            mt.is_active          AS isActive
+        FROM message_template mt
+                 JOIN message_journey_stage st
+                      ON mt.stage_code = st.stage_code
+        WHERE mt.template_code = #{templateCode}
+
+    </select>
+
+</mapper>

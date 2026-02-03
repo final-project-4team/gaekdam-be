@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingVisitorTypeQueryMapper">
+
+    <select id="resolveVisitorType"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enums.VisitorType">
+
+        SELECT
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM stay s
+                             JOIN reservation r2
+                                  ON s.reservation_code = r2.reservation_code
+                    WHERE r2.customer_code = (
+                        SELECT r.customer_code
+                        FROM reservation r
+                        WHERE r.reservation_code = #{reservationCode}
+                    )
+                      AND s.actual_checkout_at IS NOT NULL
+                      AND r2.reservation_code <![CDATA[ <> ]]> #{reservationCode}
+                )
+                    THEN 'REPEAT'
+                ELSE 'FIRST'
+                END
+
+    </select>
+
+</mapper>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerSnapshotMapper">
+
+    <select id="findCustomerSnapshot"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.service.model.row.CustomerSnapshotRow">
+        SELECT
+            c.customer_code AS customerCode,
+
+            /* 총 이용횟수: stay_status = COMPLETED */
+            (
+                SELECT COUNT(*)
+                FROM stay s
+                WHERE s.customer_code = c.customer_code
+                  AND s.stay_status = 'COMPLETED'
+            ) AS totalStayCount,
+
+            /* LTV: COMPLETED 기준 (숙박 예약금액 + 부대시설 이용금액) */
+            (
+                /* 숙박 예약금액 합 */
+                COALESCE((
+                             SELECT SUM(r.total_price)
+                             FROM reservation r
+                                      JOIN stay s1
+                                           ON s1.reservation_code = r.reservation_code
+                                               AND s1.customer_code = c.customer_code
+                                               AND s1.stay_status = 'COMPLETED'
+                             WHERE r.customer_code = c.customer_code
+                               AND r.canceled_at IS NULL
+                         ), 0)
+
+                    +
+
+                    /* 부대시설 이용금액 합 */
+                COALESCE((
+                             SELECT SUM(fu.usage_price)
+                             FROM facility_usage fu
+                                      JOIN stay s2
+                                           ON s2.stay_code = fu.stay_code
+                                               AND s2.customer_code = c.customer_code
+                                               AND s2.stay_status = 'COMPLETED'
+                         ), 0)
+                ) AS ltvAmount,
+
+            /* 최근 이용일 */
+            (
+                SELECT COALESCE(
+                               MAX(s3.actual_checkout_at),
+                               MAX(s3.actual_checkin_at),
+                               MAX(s3.created_at)
+                       )
+                FROM stay s3
+                WHERE s3.customer_code = c.customer_code
+            ) AS lastUsedAt,
+
+            /* 미해결 이슈: inquiry 조회 기준과 동일하게 hotel_group_code를 property로 필터 */
+            (
+                SELECT COUNT(*)
+                FROM inquiry i
+                         JOIN property p ON p.property_code = i.property_code
+                WHERE i.customer_code = c.customer_code
+                  AND p.hotel_group_code = #{hotelGroupCode}
+                  AND i.inquiry_status = 'IN_PROGRESS'
+            ) AS unresolvedInquiryCount
+
+        FROM customer c
+        WHERE c.customer_code = #{customerCode}
+          AND c.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+</mapper>

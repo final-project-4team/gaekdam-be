@@ -1,0 +1,113 @@
+package com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds;
+
+public enum PermissionTypeKey {
+  // 리포트 (REPORT)
+  REPORT_LAYOUT_CREATE,              // 레이아웃 생성
+  REPORT_LAYOUT_LIST,                 // 레이아웃 리스트 조회
+  REPORT_LAYOUT_READ,                 // 레이아웃 상세조회
+  REPORT_LAYOUT_UPDATE,               // 레이아웃 수정
+  REPORT_LAYOUT_DELETE,              // 레이아웃 삭제
+  REPORT_LAYOUT_TEMPLATE_CREATE,       // 레이아웃 템플릿 추가
+  REPORT_LAYOUT_TEMPLATE_LIST,       // 레이아웃 템플릿 리스트 조회
+  REPORT_LAYOUT_TEMPLATE_READ,       // 레이아웃 템플릿 상세조회
+  REPORT_LAYOUT_TEMPLATE_UPDATE,     // 레이아웃 템플릿 수정
+  REPORT_LAYOUT_TEMPLATE_DELETE,      // 레이아웃 템플릿 삭제
+  REPORT_LAYOUT_TEMPLATE_LIBRARY_LIST,// 레이아웃 템플릿 라이브러리 리스트 조회
+
+  // 회원 (MEMBER)
+  MEMBER_LIST,
+
+  // 형식 : (리소스)_(기능)
+  EMPLOYEE_LIST,                //직원 리스트 조회
+  EMPLOYEE_READ,                //직원 상세 조회
+  EMPLOYEE_CREATE,              // 직원 생성
+  EMPLOYEE_UPDATE,              // 직원 수정
+  EMPLOYEE_DELETE,              // 직원 삭제
+
+  // 고객 (CUSTOMER)
+  CUSTOMER_READ,                // 고객 상세 조회
+  CUSTOMER_LIST,                // 고객 리스트 조회
+  CUSTOMER_UPDATE,
+  CUSTOMER_DELETE,
+
+  // 고객 메모 (CUSTOMER_MEMO
+  // )
+  CUSTOMER_MEMO_CREATE,
+  CUSTOMER_MEMO_LIST,
+  CUSTOMER_MEMO_READ,
+  CUSTOMER_MEMO_UPDATE,
+  CUSTOMER_MEMO_DELETE,
+
+  // 멤버십 기준 (MEMBERSHIP_POLICY)
+  MEMBERSHIP_POLICY_LIST,
+  MEMBERSHIP_POLICY_READ,
+  MEMBERSHIP_POLICY_CREATE,
+  MEMBERSHIP_POLICY_UPDATE,
+  MEMBERSHIP_POLICY_DELETE,
+
+
+  // 로열티 기준 (LOYALTY_POLICY)
+  LOYALTY_POLICY_LIST,
+  LOYALTY_POLICY_READ,
+  LOYALTY_POLICY_CREATE,
+  LOYALTY_POLICY_UPDATE,
+  LOYALTY_POLICY_DELETE,
+
+
+  // 고객 활동 및 타임라인
+  CUSTOMER_TIMELINE_READ,
+  RESERVATION_LIST,
+  RESERVATION_READ,
+  TODAY_RESERVATION_LIST,
+  TODAY_RESERVATION_READ,
+  CHECK_IN_CREATE,
+  CHECK_OUT_CREATE,
+  TODAY_FACILITY_USAGE_LIST,
+  TODAY_FACILITY_USAGE_READ,
+
+
+  // 문의 (INQUIRY)
+  INQUIRY_LIST,
+  INQUIRY_READ,
+
+  // 사건사고 (ACCIDENT)
+  INCIDENT_CREATE, // 사건사고 등록
+  INCIDENT_LIST,   // 사건사고 리스트
+  INCIDENT_READ,   // 사건사고 상세 조회
+  INCIDENT_DELETE,
+  INCIDENT_ACTION_CREATE,// 조치이력 등록
+  INCIDENT_ACTION_READ, // 조치이력 조회
+
+  // 메시지 (MESSAGE)
+  MESSAGE_CREATE,
+  MESSAGE_LIST,
+  MESSAGE_READ,
+  MESSAGE_UPDATE,
+  MESSAGE_DELETE,
+
+  //로그
+  LOG_LOGIN_LIST,
+  LOG_LOGIN_READ,
+  LOG_AUDIT_LIST,
+  LOG_AUDIT_READ,
+  LOG_PERMISSION_CHANGED_LIST,
+  LOG_PERSONAL_INFORMATION_LIST,
+  LOG_PERSONAL_INFORMATION_READ,
+
+  // 권한
+  PERMISSION_CREATE,
+  PERMISSION_LIST,
+  PERMISSION_UPDATE,
+  PERMISSION_DELETE,
+
+  // 세팅 - 목표관리
+  SETTING_OBJECTIVE_CREATE,
+  SETTING_OBJECTIVE_LIST,
+  SETTING_OBJECTIVE_UPDATE,
+  SETTING_OBJECTIVE_DELETE,
+
+  //부서 조회와 직급조회
+  DEPARTMENT_LIST,
+  HOTEL_POSITION_LIST,
+
+}

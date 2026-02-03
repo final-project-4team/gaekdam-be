@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+  namespace="com.gaekdam.gaekdambe.customer_service.membership.query.mapper.MembershipGradeMapper">
+
+  <select id="findMembershipGradeList"
+    resultType="com.gaekdam.gaekdambe.customer_service.membership.query.dto.response.MembershipGradeListQueryResponse">
+    SELECT
+    ms.membership_grade_code   AS membershipGradeCode,
+    ms.grade_name AS gradeName,
+    ms.tier_level AS tierLevel,
+    ms.calculation_amount AS calculationAmount,
+    ms.calculation_count AS calculationCount,
+    ms.calculation_term_month AS calculationTermMonth,
+    ms.calculation_renewal_day AS calculationRenewalDay
+
+    FROM membership_grade ms
+    WHERE ms.hotel_group_code = #{hotelGroupCode}
+
+
+    <choose>
+      <when test="status != null and status == 'INACTIVE'">
+        AND ms.membership_grade_status = #{status}
+      </when>
+      <when test="status != null and status == 'ALL'">
+      </when>
+      <otherwise>AND ms.membership_grade_status = 'ACTIVE'</otherwise>
+    </choose>
+
+    ORDER BY
+    <choose>
+      <when test="sort != null and sort.sortBy == 'gradeName'">ms.grade_name</when>
+      <when test="sort != null and sort.sortBy == 'calculationAmount'">ms.calculation_amount</when>
+      <when test="sort != null and sort.sortBy == 'calculationCount'">ms.calculation_count</when>
+      <when test="sort != null and sort.sortBy == 'calculationTermMonth'">
+        ms.calculation_term_month
+      </when>
+      <when test="sort != null and sort.sortBy == 'calculationRenewalDay'">
+        ms.calculation_renewal_day
+      </when>
+      <otherwise>ms.tier_level</otherwise>
+    </choose>
+
+    <choose>
+      <when test="sort != null and sort.direction == 'ASC'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>
+
+  </select>
+
+  <select id="findMembershipGradeDetail"
+    resultType="com.gaekdam.gaekdambe.customer_service.membership.query.dto.response.MembershipGradeDetailQueryResponse">
+    SELECT ms.membership_grade_code   AS membershipGradeCode,
+           ms.grade_name              AS gradeName,
+           ms.tier_level              AS tierLevel,
+           ms.tier_comment            AS tierComment,
+           ms.calculation_amount      AS calculationAmount,
+           ms.calculation_count       AS calculationCount,
+           ms.calculation_term_month  AS calculationTermMonth,
+           ms.calculation_renewal_day AS calculationRenewalDay,
+           ms.membership_grade_status AS membershipGradeStatus,
+           ms.updated_at              AS updatedAt
+
+    FROM membership_grade ms
+    WHERE ms.membership_grade_code = #{membershipGradeCode}
+      AND ms.hotel_group_code = #{hotelGroupCode}
+  </select>
+</mapper>

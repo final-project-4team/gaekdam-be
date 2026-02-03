@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.log.query.mapper.AuditLogMapper">
+
+  <select id="findAuditLogs"
+    resultType="com.gaekdam.gaekdambe.iam_service.log.query.dto.response.AuditLogQueryResponse">
+    SELECT
+      al.audit_log_code AS auditLogCode,
+      al.permission_type_key AS permissionTypeKey,
+      al.employee_code AS employeeCode,
+      al.employee_login_id AS employeeLoginId,
+      al.employee_name AS employeeName,
+      al.hotel_group_code AS hotelGroupCode,
+      al.details AS details,
+      al.previous_value AS previousValue,
+      al.new_value AS newValue,
+      al.occurred_at AS occurredAt
+    FROM audit_log al
+    <where>
+      AND al.hotel_group_code = #{hotelGroupCode}
+
+      <if test="search.employeeLoginId != null and search.employeeLoginId != ''">
+        AND al.employee_login_id LIKE CONCAT('%', #{search.employeeLoginId}, '%')
+      </if>
+
+      <if test="search.permissionTypeKey != null and search.permissionTypeKey != ''">
+        AND  al.permission_type_key LIKE CONCAT('%', #{search.permissionTypeKey}, '%')
+      </if>
+
+      <if test="search.details != null and search.details != ''">
+        AND (
+          al.details LIKE CONCAT('%', #{search.details}, '%')
+          OR al.previous_value LIKE CONCAT('%', #{search.details}, '%')
+          OR al.new_value LIKE CONCAT('%', #{search.details}, '%')
+        )
+      </if>
+
+      <if test="search.fromDate != null">
+        AND al.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
+      </if>
+      
+      <if test="search.toDate != null">
+        AND al.occurred_at <![CDATA[ <= ]]> #{search.toDate}
+      </if>
+    </where>
+
+    <choose>
+      <when test="sort != null and sort.sortBy != null and sort.sortBy != ''">
+        ORDER BY ${sort.sortBy} ${sort.direction}
+      </when>
+      <otherwise>
+        ORDER BY al.occurred_at DESC
+      </otherwise>
+    </choose>
+    LIMIT #{page.size} OFFSET #{page.offset}
+  </select>
+
+  <select id="countAuditLogs" resultType="long">
+    SELECT COUNT(*) 
+    FROM audit_log al
+    <where>
+      AND al.hotel_group_code = #{hotelGroupCode}
+
+      <if test="search.employeeLoginId != null and search.employeeLoginId != ''">
+        AND al.employee_login_id LIKE CONCAT('%', #{search.employeeLoginId}, '%')
+      </if>
+
+      <if test="search.permissionTypeKey != null and search.permissionTypeKey != ''">
+        AND al.permission_type_key LIKE CONCAT('%', #{search.permissionTypeKey}, '%')
+      </if>
+
+      <if test="search.details != null and search.details != ''">
+        AND al.details LIKE CONCAT('%', #{search.details}, '%')
+      </if>
+
+      <if test="search.fromDate != null">
+        AND al.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
+      </if>
+      
+      <if test="search.toDate != null">
+        AND al.occurred_at <![CDATA[ <= ]]> #{search.toDate}
+      </if>
+    </where>
+  </select>
+
+  <select id="findAuditLog"
+    resultType="com.gaekdam.gaekdambe.iam_service.log.query.dto.response.AuditLogQueryResponse">
+    SELECT
+      al.audit_log_code AS auditLogCode,
+      al.permission_type_key AS permissionTypeKey,
+      al.employee_code AS employeeCode,
+      al.employee_login_id AS employeeLoginId,
+      al.employee_name AS employeeName,
+      al.hotel_group_code AS hotelGroupCode,
+      al.details AS details,
+      al.previous_value AS previousValue,
+      al.new_value AS newValue,
+      al.occurred_at AS occurredAt
+    FROM audit_log al
+    WHERE al.audit_log_code = #{auditLogCode}
+  </select>
+
+</mapper>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.log.query.mapper.PersonalInformationLogMapper">
+
+  <select id="findPersonalInformationLogs"
+    resultType="com.gaekdam.gaekdambe.iam_service.log.query.dto.response.PersonalInformationLogQueryResponse">
+    SELECT
+       pil.personal_information_log_code AS personalInformationLogCode,
+       pil.occurred_at AS occurredAt,
+       pil.permission_type_key AS permissionTypeKey,
+       ea.employee_code AS employeeAccessorCode,
+       ea.employee_name_enc AS employeeAccessorName,
+       ea.login_id AS employeeAccessorLoginId,
+       
+       CASE 
+           WHEN et.employee_code IS NOT NULL THEN 'EMPLOYEE'
+           WHEN ct.customer_code IS NOT NULL THEN 'CUSTOMER'
+           ELSE 'UNKNOWN' 
+       END AS targetType,
+
+       COALESCE(et.employee_code, ct.customer_code) AS targetCode,
+       COALESCE(et.employee_name_enc, ct.customer_name_enc) AS targetName,
+       
+       pil.purpose AS purpose
+
+    FROM personal_information_log pil
+    JOIN employee ea ON pil.employee_accessor_code = ea.employee_code
+    LEFT JOIN employee et ON pil.target_employee_code = et.employee_code
+    LEFT JOIN customer ct ON pil.target_customer_code = ct.customer_code
+    
+    <where>
+        AND pil.hotel_group_code = #{hotelGroupCode}
+
+        <if test="search.accessorLoginId != null and search.accessorLoginId != ''">
+            AND ea.login_id LIKE CONCAT('%', #{search.accessorLoginId}, '%')
+        </if>
+
+        <if test="search.permissionTypeKey != null">
+            AND pil.permission_type_key LIKE CONCAT('%',#{search.permissionTypeKey}, '%')
+        </if>
+
+        <if test="search.purpose != null and search.purpose != ''">
+            AND pil.purpose LIKE CONCAT('%', #{search.purpose}, '%')
+        </if>
+
+        <if test="search.personalInformationLogCode != null">
+            AND pil.personal_information_log_code = #{search.personalInformationLogCode}
+        </if>
+
+        <if test="accessorNameHash != null">
+            AND ea.employee_name_hash = #{accessorNameHash, jdbcType=BINARY}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND pil.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        
+        <if test="search.targetCode != null">
+            AND (pil.target_employee_code = #{search.targetCode} OR pil.target_customer_code = #{search.targetCode})
+        </if>
+
+        <if test="targetNameHash != null">
+            AND (et.employee_name_hash = #{targetNameHash, jdbcType=BINARY}) 
+            <!-- OR ct.customer_name_hash = #{targetNameHash, jdbcType=BINARY} -->
+        </if>
+        
+        <if test="search.targetType == 'EMPLOYEE'">
+            AND pil.target_employee_code IS NOT NULL
+        </if>
+
+        <if test="search.targetType == 'CUSTOMER'">
+            AND pil.target_customer_code IS NOT NULL
+        </if>
+
+        <if test="search.toDate != null">
+            AND pil.occurred_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </where>
+
+    <choose>
+      <when test="sort != null and sort.sortBy != null and sort.sortBy != ''">
+        ORDER BY ${sort.sortBy} ${sort.direction}
+      </when>
+      <otherwise>
+        ORDER BY pil.occurred_at DESC
+      </otherwise>
+    </choose>
+    LIMIT #{page.size} OFFSET #{page.offset}
+
+  </select>
+
+  <select id="countPersonalInformationLogs" resultType="long">
+    SELECT COUNT(*) 
+    FROM personal_information_log pil
+    JOIN employee ea ON pil.employee_accessor_code = ea.employee_code
+    LEFT JOIN employee et ON pil.target_employee_code = et.employee_code
+    LEFT JOIN customer ct ON pil.target_customer_code = ct.customer_code
+    <where>
+        AND pil.hotel_group_code = #{hotelGroupCode}
+
+        <if test="search.accessorLoginId != null and search.accessorLoginId != ''">
+            AND ea.login_id LIKE CONCAT('%', #{search.accessorLoginId}, '%')
+        </if>
+
+        <if test="search.permissionTypeKey != null">
+            AND pil.permission_type_key = #{search.permissionTypeKey}
+        </if>
+
+        <if test="search.purpose != null and search.purpose != ''">
+            AND pil.purpose LIKE CONCAT('%', #{search.purpose}, '%')
+        </if>
+
+        <if test="search.personalInformationLogCode != null">
+            AND pil.personal_information_log_code = #{search.personalInformationLogCode}
+        </if>
+
+        <if test="accessorNameHash != null">
+            AND ea.employee_name_hash = #{accessorNameHash, jdbcType=BINARY}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND pil.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        
+        <if test="search.targetCode != null">
+            AND (pil.target_employee_code = #{search.targetCode} OR pil.target_customer_code = #{search.targetCode})
+        </if>
+
+        <if test="targetNameHash != null">
+            AND (et.employee_name_hash = #{targetNameHash, jdbcType=BINARY}) 
+            <!-- OR ct.customer_name_hash = #{targetNameHash, jdbcType=BINARY} -->
+        </if>
+        
+        <if test="search.targetType == 'EMPLOYEE'">
+            AND pil.target_employee_code IS NOT NULL
+        </if>
+
+        <if test="search.targetType == 'CUSTOMER'">
+            AND pil.target_customer_code IS NOT NULL
+        </if>
+
+        <if test="search.toDate != null">
+            AND pil.occurred_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </where>
+  </select>
+
+</mapper>

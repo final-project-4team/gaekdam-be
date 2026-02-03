@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.membership.query.mapper.MembershipBatchMapper">
+
+    <resultMap id="MembershipGradeResult" type="com.gaekdam.gaekdambe.customer_service.membership.command.domain.entity.MembershipGrade">
+        <id property="membershipGradeCode" column="membershipGradeCode"/>
+        <result property="gradeName" column="gradeName"/>
+        <result property="tierLevel" column="tierLevel"/>
+        <result property="calculationAmount" column="calculationAmount"/>
+        <result property="calculationCount" column="calculationCount"/>
+        <result property="calculationTermMonth" column="calculationTermMonth"/>
+        <result property="calculationRenewalDay" column="calculationRenewalDay"/>
+        <association property="hotelGroup" javaType="com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGroup">
+            <id property="hotelGroupCode" column="hotelGroupCode"/>
+        </association>
+    </resultMap>
+
+    <!-- 오늘 산정해야 할 등급 정책 조회 -->
+    <select id="selectTargetGradePolicies" resultMap="MembershipGradeResult">
+        SELECT
+            mg.membership_grade_code AS membershipGradeCode,
+            mg.hotel_group_code AS hotelGroupCode, 
+            mg.grade_name AS gradeName,
+            mg.tier_level AS tierLevel,
+            mg.calculation_amount AS calculationAmount,
+            mg.calculation_count AS calculationCount,
+            mg.calculation_term_month AS calculationTermMonth,
+            mg.calculation_renewal_day AS calculationRenewalDay
+        FROM membership_grade mg
+        WHERE mg.calculation_renewal_day = #{dayOfMonth}
+          AND mg.membership_grade_status = 'ACTIVE'
+    </select>
+
+    <!-- 고객 실적 조회 (총 결제 금액, 방문 횟수) -->
+    <!-- 조건: RESERVED 상태이고, 체크아웃 날짜가 기간 내에 있으며, 이미 지났을 것 -->
+    <select id="selectCustomerStatistics" resultType="java.util.Map">
+        SELECT
+            IFNULL(SUM(r.total_price), 0) AS totalAmount,
+            COUNT(r.reservation_code)     AS visitCount
+        FROM reservation r
+        WHERE r.customer_code = #{customerCode}
+          AND r.reservation_status = 'RESERVED'
+          AND r.checkout_date BETWEEN #{startDate} AND #{endDate}
+          AND r.checkout_date &lt; CURDATE()
+    </select>
+
+</mapper>

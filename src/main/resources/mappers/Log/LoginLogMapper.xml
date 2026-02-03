@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.log.query.mapper.LoginLogMapper">
+
+  <!-- =========================
+       로그인 로그 목록 조회
+       ========================= -->
+  <select id="findLoginLogs"
+    resultType="com.gaekdam.gaekdambe.iam_service.log.query.dto.response.LoginLogQueryResponse">
+
+    SELECT
+      ll.login_log_code AS loginLogCode,
+      ll.action AS action,
+      ll.employee_code AS employeeCode,
+      e.employee_name_enc AS employeeName,
+      e.login_id AS loginId,
+      ll.user_ip AS userIp,
+      ll.occurred_at AS occurredAt,
+      ll.result AS result,
+      ll.failed_reason AS failedReason,
+      ll.hotel_group_code AS hotelGroupCode
+    FROM login_log ll
+    JOIN employee e ON ll.employee_code = e.employee_code
+
+    <where>
+      <!-- SaaS 호텔 스코프 -->
+      AND ll.hotel_group_code = #{hotelGroupCode}
+
+      <if test="search.employeeCode != null">
+        AND ll.employee_code = #{search.employeeCode}
+      </if>
+
+      <if test="search.loginId != null and search.loginId != ''">
+        AND e.login_id LIKE CONCAT('%', #{search.loginId}, '%')
+      </if>
+
+      <if test="search.action != null and search.action != ''">
+        AND ll.action = #{search.action}
+      </if>
+
+      <if test="search.result != null">
+        AND ll.result = #{search.result}
+      </if>
+
+      <if test="search.userIp != null and search.userIp != ''">
+        AND ll.user_ip LIKE CONCAT('%', #{search.userIp}, '%')
+      </if>
+
+      <if test="search.fromDate != null">
+        AND ll.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
+      </if>
+
+      <if test="search.toDate != null">
+        AND ll.occurred_at <![CDATA[ <= ]]> #{search.toDate}
+      </if>
+    </where>
+
+    <choose>
+      <when test="sort != null and sort.sortBy != null and sort.sortBy != ''">
+        ORDER BY ${sort.sortBy} ${sort.direction}
+      </when>
+      <otherwise>
+        ORDER BY ll.occurred_at DESC
+      </otherwise>
+    </choose>
+    LIMIT #{page.size} OFFSET #{page.offset}
+  </select>
+
+  <!-- =========================
+       로그인 로그 총 개수
+       ========================= -->
+  <select id="countLoginLogs" resultType="long">
+
+    SELECT COUNT(*)
+    FROM login_log ll
+    JOIN employee e ON ll.employee_code = e.employee_code
+
+    <where>
+      AND ll.hotel_group_code = #{hotelGroupCode}
+
+      <if test="search.employeeCode != null">
+        AND ll.employee_code = #{search.employeeCode}
+      </if>
+
+      <if test="search.loginId != null and search.loginId != ''">
+        AND e.login_id LIKE CONCAT('%', #{search.loginId}, '%')
+      </if>
+
+      <if test="search.action != null and search.action != ''">
+        AND ll.action = #{search.action}
+      </if>
+
+      <if test="search.result != null">
+        AND ll.result = #{search.result}
+      </if>
+
+      <if test="search.userIp != null and search.userIp != ''">
+        AND ll.user_ip LIKE CONCAT('%', #{search.userIp}, '%')
+      </if>
+
+      <if test="search.fromDate != null">
+        AND ll.occurred_at <![CDATA[ >= ]]> #{search.fromDate}
+      </if>
+
+      <if test="search.toDate != null">
+        AND ll.occurred_at <![CDATA[ <= ]]> #{search.toDate}
+      </if>
+    </where>
+  </select>
+
+</mapper>

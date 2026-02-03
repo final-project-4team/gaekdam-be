@@ -50,7 +50,8 @@
 ![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![JUnit5 Badge](https://img.shields.io/badge/JUnit5-25A162?logo=junit5&logoColor=fff&style=for-the-badge)
-
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 
 #Frontend
 <br>
@@ -59,6 +60,7 @@
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 ![Pinia Badge](https://img.shields.io/badge/Pinia-FFD859?logo=pinia&logoColor=000&style=for-the-badge)
 ![Axios Badge](https://img.shields.io/badge/Axios-5A29E4?logo=axios&logoColor=fff&style=for-the-badge)
+![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white)
 
 #API Platform
 <br>
@@ -120,5 +122,25 @@
   <details> <summary>아키텍처 구조도</summary>
   <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
 
-    </details> 
+
+- ### 프로그램 사양서
+  <details> <summary>프로그램 사양서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=784246878#gid=784246878
+  <br>
+
+- ### 단위테스트 결과서
+  <details> <summary>단위테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1492834519#gid=1492834519
+  <br>
+
+- ### UI/UX 단위 테스트 결과서
+  <details> <summary>UI/UX 단위 테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1079372133#gid=1079372133
+  <br>
+
+- ### 통합 테스트 결과서
+  <details> <summary>통합 테스트 결과서</summary>
+  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
+  <br>
+
 
