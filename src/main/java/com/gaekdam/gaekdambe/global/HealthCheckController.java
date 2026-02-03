@@ -16,11 +16,7 @@ public class HealthCheckController {
 
     @GetMapping("/health")
     @Operation(summary = "헬스 체크", description = "")
-    public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("status", "UP");
-        result.put("timestamp", LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(result);
+    public String ok() {
+        return "health OK";
     }
 }
