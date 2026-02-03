@@ -10,11 +10,15 @@ import com.gaekdam.gaekdambe.global.paging.PageResponse;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
 import com.gaekdam.gaekdambe.iam_service.log.command.application.aop.annotation.AuditLog;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name="고객 메모")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/customers/{customerCode}/memos")
@@ -25,12 +29,13 @@ public class CustomerMemoQueryController {
     @GetMapping
     @PreAuthorize("hasAuthority('CUSTOMER_MEMO_LIST')")
     @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_MEMO_LIST)
+    @Operation(summary = "고객 메모 리스트 조회", description = "특정 고객에 대한 메모를 리스트로 조회 한다.")
     public ApiResponse<PageResponse<CustomerMemoResponse>> getMemos(
             @AuthenticationPrincipal CustomUser user,
-            @PathVariable Long customerCode,
-            PageRequest page,
-            CustomerMemoSearchRequest search,
-            SortRequest sort
+            @Parameter(description = "고객 코드") @PathVariable Long customerCode,
+            @Parameter(description = "페이징 값") PageRequest page,
+            @Parameter(description = "검색 키워드")CustomerMemoSearchRequest search,
+            @Parameter(description = "정렬 기준")SortRequest sort
     ) {
         search.setHotelGroupCode(user.getHotelGroupCode());
         search.setCustomerCode(customerCode);
@@ -47,11 +52,12 @@ public class CustomerMemoQueryController {
     @GetMapping("/{memoCode}")
     @PreAuthorize("hasAuthority('CUSTOMER_MEMO_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_MEMO_READ)
+    @Operation(summary = "고객 메모 상세 조회", description = "특정 고객에 대한 메모를 상세 조회 한다.")
     public ApiResponse<CustomerMemoResponse> getMemoDetail(
             @AuthenticationPrincipal CustomUser user,
-            @PathVariable Long customerCode,
-            @PathVariable Long memoCode,
-            CustomerMemoSearchRequest search
+            @Parameter(description = "고객 코드") @PathVariable Long customerCode,
+            @Parameter(description = "고객 메모 코드") @PathVariable Long memoCode,
+            @Parameter(description = "검색 키워드")CustomerMemoSearchRequest search
     ) {
         search.setHotelGroupCode(user.getHotelGroupCode());
         search.setCustomerCode(customerCode);
