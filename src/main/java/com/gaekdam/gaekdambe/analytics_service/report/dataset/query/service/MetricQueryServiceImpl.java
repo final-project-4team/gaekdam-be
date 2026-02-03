@@ -554,7 +554,8 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             case "FOREIGN_RATE", "FOREIGN", "FOREIGN_CUSTOMER_RATE" -> "FOREIGN_RATE";
             case "INQUIRY_COUNT", "INQUIRIES", "INQUIRY", "TOTAL_INQUIRY_COUNT" -> "INQUIRY_COUNT";
             case "MEMBERSHIP_RATE", "MEMBERSHIP" -> "MEMBERSHIP_RATE";
-            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO" -> "NON_ROOM_REVENUE";
+            // Accept several aliases for non-room revenue (부대시설 매출 비율). Also map FACILITY_REVENUE_RATIO to the same KPI code.
+            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO", "FACILITY_REVENUE_RATIO" -> "NON_ROOM_REVENUE";
             case "NO_SHOW_RATE", "NOSHOW_RATE", "NO_SHOW" -> "NO_SHOW_RATE";
             case "OCC_RATE", "OCCUPANCY", "OCCUPANCY_RATE" -> "OCC_RATE";
             case "RESERVATION_COUNT", "RESERVATIONS", "RESERVATION" -> "RESERVATION_COUNT";
@@ -595,8 +596,10 @@ public class MetricQueryServiceImpl implements MetricQueryService {
             case "FOREIGN_RATE", "FOREIGN", "FOREIGN_CUSTOMER_RATE" -> "foreign_rate";
             // Membership rate
             case "MEMBERSHIP_RATE", "MEMBERSHIP" -> "membership_rate";
-            // Non-room revenue
-            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO" -> "non_room_revenue";
+            // Non-room revenue (ratio KPI) - include FACILITY_REVENUE_RATIO as an alias so it uses non_room_revenue computation
+            case "NON_ROOM_REVENUE", "NON_ROOM_SALES", "NONROOM_REVENUE", "NON_ROOM", "NON_ROOM_REVENUE_RATIO", "FACILITY_REVENUE_RATIO" -> "non_room_revenue";
+            // Facility revenue (absolute sales) used by timeseries widget
+            case "FACILITY_REVENUE" -> "facility_revenue";
             default -> widgetKey.toLowerCase(Locale.ROOT);
         };
     }
@@ -823,13 +826,63 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                             params = new Object[]{tsStart, tsEnd};
                         }
                         break;
-                    default:
-                        needQuery = false;
-                        sql = null;
+                    // 예약 수 (created_at 기준 월별 집계)
+                    case "reservation_count":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.created_at, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.created_at >= ? AND r.created_at < ? AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.created_at, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.created_at >= ? AND r.created_at < ? AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.created_at, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.created_at >= ? AND r.created_at < ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd};
+                        }
+                        break;
+                    // 예약 취소수 (canceled_at 기준 월별 집계)
+                    case "cancel_count":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.canceled_at, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.canceled_at >= ? AND r.canceled_at < ? AND r.canceled_at IS NOT NULL AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.canceled_at, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.canceled_at >= ? AND r.canceled_at < ? AND r.canceled_at IS NOT NULL AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.canceled_at, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.canceled_at >= ? AND r.canceled_at < ? AND r.canceled_at IS NOT NULL GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd};
+                        }
+                        break;
+                    // 노쇼 수 (checkin_date 기준 월별 집계, reservation_status='NO_SHOW')
+                    case "no_show_count":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.reservation_status = 'NO_SHOW' AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.reservation_status = 'NO_SHOW' AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%m') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.reservation_status = 'NO_SHOW' GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive};
+                        }
+                        break;
+                    // 부대시설 매출 (checkin_date 기준, reservation_package_price 합계)
+                    case "facility_revenue":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%m') AS bucket, COALESCE(SUM(COALESCE(r.reservation_package_price,0)),0) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.canceled_at IS NULL AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%m') AS bucket, COALESCE(SUM(COALESCE(r.reservation_package_price,0)),0) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.canceled_at IS NULL AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%m') AS bucket, COALESCE(SUM(COALESCE(r.reservation_package_price,0)),0) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.canceled_at IS NULL GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive};
+                        }
+                        break;
                 }
 
                 java.util.List<java.util.Map<String, Object>> rowsLocal = java.util.Collections.emptyList();
                 if (needQuery && sql != null) {
+                    log.debug("Timeseries SQL (internalKey={}) sql={} paramsPresent={}", internalKey, sql, params != null);
                     rowsLocal = params != null ? jdbc.queryForList(sql, params) : jdbc.queryForList(sql);
                 }
 
@@ -1015,13 +1068,60 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                             params = new Object[]{tsStart, tsEnd};
                         }
                         break;
-                    default:
-                        needQuery = false;
-                        sql = null;
+                    // 예약 수 (created_at 기준 일별 집계)
+                    case "reservation_count":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.created_at, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.created_at >= ? AND r.created_at < ? AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.created_at, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.created_at >= ? AND r.created_at < ? AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.created_at, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.created_at >= ? AND r.created_at < ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd};
+                        }
+                        break;
+                    case "cancel_count":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.canceled_at, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.canceled_at >= ? AND r.canceled_at < ? AND r.canceled_at IS NOT NULL AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.canceled_at, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.canceled_at >= ? AND r.canceled_at < ? AND r.canceled_at IS NOT NULL AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.canceled_at, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.canceled_at >= ? AND r.canceled_at < ? AND r.canceled_at IS NOT NULL GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{tsStart, tsEnd};
+                        }
+                        break;
+                    case "no_show_count":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.reservation_status = 'NO_SHOW' AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.reservation_status = 'NO_SHOW' AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%d') AS bucket, COUNT(r.reservation_code) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.reservation_status = 'NO_SHOW' GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive};
+                        }
+                        break;
+                    case "facility_revenue":
+                        if (hotelId != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%d') AS bucket, COALESCE(SUM(COALESCE(r.reservation_package_price,0)),0) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.canceled_at IS NULL AND r.property_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelId};
+                        } else if (hotelGroup != null) {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%d') AS bucket, COALESCE(SUM(COALESCE(r.reservation_package_price,0)),0) AS val FROM reservation r JOIN property p ON r.property_code = p.property_code WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.canceled_at IS NULL AND p.hotel_group_code = ? GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive, hotelGroup};
+                        } else {
+                            sql = "SELECT DATE_FORMAT(r.checkin_date, '%d') AS bucket, COALESCE(SUM(COALESCE(r.reservation_package_price,0)),0) AS val FROM reservation r WHERE r.checkin_date >= ? AND r.checkin_date < ? AND r.canceled_at IS NULL GROUP BY bucket ORDER BY bucket";
+                            params = new Object[]{dStart, dEndExclusive};
+                        }
+                        break;
                 }
 
                 java.util.List<java.util.Map<String, Object>> rowsLocal = java.util.Collections.emptyList();
                 if (needQuery && sql != null) {
+                    log.debug("Timeseries SQL (internalKey={}) sql={} paramsPresent={}", internalKey, sql, params != null);
                     rowsLocal = params != null ? jdbc.queryForList(sql, params) : jdbc.queryForList(sql);
                 }
 
@@ -1044,7 +1144,7 @@ public class MetricQueryServiceImpl implements MetricQueryService {
                 }
             }
         } catch (Exception ex) {
-            log.warn("Failed to build timeseries for metricKey={}: {}", metricKey, ex.getMessage());
+            log.warn("Failed to build timeseries for metricKey={}", metricKey, ex);
         }
 
         // 5) MetricTimeSeries 생성 및 반환
