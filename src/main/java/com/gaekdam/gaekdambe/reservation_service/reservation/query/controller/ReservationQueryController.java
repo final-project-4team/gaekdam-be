@@ -1,5 +1,14 @@
 package com.gaekdam.gaekdambe.reservation_service.reservation.query.controller;
 
+import java.util.Map;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.config.security.CustomUser;
 import com.gaekdam.gaekdambe.global.paging.PageRequest;
@@ -14,18 +23,11 @@ import com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.OperationBoardQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.ReservationQueryService;
 import com.gaekdam.gaekdambe.reservation_service.reservation.query.service.TodayOperationQueryService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 @Tag(name = "예약")
 @RestController
@@ -71,7 +73,7 @@ public class ReservationQueryController {
 
                 if (sort == null || sort.getSortBy() == null) {
                         sort = new SortRequest();
-                        sort.setSortBy("r.reservation_code");
+                        sort.setSortBy("t.reservationCode");
                         sort.setDirection("DESC");
                 }
 
@@ -95,7 +97,7 @@ public class ReservationQueryController {
 
                 if (sort == null || sort.getSortBy() == null) {
                         sort = new SortRequest();
-                        sort.setSortBy("r.checkout_date");
+                        sort.setSortBy("t.plannedCheckoutDate");
                         sort.setDirection("DESC");
                 }
 
