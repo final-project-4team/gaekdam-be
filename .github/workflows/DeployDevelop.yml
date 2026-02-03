@@ -92,7 +92,7 @@ jobs:
       - name: Download task definition (from ECS)
         run: |
           aws ecs describe-task-definition \
-            --task-definition "${{ steps.td-arn.outputs.task_definition_arn }}" \
+            --task-definition "gaekdam-backend-task:73" \
             --query taskDefinition \
             --output json > task-definition.raw.json
 
