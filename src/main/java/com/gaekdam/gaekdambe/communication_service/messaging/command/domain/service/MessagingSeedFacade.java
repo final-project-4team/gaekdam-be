@@ -17,4 +17,3 @@ public class MessagingSeedFacade {
         ruleSeeder.seed(hotelGroupCode);
     }
 }
-
