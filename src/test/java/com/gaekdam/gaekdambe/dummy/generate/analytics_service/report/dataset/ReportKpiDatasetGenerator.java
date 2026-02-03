@@ -114,36 +114,59 @@ public class ReportKpiDatasetGenerator {
                 "NON_ROOM_REVENUE"
             };
 
-            // base values per KPI (annual base)
-            Map<String, Double> baseAnnual = new LinkedHashMap<>();
-            baseAnnual.put("CHECKIN", 120.0);
-            baseAnnual.put("CHECKOUT", 115.0);
-            baseAnnual.put("ADR", 100000.0);
-            baseAnnual.put("OCC_RATE", 0.65);
-            baseAnnual.put("GUEST_COUNT", 900.0);
-            baseAnnual.put("REPEAT_RATE", 0.20);
-            baseAnnual.put("MEMBERSHIP_RATE", 0.30);
-            baseAnnual.put("FOREIGN_RATE", 0.20);
-            baseAnnual.put("INQUIRY_COUNT", 160.0);
-            baseAnnual.put("CLAIM_COUNT", 20.0);
-            baseAnnual.put("UNRESOLVED_RATE", 0.12);
-            baseAnnual.put("AVG_RESPONSE_TIME", 5.0);
-            baseAnnual.put("RESERVATION_COUNT", 1200.0);
-            baseAnnual.put("CANCELLATION_RATE", 0.15);
-            baseAnnual.put("NO_SHOW_RATE", 0.04);
-            baseAnnual.put("NON_ROOM_REVENUE", 2000000.0);
+            // Explicit monthly and annual target values as provided
+            Map<String, Double> monthlyTargets = new LinkedHashMap<>();
+            monthlyTargets.put("CHECKIN", 3000.0);
+            monthlyTargets.put("CHECKOUT", 3000.0);
+            monthlyTargets.put("ADR", 200000.0);
+            monthlyTargets.put("OCC_RATE", 0.70);
+            monthlyTargets.put("GUEST_COUNT", 5500.0);
+            monthlyTargets.put("REPEAT_RATE", 0.90);
+            monthlyTargets.put("MEMBERSHIP_RATE", 0.50);
+            monthlyTargets.put("FOREIGN_RATE", 0.20);
+            monthlyTargets.put("INQUIRY_COUNT", 1000.0);
+            monthlyTargets.put("CLAIM_COUNT", 800.0);
+            monthlyTargets.put("UNRESOLVED_RATE", 0.30);
+            monthlyTargets.put("AVG_RESPONSE_TIME", 12.0);
+            monthlyTargets.put("RESERVATION_COUNT", 3000.0);
+            monthlyTargets.put("CANCELLATION_RATE", 0.05);
+            monthlyTargets.put("NO_SHOW_RATE", 0.05);
+            monthlyTargets.put("NON_ROOM_REVENUE", 0.20);
+
+            Map<String, Double> annualTargets = new LinkedHashMap<>();
+            annualTargets.put("CHECKIN", 36000.0);
+            annualTargets.put("CHECKOUT", 36000.0);
+            annualTargets.put("ADR", 200000.0);
+            annualTargets.put("OCC_RATE", 0.80);
+            annualTargets.put("GUEST_COUNT", 66000.0);
+            annualTargets.put("REPEAT_RATE", 0.95);
+            annualTargets.put("MEMBERSHIP_RATE", 0.65);
+            annualTargets.put("FOREIGN_RATE", 0.30);
+            annualTargets.put("INQUIRY_COUNT", 12000.0);
+            annualTargets.put("CLAIM_COUNT", 9600.0);
+            annualTargets.put("UNRESOLVED_RATE", 0.20);
+            annualTargets.put("AVG_RESPONSE_TIME", 9.0);
+            annualTargets.put("RESERVATION_COUNT", 36000.0);
+            annualTargets.put("CANCELLATION_RATE", 0.03);
+            annualTargets.put("NO_SHOW_RATE", 0.03);
+            annualTargets.put("NON_ROOM_REVENUE", 0.35);
 
             List<ReportKPITarget> toSave = new ArrayList<>();
 
             for (int year = 2021; year <= 2031; year++) {
                 for (String kpi : genKpis) {
-                    double base = baseAnnual.getOrDefault(kpi, 100.0);
+                    // use explicit annual target if provided, else fallback to previous base/growth calculation
+                    Double explicitAnnual = annualTargets.get(kpi);
+                    double annualValue;
+                    if (explicitAnnual != null) {
+                        annualValue = explicitAnnual;
+                    } else {
+                        double base = 100.0;
+                        double yearFactor = 1.0 + (year - 2021) * 0.02;
+                        annualValue = base * yearFactor;
+                    }
 
-                    // annual growth factor: small yearly increase or decrease
-                    double yearFactor = 1.0 + (year - 2021) * 0.02; // +2% per year
-                    double annualValue = base * yearFactor;
-
-                    // thresholds as proportions
+                    // thresholds as proportions (same ratios as before)
                     double warning = annualValue * 0.85;
                     double danger = annualValue * 0.7;
 
@@ -170,9 +193,15 @@ public class ReportKpiDatasetGenerator {
 
                     // monthly entries for each month
                     for (int m = 1; m <= 12; m++) {
-                        // month variation factor to create different values across months
-                        double monthFactor = 0.8 + 0.4 * ((m - 1) / 11.0); // ranges 0.8..1.2
-                        double monthlyValue = annualValue * (monthFactor / 12.0) * 1.0; // scaled to month
+                        // determine monthly value: prefer explicit monthly target, otherwise distribute annual value across months
+                        Double explicitMonthly = monthlyTargets.get(kpi);
+                        double monthlyValue;
+                        if (explicitMonthly != null) {
+                            monthlyValue = explicitMonthly;
+                        } else {
+                            double monthFactor = 0.8 + 0.4 * ((m - 1) / 11.0); // ranges 0.8..1.2
+                            monthlyValue = annualValue * (monthFactor / 12.0);
+                        }
                         double monthWarning = monthlyValue * 0.85;
                         double monthDanger = monthlyValue * 0.7;
 
