@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LoyaltyGradeRepository extends JpaRepository<LoyaltyGrade, Long> {
     boolean existsByHotelGroupAndLoyaltyGradeName(HotelGroup hotelGroup, String loyaltyGradeName);
+
+    java.util.List<LoyaltyGrade> findAllByHotelGroup_HotelGroupCode(Long hotelGroupCode);
 }

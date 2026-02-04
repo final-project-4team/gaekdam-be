@@ -44,7 +44,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.StopWatch;
 
 @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE) // 포트 충돌 방지
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Rollback(value = false)
 @ActiveProfiles("local-dummy")
 @Tag("dummy")
