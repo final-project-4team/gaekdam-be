@@ -60,7 +60,6 @@ public class EmployeeCommandController {
   // 직원 본인 비밀번호 변경
 
   @PatchMapping("/password")
-  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
   @Operation(summary = "직원 비밀번호 변경", description = "특정 직원의 비밀번호를 변경 할 수 있다.")
   public ResponseEntity<ApiResponse<String>> changePassword(
       @AuthenticationPrincipal CustomUser customUser,
