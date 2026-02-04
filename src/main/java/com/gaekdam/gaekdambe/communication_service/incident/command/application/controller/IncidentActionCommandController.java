@@ -24,7 +24,7 @@ public class IncidentActionCommandController {
 
     // 조치등록
     @PostMapping("/{incidentCode}/actions")
-    @PreAuthorize("hasAuthority('INCIDENT_ACTION_CREATE')")
+    @PreAuthorize("hasAuthority('INCIDENT_CREATE')")
     @Operation(summary = "조치 등록", description = "특정 사고에 대한 조치 내역을 등록 한다.")
     public ApiResponse<IncidentActionCreateResponse> createAction(
             @AuthenticationPrincipal CustomUser user,
