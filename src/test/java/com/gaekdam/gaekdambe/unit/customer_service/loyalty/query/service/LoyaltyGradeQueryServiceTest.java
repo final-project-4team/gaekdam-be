@@ -1,9 +1,11 @@
 package com.gaekdam.gaekdambe.unit.customer_service.loyalty.query.service;
 
+import com.gaekdam.gaekdambe.customer_service.loyalty.command.infrastructure.repository.LoyaltyGradeRepository;
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.dto.response.LoyaltyGradeDetailQueryResponse;
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.dto.response.LoyaltyGradeListQueryResponse;
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.mapper.LoyaltyGradeMapper;
 import com.gaekdam.gaekdambe.customer_service.loyalty.query.service.LoyaltyGradeQueryService;
+import com.gaekdam.gaekdambe.customer_service.membership.query.mapper.MembershipBatchMapper;
 import com.gaekdam.gaekdambe.global.exception.CustomException;
 import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.paging.SortRequest;
@@ -23,12 +25,17 @@ import static org.mockito.Mockito.*;
 class LoyaltyGradeQueryServiceTest {
 
     private LoyaltyGradeMapper mapper;
+    private LoyaltyGradeRepository loyaltyGradeRepository;
+    private MembershipBatchMapper membershipBatchMapper;
     private LoyaltyGradeQueryService service;
 
     @BeforeEach
     void setUp() {
         mapper = mock(LoyaltyGradeMapper.class);
-        service = new LoyaltyGradeQueryService(mapper);
+        loyaltyGradeRepository = mock(LoyaltyGradeRepository.class);
+        membershipBatchMapper = mock(MembershipBatchMapper.class);
+
+        service = new LoyaltyGradeQueryService(mapper, loyaltyGradeRepository, membershipBatchMapper);
     }
 
     @Test
@@ -40,15 +47,14 @@ class LoyaltyGradeQueryServiceTest {
         String direction = "DESC";
         String status = "ACTIVE";
 
-        List<LoyaltyGradeListQueryResponse> mockList =
-                List.of(mock(LoyaltyGradeListQueryResponse.class));
+        List<LoyaltyGradeListQueryResponse> mockList = List.of(mock(LoyaltyGradeListQueryResponse.class));
 
         when(mapper.findLoyaltyGradeList(eq(hotelGroupCode), any(SortRequest.class), eq(status)))
                 .thenReturn(mockList);
 
         // when
-        List<LoyaltyGradeListQueryResponse> result =
-                service.getLoyaltyGradeList(hotelGroupCode, sortBy, direction, status);
+        List<LoyaltyGradeListQueryResponse> result = service.getLoyaltyGradeList(hotelGroupCode, sortBy, direction,
+                status);
 
         // then
         assertThat(result).isSameAs(mockList);
@@ -74,8 +80,7 @@ class LoyaltyGradeQueryServiceTest {
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.getLoyaltyGradeDetail(hotelGroupCode, loyaltyGradeCode),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.LOYALTY_GRADE_NOT_FOUND);
@@ -93,8 +98,7 @@ class LoyaltyGradeQueryServiceTest {
         when(mapper.findLoyaltyGradeDetail(hotelGroupCode, loyaltyGradeCode)).thenReturn(dto);
 
         // when
-        LoyaltyGradeDetailQueryResponse result =
-                service.getLoyaltyGradeDetail(hotelGroupCode, loyaltyGradeCode);
+        LoyaltyGradeDetailQueryResponse result = service.getLoyaltyGradeDetail(hotelGroupCode, loyaltyGradeCode);
 
         // then
         assertThat(result).isSameAs(dto);

@@ -53,8 +53,7 @@ public class Membership {
             Long membershipGradeCode,
             MembershipStatus membershipStatus,
             LocalDateTime joinedAt,
-            LocalDateTime now
-    ) {
+            LocalDateTime now) {
         this.customerCode = customerCode;
         this.hotelGroupCode = hotelGroupCode;
         this.membershipGradeCode = membershipGradeCode;
@@ -69,26 +68,29 @@ public class Membership {
             Long hotelGroupCode,
             Long membershipGradeCode,
             LocalDateTime joinedAt,
-            LocalDateTime now
-    ) {
-        return new Membership(customerCode, hotelGroupCode, membershipGradeCode, MembershipStatus.ACTIVE, joinedAt, now);
+            LocalDateTime now) {
+        LocalDateTime expiredAt = now.withMonth(12).withDayOfMonth(31).withHour(23).withMinute(59).withSecond(59);
+        Membership membership = new Membership(customerCode, hotelGroupCode, membershipGradeCode,
+                MembershipStatus.ACTIVE, joinedAt, now);
+        membership.expiredAt = expiredAt;
+        return membership;
     }
 
     public void changeMembershipStatus(MembershipStatus afterStatus, LocalDateTime now) {
         this.membershipStatus = afterStatus;
         this.updatedAt = now;
     }
+
     // 맴버십 수정
     public void changeMembership(
             Long afterMembershipGradeCode,
             MembershipStatus afterStatus,
             LocalDateTime afterExpiredAt,
-            LocalDateTime now
-    ) {
+            LocalDateTime now) {
         this.membershipGradeCode = afterMembershipGradeCode;
         this.membershipStatus = afterStatus;
-        this.expiredAt = afterExpiredAt;     // null 허용
-        this.calculatedAt = now;             // 수동 변경도 "반영시각" 업데이트
+        this.expiredAt = afterExpiredAt;
+        this.calculatedAt = now;
         this.updatedAt = now;
     }
 

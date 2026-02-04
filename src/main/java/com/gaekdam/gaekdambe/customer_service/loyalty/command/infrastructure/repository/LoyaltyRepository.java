@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface LoyaltyRepository extends JpaRepository<Loyalty, Long> {
     Optional<Loyalty> findByHotelGroupCodeAndCustomerCode(Long hotelGroupCode, Long customerCode);
+
+    java.util.List<Loyalty> findAllByHotelGroupCode(Long hotelGroupCode);
 }

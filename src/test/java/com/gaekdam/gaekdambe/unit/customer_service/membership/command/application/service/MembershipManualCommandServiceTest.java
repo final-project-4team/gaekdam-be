@@ -48,15 +48,15 @@ class MembershipManualCommandServiceTest {
         membershipRepository = mock(MembershipRepository.class);
         membershipGradeRepository = mock(MembershipGradeRepository.class);
         membershipHistoryRepository = mock(MembershipHistoryRepository.class);
-        employeeRepository=mock(EmployeeRepository.class);
+        employeeRepository = mock(EmployeeRepository.class);
         auditLogService = mock(AuditLogService.class);
 
-        service = new MembershipManualCommandService(membershipRepository, membershipGradeRepository, membershipHistoryRepository,employeeRepository, auditLogService);
+        service = new MembershipManualCommandService(membershipRepository, membershipGradeRepository,
+                membershipHistoryRepository, employeeRepository, auditLogService);
 
         Employee accessor = mock(Employee.class);
         lenient().when(employeeRepository.findById(anyLong())).thenReturn(Optional.of(accessor));
     }
-
 
     @Test
     @DisplayName("request null이면 INVALID_INCORRECT_FORMAT")
@@ -66,8 +66,7 @@ class MembershipManualCommandServiceTest {
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, null),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_INCORRECT_FORMAT);
@@ -78,14 +77,12 @@ class MembershipManualCommandServiceTest {
     void gradeCodeNull_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                null, MembershipStatus.ACTIVE, null, "reason", 10L
-        );
+                null, MembershipStatus.ACTIVE, null, "reason", 10L);
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_INCORRECT_FORMAT);
@@ -96,14 +93,12 @@ class MembershipManualCommandServiceTest {
     void statusNull_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, null, null, "reason", 10L
-        );
+                1L, null, null, "reason", 10L);
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_INCORRECT_FORMAT);
@@ -114,14 +109,12 @@ class MembershipManualCommandServiceTest {
     void employeeCodeNull_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "reason", 10L
-        );
+                1L, MembershipStatus.ACTIVE, null, "reason", 10L);
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, null, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.EMPLOYEE_CODE_REQUIRED);
@@ -132,14 +125,12 @@ class MembershipManualCommandServiceTest {
     void changeReasonNull_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, null, 10L
-        );
+                1L, MembershipStatus.ACTIVE, null, null, 10L);
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_MANUAL_REASON_REQUIRED);
@@ -150,14 +141,12 @@ class MembershipManualCommandServiceTest {
     void changeReasonBlank_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "   ", 10L
-        );
+                1L, MembershipStatus.ACTIVE, null, "   ", 10L);
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_MANUAL_REASON_REQUIRED);
@@ -168,15 +157,13 @@ class MembershipManualCommandServiceTest {
     void afterGradeNotFound_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                999L, MembershipStatus.ACTIVE, null, "reason", 10L
-        );
+                999L, MembershipStatus.ACTIVE, null, "reason", 10L);
         when(membershipGradeRepository.findById(999L)).thenReturn(Optional.empty());
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_GRADE_NOT_FOUND);
@@ -187,8 +174,7 @@ class MembershipManualCommandServiceTest {
     void hotelGroupMismatch_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "reason", 10L
-        );
+                1L, MembershipStatus.ACTIVE, null, "reason", 10L);
 
         MembershipGrade grade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -200,8 +186,7 @@ class MembershipManualCommandServiceTest {
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);
@@ -213,8 +198,7 @@ class MembershipManualCommandServiceTest {
     void afterGradeInactive_thenThrow() {
         // given
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "reason", 10L
-        );
+                1L, MembershipStatus.ACTIVE, null, "reason", 10L);
 
         MembershipGrade grade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -227,8 +211,7 @@ class MembershipManualCommandServiceTest {
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(1L, 10L, 100L, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_GRADE_INACTIVE);
@@ -243,8 +226,7 @@ class MembershipManualCommandServiceTest {
         Long customerCode = 100L;
 
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "reason", employeeCode
-        );
+                1L, MembershipStatus.ACTIVE, null, "reason", employeeCode);
 
         MembershipGrade afterGrade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -257,16 +239,14 @@ class MembershipManualCommandServiceTest {
 
         // membership null 방지(핵심)
         Membership membership = Membership.registerMembership(
-                customerCode, hotelGroupCode, null, LocalDateTime.now(), LocalDateTime.now()
-        );
+                customerCode, hotelGroupCode, null, LocalDateTime.now(), LocalDateTime.now());
         when(membershipRepository.findByCustomerCodeAndHotelGroupCode(customerCode, hotelGroupCode))
                 .thenReturn(Optional.of(membership));
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(hotelGroupCode, employeeCode, customerCode, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_GRADE_NAME_EMPTY);
@@ -281,8 +261,7 @@ class MembershipManualCommandServiceTest {
         Long customerCode = 100L;
 
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                1L, MembershipStatus.ACTIVE, null, "reason", employeeCode
-        );
+                1L, MembershipStatus.ACTIVE, null, "reason", employeeCode);
 
         MembershipGrade afterGrade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -295,21 +274,18 @@ class MembershipManualCommandServiceTest {
 
         // membership null 방지(핵심)
         Membership membership = Membership.registerMembership(
-                customerCode, hotelGroupCode, null, LocalDateTime.now(), LocalDateTime.now()
-        );
+                customerCode, hotelGroupCode, null, LocalDateTime.now(), LocalDateTime.now());
         when(membershipRepository.findByCustomerCodeAndHotelGroupCode(customerCode, hotelGroupCode))
                 .thenReturn(Optional.of(membership));
 
         // when
         CustomException ex = catchThrowableOfType(
                 () -> service.changeMembershipManually(hotelGroupCode, employeeCode, customerCode, req),
-                CustomException.class
-        );
+                CustomException.class);
 
         // then
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.MEMBERSHIP_GRADE_NAME_EMPTY);
     }
-
 
     @Test
     @DisplayName("멤버십 기존 존재 시: 변경 + 이력 저장 (beforeGradeName 정상)")
@@ -319,10 +295,9 @@ class MembershipManualCommandServiceTest {
         Long employeeCode = 10L;
         Long customerCode = 100L;
 
-        LocalDateTime expiredAt = LocalDateTime.now().plusDays(30);
+        LocalDateTime expiredAt = LocalDateTime.of(LocalDateTime.now().getYear(), 12, 31, 23, 59, 59);
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                2L, MembershipStatus.SUSPENDED, expiredAt, "manual reason", employeeCode
-        );
+                2L, MembershipStatus.SUSPENDED, expiredAt, "manual reason", employeeCode);
 
         MembershipGrade afterGrade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -337,8 +312,7 @@ class MembershipManualCommandServiceTest {
         Membership membership = Membership.registerMembership(
                 customerCode, hotelGroupCode, 1L,
                 LocalDateTime.now().minusDays(10),
-                LocalDateTime.now().minusDays(10)
-        );
+                LocalDateTime.now().minusDays(10));
         setField(membership, "membershipCode", 777L);
         setField(membership, "expiredAt", LocalDateTime.now().plusDays(1));
         setField(membership, "membershipStatus", MembershipStatus.ACTIVE);
@@ -384,8 +358,7 @@ class MembershipManualCommandServiceTest {
         Long customerCode = 100L;
 
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode
-        );
+                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode);
 
         MembershipGrade afterGrade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -400,8 +373,7 @@ class MembershipManualCommandServiceTest {
         Membership membership = Membership.registerMembership(
                 customerCode, hotelGroupCode, 1L,
                 LocalDateTime.now().minusDays(10),
-                LocalDateTime.now().minusDays(10)
-        );
+                LocalDateTime.now().minusDays(10));
         setField(membership, "membershipCode", 777L);
         setField(membership, "membershipGradeCode", 1L);
 
@@ -427,8 +399,7 @@ class MembershipManualCommandServiceTest {
         Long customerCode = 100L;
 
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode
-        );
+                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode);
 
         MembershipGrade afterGrade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
@@ -443,8 +414,7 @@ class MembershipManualCommandServiceTest {
         Membership membership = Membership.registerMembership(
                 customerCode, hotelGroupCode, null,
                 LocalDateTime.now().minusDays(10),
-                LocalDateTime.now().minusDays(10)
-        );
+                LocalDateTime.now().minusDays(10));
         setField(membership, "membershipCode", 777L);
         setField(membership, "membershipGradeCode", null);
 
@@ -469,8 +439,7 @@ class MembershipManualCommandServiceTest {
         Long customerCode = 100L;
 
         MembershipManualChangeRequest req = new MembershipManualChangeRequest(
-                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode
-        );
+                2L, MembershipStatus.ACTIVE, null, "manual reason", employeeCode);
 
         MembershipGrade afterGrade = mock(MembershipGrade.class);
         HotelGroup hg = mock(HotelGroup.class);
