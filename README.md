@@ -144,4 +144,9 @@
   [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
   <br>
 
+- ### CI/CD 계획서
+  <details> <summary>ci/cd 계획서</summary>
+  [객담_CICD_계획서.pdf](https://github.com/user-attachments/files/25066070/_CICD_.pdf)
+  <br>
+
 
