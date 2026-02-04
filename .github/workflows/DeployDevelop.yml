@@ -3,7 +3,7 @@ name: deploy-develop-ecs
 on:
   pull_request:
     types: [closed]
-    branches: [ "develop" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
