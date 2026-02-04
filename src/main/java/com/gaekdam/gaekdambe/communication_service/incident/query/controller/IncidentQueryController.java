@@ -70,7 +70,8 @@ public class IncidentQueryController {
 
     // 조치 이력 조회
     @GetMapping("/{incidentCode}/actions")
-    @PreAuthorize("hasAuthority('INCIDENT_ACTION_READ')")
+    //@PreAuthorize("hasAuthority('INCIDENT_ACTION_READ')")
+    @PreAuthorize("hasAuthority('INCIDENT_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.INCIDENT_ACTION_READ)
     @Operation(summary = "조치 이력 리스트 조회", description = "특정 사건사고에 대한 조치이력 리스트를 조회한다.")
     public ApiResponse<List<IncidentActionHistoryResponse>> getIncidentActions(
