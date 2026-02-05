@@ -52,7 +52,8 @@ public class EmployeeUpdateService {
 
   // @AuditLog 제거: 수동 로깅으로 전환 (Diff 저장)
   @Transactional
-  public void updateEmployee(Long hotelGroupCode, Long employeeCode, EmployeeUpdateSecureRequest request,
+  public void updateEmployee(Long hotelGroupCode, Long employeeCode,
+      EmployeeUpdateSecureRequest request,
       Employee accessor) {
     log.info("직원 정보 수정 시작 - employeeCode: {}, accessor: {}",
         employeeCode, accessor.getLoginId());
@@ -69,11 +70,14 @@ public class EmployeeUpdateService {
         });
 
     // --- 변경 전 데이터 캡처 ---
-    String prevDept = (employee.getDepartment() != null) ? employee.getDepartment().getDepartmentName() : "None";
-    String prevPos = (employee.getHotelPosition() != null) ? employee.getHotelPosition().getHotelPositionName()
-        : "None";
+    String prevDept =
+        (employee.getDepartment() != null) ? employee.getDepartment().getDepartmentName() : "None";
+    String prevPos =
+        (employee.getHotelPosition() != null) ? employee.getHotelPosition().getHotelPositionName()
+            : "None";
     String prevStatus = employee.getEmployeeStatus().name();
-    String prevPermission = (employee.getPermission() != null) ? employee.getPermission().getPermissionName() : "None";
+    String prevPermission =
+        (employee.getPermission() != null) ? employee.getPermission().getPermissionName() : "None";
     Permission beforePermission = employee.getPermission();
 
     // 평문 DEK 복호화
@@ -107,11 +111,16 @@ public class EmployeeUpdateService {
     employeeRepository.save(employee);
 
     // --- 변경 후 데이터 캡처 & 비교 ---
-    String newDept = (employee.getDepartment() != null) ? employee.getDepartment().getDepartmentName() : "None";
-    String newPos = (employee.getHotelPosition() != null) ? employee.getHotelPosition().getHotelPositionName() : "None";
+    String newDept =
+        (employee.getDepartment() != null) ? employee.getDepartment().getDepartmentName() : "None";
+    String newPos =
+        (employee.getHotelPosition() != null) ? employee.getHotelPosition().getHotelPositionName()
+            : "None";
     String newStatus = employee.getEmployeeStatus().name();
-    String newPermission = (employee.getPermission() != null) ? employee.getPermission().getPermissionName() : "None";
-    String newPhone = (request.phoneNumber() != null) ? request.phoneNumber() : prevPhone; // 변경 안했으면 prev 그대로
+    String newPermission =
+        (employee.getPermission() != null) ? employee.getPermission().getPermissionName() : "None";
+    String newPhone =
+        (request.phoneNumber() != null) ? request.phoneNumber() : prevPhone; // 변경 안했으면 prev 그대로
 
     StringBuilder changes = new StringBuilder();
     StringBuilder prevVal = new StringBuilder();
@@ -133,13 +142,15 @@ public class EmployeeUpdateService {
       newVal.append(String.format("Status: %s, ", newStatus));
     }
     // 권한 변경 로깅 분리 (AuditLog -> PermissionChangedLog)
-    if (afterPermission != null && !beforePermission.getPermissionCode().equals(afterPermission.getPermissionCode())) {
+    if (afterPermission != null && !beforePermission.getPermissionCode()
+        .equals(afterPermission.getPermissionCode())) {
       auditLogService.logPermissionChanged(employee, accessor, beforePermission, afterPermission);
     }
     // 전화번호 변경 로깅
     if (!prevPhone.equals(newPhone)) {
-      changes.append(String.format("[전화번호 변경] ")); // 민감정보라 값은 details엔 안넣고 prev/new에만? 아니면 마스킹? 요구사항: "이전 이후 값
-                                                   // 저장되게"였으므로 저장.
+      changes.append(
+          String.format("[전화번호 변경] ")); // 민감정보라 값은 details엔 안넣고 prev/new에만? 아니면 마스킹? 요구사항: "이전 이후 값
+      // 저장되게"였으므로 저장.
       prevVal.append(String.format("Phone: %s, ", prevPhone));
       newVal.append(String.format("Phone: %s, ", newPhone));
     }
@@ -159,13 +170,17 @@ public class EmployeeUpdateService {
 
   private void updatePersonalInfo(Employee employee, EmployeeUpdateSecureRequest request,
       byte[] plaintextDek) {
-    byte[] phoneEnc = (request.phoneNumber() != null) ? AesCryptoUtils.encrypt(request.phoneNumber(),
-        plaintextDek)
-        : null;
-    byte[] phoneHash = (request.phoneNumber() != null) ? searchHashService.phoneHash(request.phoneNumber()) : null;
+    byte[] phoneEnc =
+        (request.phoneNumber() != null) ? AesCryptoUtils.encrypt(request.phoneNumber(),
+            plaintextDek)
+            : null;
+    byte[] phoneHash =
+        (request.phoneNumber() != null) ? searchHashService.phoneHash(request.phoneNumber()) : null;
 
-    byte[] emailEnc = (request.email() != null) ? AesCryptoUtils.encrypt(request.email(), plaintextDek) : null;
-    byte[] emailHash = (request.email() != null) ? searchHashService.emailHash(request.email()) : null;
+    byte[] emailEnc =
+        (request.email() != null) ? AesCryptoUtils.encrypt(request.email(), plaintextDek) : null;
+    byte[] emailHash =
+        (request.email() != null) ? searchHashService.emailHash(request.email()) : null;
 
     employee.updatePersonalInfo(phoneEnc, phoneHash, emailEnc, emailHash);
 
@@ -197,7 +212,6 @@ public class EmployeeUpdateService {
   @Transactional
   public void changePassword(Employee employee, PasswordChangeRequest request) {
     log.info("비밀번호 변경 시작 - loginId: {}", employee.getLoginId());
-
 
     PasswordValidator.validate(request.newPassword());
     // 기존 비밀번호 검증
@@ -275,13 +289,31 @@ public class EmployeeUpdateService {
           employeeCode, hotelGroupCode, employee.getHotelGroup().getHotelGroupCode());
       throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);
     }
-    if (employee.getEmployeeStatus() == EmployeeStatus.LOCKED
-        || employee.getEmployeeStatus() == EmployeeStatus.DORMANCY) {
+    if (employee.getEmployeeStatus() != EmployeeStatus.ACTIVE) {
       employee.employeeUnlocked();
       employeeRepository.save(employee);
       log.info("직원 잠금 해제 완료 - employeeCode: {}, loginId: {}", employeeCode, employee.getLoginId());
     }
   }
+
+  @Transactional
+  @AuditLog(details = "'직원 비활성화   직원 코드 : '+#employeeCode", type = PermissionTypeKey.EMPLOYEE_UPDATE)
+  public void inactiveEmployee(Long hotelGroupCode, Long employeeCode) {
+    log.info("직원 비활성화 - employeeCode: {}, hotelGroupCode: {}", employeeCode, hotelGroupCode);
+
+    Employee employee = employeeRepository.findById(employeeCode).orElseThrow();
+    if (!employee.getHotelGroup().getHotelGroupCode().equals(hotelGroupCode)) {
+      log.error("호텔 그룹 불일치 - employeeCode: {}, expected: {}, actual: {}",
+          employeeCode, hotelGroupCode, employee.getHotelGroup().getHotelGroupCode());
+      throw new CustomException(ErrorCode.HOTEL_GROUP_CODE_NOT_MATCH);
+    }
+    if (employee.getEmployeeStatus() == EmployeeStatus.ACTIVE) {
+      employee.employeeInactive();
+      employeeRepository.save(employee);
+      log.info("직원 비활성화 완료 - employeeCode: {}, loginId: {}", employeeCode, employee.getLoginId());
+    }
+  }
+
 
   // 유저 휴면 전환
   @Scheduled(cron = "0 0 12 * * ?", zone = "Asia/Seoul")

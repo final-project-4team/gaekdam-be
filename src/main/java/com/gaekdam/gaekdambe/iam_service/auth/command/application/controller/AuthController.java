@@ -2,6 +2,7 @@ package com.gaekdam.gaekdambe.iam_service.auth.command.application.controller;
 
 import com.gaekdam.gaekdambe.global.Logging.IpLogging;
 import com.gaekdam.gaekdambe.global.config.jwt.JwtTokenProvider;
+import com.gaekdam.gaekdambe.global.config.jwt.RedisAccessTokenService;
 import com.gaekdam.gaekdambe.global.config.jwt.RefreshTokenService;
 import com.gaekdam.gaekdambe.global.config.model.ApiResponse;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
@@ -42,7 +43,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name="인증")
+@Tag(name = "인증")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
@@ -52,6 +53,7 @@ public class AuthController {
   private final JwtTokenProvider jwtTokenProvider;
   private final PermissionRepository permissionRepository;
   private final RefreshTokenService redisRefreshTokenService;
+  private final RedisAccessTokenService redisAccessTokenService;
   private final LoginAuthService loginAuthService;
   private final SearchHashService searchHashService;
   private final PermissionMappingRepository permissionMappingRepository;
@@ -60,12 +62,11 @@ public class AuthController {
   private final long REFRESH_TOKEN_EXPIRE = 1000 * 60 * 60;
   private final IpLogging ipLogging;
 
+  @Value("${app.cookie.secure}")
+  private boolean cookieSecure;
 
-    @Value("${app.cookie.secure}")
-    private boolean cookieSecure;
-
-    @Value("${app.cookie.same-site}")
-    private String sameSite;
+  @Value("${app.cookie.same-site}")
+  private String sameSite;
 
   // 직원 로그인
   @PostMapping("/login")
@@ -99,6 +100,7 @@ public class AuthController {
     }
 
     // 로그인 성공 시 카운트 초기화 및 시간 갱신
+
     loginAuthService.loginSuccess(employee, ip);
 
     String role = permissionRepository.findById(employee.getPermission().getPermissionCode()).get()
@@ -112,6 +114,8 @@ public class AuthController {
         propertyCode);
 
     // refreshToken을 Redis에 저장(회전 / 검증용)
+
+    redisAccessTokenService.save(loginId, accessToken);
     redisRefreshTokenService.save(loginId, refreshToken, REFRESH_TOKEN_EXPIRE);
 
     // 1) refreshToken을 HttpOnly 쿠키에 넣기
@@ -183,6 +187,7 @@ public class AuthController {
     String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, role, hotelGroupCode,
         propertyCode);
 
+    redisAccessTokenService.save(userId, newAccessToken);
     redisRefreshTokenService.save(userId, newRefreshToken, REFRESH_TOKEN_EXPIRE);
 
     ResponseCookie refreshCookie = ResponseCookie.from(COOKIE_NAME, newRefreshToken)

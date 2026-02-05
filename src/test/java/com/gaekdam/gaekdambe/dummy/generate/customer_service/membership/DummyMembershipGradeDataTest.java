@@ -32,27 +32,27 @@ public class DummyMembershipGradeDataTest {
 
             membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
                     hg, "BASIC",  1L, "Basic membership grade",
-                    0L, 0, 12, 1
+                    0L, 0
             ));
 
             membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
                     hg, "BRONZE", 2L, "Bronze membership grade",
-                    200_000L, 0, 12, 1
+                    200_000L, 0
             ));
 
             membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
                     hg, "SILVER", 3L, "Silver membership grade",
-                    500_000L, 0, 12, 1
+                    500_000L, 0
             ));
 
             membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
                     hg, "GOLD",   4L, "Gold membership grade",
-                    1_000_000L, 0, 12, 1
+                    1_000_000L, 0
             ));
 
             membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
                     hg, "VIP",    5L, "VIP membership grade",
-                    2_000_000L, 0, 12, 1
+                    2_000_000L, 0
             ));
         }
 

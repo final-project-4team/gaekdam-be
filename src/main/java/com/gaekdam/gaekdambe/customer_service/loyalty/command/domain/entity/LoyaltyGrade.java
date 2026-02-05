@@ -15,19 +15,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        name = "loyalty_grade",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "UQ_loyalty_grade_hotel_group_name",
-                        columnNames = {"hotel_group_code", "loyalty_grade_name"} //
-                )
-        },
-        indexes = {
-                @Index(name = "IDX_loyalty_grade_hotel_group", columnList = "hotel_group_code"),
-                @Index(name = "IDX_loyalty_grade_tier", columnList = "hotel_group_code,loyalty_tier_level") //
-        }
-)
+@Table(name = "loyalty_grade", uniqueConstraints = {
+    @UniqueConstraint(name = "UQ_loyalty_grade_hotel_group_name", columnNames = { "hotel_group_code",
+        "loyalty_grade_name" } //
+    )
+}, indexes = {
+    @Index(name = "IDX_loyalty_grade_hotel_group", columnList = "hotel_group_code"),
+    @Index(name = "IDX_loyalty_grade_tier", columnList = "hotel_group_code,loyalty_tier_level") //
+})
 @EntityListeners(AuditingEntityListener.class)
 public class LoyaltyGrade {
 
@@ -35,7 +30,6 @@ public class LoyaltyGrade {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "loyalty_grade_code", nullable = false)
   private Long loyaltyGradeCode;
-
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "hotel_group_code", nullable = false)
@@ -80,22 +74,12 @@ public class LoyaltyGrade {
       Long loyaltyTierLevel,
       String loyaltyTierComment,
       Long loyaltyCalculationAmount,
-      Integer loyaltyCalculationCount,
-      Integer loyaltyCalculationTermMonth,
-      Integer loyaltyCalculationRenewalDay) {
+      Integer loyaltyCalculationCount) {
     if (loyaltyGradeName == null || loyaltyGradeName.isBlank()) {
       throw new IllegalArgumentException("gradeName must not be blank");
     }
     if (loyaltyTierComment == null || loyaltyTierComment.isBlank()) {
       throw new IllegalArgumentException("tierComment must not be blank");
-    }
-    if (loyaltyCalculationTermMonth == null
-        || loyaltyCalculationTermMonth <= 0 | loyaltyCalculationTermMonth > 12) { //  변경
-      throw new IllegalArgumentException("calculationTermMonth는 1개월에서 12개월 사이여야 합니다");
-    }
-    if (loyaltyCalculationRenewalDay == null || loyaltyCalculationRenewalDay <= 0
-        || loyaltyCalculationRenewalDay > 31) { // 변경
-      throw new IllegalArgumentException("calculationRenewalDay는 1일에서 31일 사이여야 합니다");
     }
 
     this.hotelGroup = hotelGroup;
@@ -104,8 +88,8 @@ public class LoyaltyGrade {
     this.loyaltyTierComment = loyaltyTierComment;
     this.loyaltyCalculationAmount = loyaltyCalculationAmount;
     this.loyaltyCalculationCount = loyaltyCalculationCount;
-    this.loyaltyCalculationTermMonth = loyaltyCalculationTermMonth;
-    this.loyaltyCalculationRenewalDay = loyaltyCalculationRenewalDay;
+    this.loyaltyCalculationTermMonth = 12;
+    this.loyaltyCalculationRenewalDay = 1;
     this.loyaltyGradeStatus = LoyaltyGradeStatus.ACTIVE;
   }
 
@@ -115,18 +99,14 @@ public class LoyaltyGrade {
       Long loyaltyTierLevel,
       String loyaltyTierComment,
       Long loyaltyCalculationAmount,
-      Integer loyaltyCalculationCount,
-      Integer loyaltyCalculationTermMonth,
-      Integer loyaltyCalculationRenewalDay) {
+      Integer loyaltyCalculationCount) {
     return new LoyaltyGrade(
         hotelGroup,
         loyaltyGradeName,
         loyaltyTierLevel,
         loyaltyTierComment,
         loyaltyCalculationAmount,
-        loyaltyCalculationCount,
-        loyaltyCalculationTermMonth,
-        loyaltyCalculationRenewalDay);
+        loyaltyCalculationCount);
   }
 
   public void deleteLoyaltyGradeStatus() {
@@ -142,22 +122,12 @@ public class LoyaltyGrade {
       Long loyaltyTierLevel,
       String loyaltyTierComment,
       Long loyaltyCalculationAmount,
-      Integer loyaltyCalculationCount,
-      Integer loyaltyCalculationTermMonth,
-      Integer loyaltyCalculationRenewalDay) {
+      Integer loyaltyCalculationCount) {
     if (loyaltyGradeName == null || loyaltyGradeName.isBlank()) {
       throw new IllegalArgumentException("gradeName must not be blank");
     }
     if (loyaltyTierComment == null || loyaltyTierComment.isBlank()) {
       throw new IllegalArgumentException("tierComment must not be blank");
-    }
-    if (loyaltyCalculationTermMonth == null
-        || loyaltyCalculationTermMonth <= 0 | loyaltyCalculationTermMonth > 12) { // ✅ 변경
-      throw new IllegalArgumentException("calculationTermMonth는 1개월에서 12개월 사이여야 합니다");
-    }
-    if (loyaltyCalculationRenewalDay == null || loyaltyCalculationRenewalDay <= 0
-        || loyaltyCalculationRenewalDay > 31) { // ✅ 변경
-      throw new IllegalArgumentException("calculationRenewalDay는 1일에서 31일 사이여야 합니다");
     }
 
     this.loyaltyGradeName = loyaltyGradeName.trim();
@@ -165,7 +135,5 @@ public class LoyaltyGrade {
     this.loyaltyTierComment = loyaltyTierComment;
     this.loyaltyCalculationAmount = loyaltyCalculationAmount;
     this.loyaltyCalculationCount = loyaltyCalculationCount;
-    this.loyaltyCalculationTermMonth = loyaltyCalculationTermMonth;
-    this.loyaltyCalculationRenewalDay = loyaltyCalculationRenewalDay;
   }
 }

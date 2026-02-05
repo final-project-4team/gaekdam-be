@@ -5,9 +5,7 @@ public record MembershipGradeRequest(
     Long tierLevel,
     String tierComment,
     Long calculationAmount,
-    Integer calculationCount,
-    Integer calculationTermMonth,
-    Integer calculationRenewalDay
+    Integer calculationCount
 ) {
 
 }

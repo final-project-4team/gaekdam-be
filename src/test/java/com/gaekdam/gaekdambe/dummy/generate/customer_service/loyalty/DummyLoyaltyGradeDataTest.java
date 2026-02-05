@@ -43,9 +43,8 @@ public class DummyLoyaltyGradeDataTest {
                         1L,
                         "General loyalty grade",
                         0L,
-                        0,
-                        12,
-                        1));
+                        0
+                ));
             }
 
             if (!hasExcellent) {
@@ -55,9 +54,8 @@ public class DummyLoyaltyGradeDataTest {
                         2L,
                         "Excellent loyalty grade",
                         0L,
-                        5,
-                        12,
-                        1));
+                        10
+                ));
             }
         }
 

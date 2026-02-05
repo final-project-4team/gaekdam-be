@@ -26,7 +26,6 @@ public class LoyaltyGradeCommandService {
   private final EmployeeRepository employeeRepository;
   private final AuditLogService auditLogService;
 
-
   @Transactional
   @AuditLog(details = "'로열티 등급 이름 : '+ #request.loyaltyGradeName", type = PermissionTypeKey.LOYALTY_POLICY_CREATE)
   public String createLoyaltyGrade(LoyaltyGradeRequest request, Long hotelGroupCode) {
@@ -40,10 +39,7 @@ public class LoyaltyGradeCommandService {
         request.loyaltyTierLevel(),
         request.loyaltyTierComment(),
         request.loyaltyCalculationAmount(),
-        request.loyaltyCalculationCount(),
-        request.loyaltyCalculationTermMonth(),
-        request.loyaltyCalculationRenewalDay()
-
+        request.loyaltyCalculationCount()
     );
     loyaltyGradeRepository.save(loyaltyGrade);
     return "멤버십 등급 생성 완료";
@@ -81,21 +77,19 @@ public class LoyaltyGradeCommandService {
     String prevName = loyaltyGrade.getLoyaltyGradeName();
     Long prevInfoAmount = loyaltyGrade.getLoyaltyCalculationAmount();
     Integer prevInfoCount = loyaltyGrade.getLoyaltyCalculationCount();
+    Integer prevInfoTerm = loyaltyGrade.getLoyaltyCalculationTermMonth();
+    Integer prevInfoRenewal = loyaltyGrade.getLoyaltyCalculationRenewalDay();
 
     loyaltyGrade.update(
         request.loyaltyGradeName(),
         request.loyaltyTierLevel(),
         request.loyaltyTierComment(),
         request.loyaltyCalculationAmount(),
-        request.loyaltyCalculationCount(),
-        request.loyaltyCalculationTermMonth(),
-        request.loyaltyCalculationRenewalDay());
+        request.loyaltyCalculationCount());
 
     StringBuilder changes = new StringBuilder();
 
-
-
-    //  등급 이름 비교
+    // 등급 이름 비교
     String newName = loyaltyGrade.getLoyaltyGradeName();
     if (prevName != null && !prevName.equals(newName)) {
       changes.append(String.format("[등급명: %s -> %s] ", prevName, newName));
@@ -121,6 +115,23 @@ public class LoyaltyGradeCommandService {
       changes.append(String.format("[기준횟수: %d -> %s] ", prevInfoCount,
           (newInfoCount != null ? newInfoCount.toString() : "없음")));
     }
+    // 기준 기간(월) 비교
+    Integer newInfoTerm = loyaltyGrade.getLoyaltyCalculationTermMonth();
+    if (prevInfoTerm == null) {
+      if (newInfoTerm != null)
+        changes.append(String.format("[기간: 없음 -> %d] ", newInfoTerm));
+    } else if (!prevInfoTerm.equals(newInfoTerm)) {
+      changes.append(String.format("[기간: %d -> %s] ", prevInfoTerm, (newInfoTerm != null ? newInfoTerm : "없음")));
+    }
+    // 갱신일 비교
+    Integer newInfoRenewal = loyaltyGrade.getLoyaltyCalculationRenewalDay();
+    if (prevInfoRenewal == null) {
+      if (newInfoRenewal != null)
+        changes.append(String.format("[갱신일: 없음 -> %d] ", newInfoRenewal));
+    } else if (!prevInfoRenewal.equals(newInfoRenewal)) {
+      changes
+          .append(String.format("[갱신일: %d -> %s] ", prevInfoRenewal, (newInfoRenewal != null ? newInfoRenewal : "없음")));
+    }
 
     Employee accessor = employeeRepository.findByLoginId(accessorLoginId).orElse(null);
     if (accessor != null) {
@@ -129,8 +140,7 @@ public class LoyaltyGradeCommandService {
           PermissionTypeKey.LOYALTY_POLICY_UPDATE,
           changes.toString(), // "이름: A->B, 금액: 100->200"
           null,
-          null
-      );
+          null);
     }
     return "등급 정보가 수정 되었습니다";
   }
