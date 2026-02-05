@@ -77,87 +77,40 @@ public class DummyLoyaltyDataTest {
             LocalDateTime now = joinedAt;
 
             // 기본은 GENERAL
+            // [단순화] 랜덤 방문 횟수 기반 1회 생성 (0~30회)
+            long randomVisitCount = random.nextInt(31);
+            long visitThreshold = 5;
+
+            Long initialGradeCode = pair.generalCode;
+            if (pair.excellentCode != null && randomVisitCount >= visitThreshold) {
+                initialGradeCode = pair.excellentCode;
+            }
+
+            // Loyalty 생성
             Loyalty loyalty = Loyalty.registerLoyalty(
                     customerCode,
                     hotelGroupCode,
-                    pair.generalCode,
+                    initialGradeCode,
                     joinedAt,
-                    now);
-
-            // 가입 시점 세팅
-            // 산정일 = 가입일
-            // 로열티는 만료 개념이 명시적이지 않다면 calculatedAt 기준 1년 뒤 갱신으로 가정 or 로직에 따름
-            // 여기서는 가입 시점 상태 저장
+                    joinedAt);
 
             int idxInBatch = loyaltyBuffer.size();
             loyaltyBuffer.add(loyalty);
 
-            // 2. 연도 갱신 시뮬레이션 (매년 1월 1일 등급 재산정 가정)
-            int currentYear = joinedAt.getYear();
-            int maxYear = END.getYear(); // 2026
+            // 초기 이력 저장
+            LoyaltyHistory history = LoyaltyHistory.recordLoyaltyChange(
+                    customerCode,
+                    0L, // flush 후 설정
+                    ChangeSource.SYSTEM,
+                    null,
+                    "Initial Loyalty Grade (Simulated Visits: " + randomVisitCount + ")",
+                    null,
+                    initialGradeCode,
+                    LoyaltyStatus.ACTIVE,
+                    LoyaltyStatus.ACTIVE,
+                    joinedAt);
 
-            // 현재 등급 (가입 시점)
-            Long currentGradeCode = pair.generalCode;
-
-            // 반복적으로 해를 넘기며 갱신
-            while (currentYear < maxYear && random.nextBoolean()) { // 50% 확률로 다음 해 유지
-                int nextYear = currentYear + 1;
-                LocalDateTime renewalDate = LocalDateTime.of(nextYear, 1, 1, 7, 38); // 배치 실행 시간
-
-                boolean canPromote = pair.excellentCode != null
-                        && !Objects.equals(pair.generalCode, pair.excellentCode);
-
-                // 확률적으로 등급 변경 (EXCELLENT 승급 or 유지)
-                // 이미 EXCELLENT면 유지, GENERAL이면 승급 시도
-                Long nextGradeCode = currentGradeCode;
-                boolean isExcellent = Objects.equals(currentGradeCode, pair.excellentCode);
-
-                if (canPromote) {
-                    if (!isExcellent && random.nextInt(100) < EXCELLENT_PROMOTION_RATE) {
-                        nextGradeCode = pair.excellentCode; // 승급
-                    } else if (isExcellent && random.nextInt(100) < 5) {
-                        nextGradeCode = pair.generalCode; // 강등 (드물게)
-                    }
-                }
-
-                if (!Objects.equals(currentGradeCode, nextGradeCode)) {
-                    // 등급 변경 발생 시 이력 저장
-                    // 생략하거나
-                    // map
-                    // 활용
-                    // 필요
-                    // 간소화를 위해 gradeCode만 기록하거나, 위에서 map에 이름을 같이 담아뒀어야 함.
-                    // (GradePair에 이름 추가 필요하지만, 일단 로직 흐름 구현)
-
-                    LoyaltyHistory history = LoyaltyHistory.recordLoyaltyChange(
-                            customerCode,
-                            0L, // flush 후 주입
-                            ChangeSource.SYSTEM,
-                            null, // system
-                            "Automatic Loyalty Grade Update (Dummy Simulation)",
-                            currentGradeCode,
-                            nextGradeCode,
-                            LoyaltyStatus.ACTIVE,
-                            LoyaltyStatus.ACTIVE,
-                            renewalDate);
-                    historySlots.add(new HistorySlot(idxInBatch, history));
-
-                    // 현재 등급 상태 업데이트 (메모리 반영 -> 마지막 상태가 DB 저장됨)
-                    // setter가 없어서 리플렉션 써야 함 (setLoyaltyGradeCode 재사용)
-                    setLoyaltyGradeCode(loyalty, nextGradeCode);
-
-                    // calculatedAt 업데이트 필요 (엔티티에 setter 없음, changeLoyaltyGrade 사용해야 함 which handles
-                    // both)
-                    // loyalty.changeLoyaltyGrade(nextGradeCode, renewalDate); // 접근 제어자가 public이면
-                    // 이것 사용
-                    // Loyalty.java 보니 changeLoyaltyGrade가 public임. 리플렉션 대신 이거 사용 권장.
-                    loyalty.changeLoyaltyGrade(nextGradeCode, renewalDate);
-
-                    currentGradeCode = nextGradeCode;
-                }
-
-                currentYear = nextYear;
-            }
+            historySlots.add(new HistorySlot(idxInBatch, history));
 
             if (loyaltyBuffer.size() == BATCH) {
                 flushBatch(loyaltyBuffer, historySlots);
@@ -282,27 +235,5 @@ public class DummyLoyaltyDataTest {
         } catch (Exception e) {
             throw new RuntimeException("LoyaltyHistory.loyaltyCode set failed", e);
         }
-    }
-
-    // Loyalty 엔티티에 setter가 없어서 reflection으로 강제 주입
-    private static void setLoyaltyGradeCode(Loyalty loyalty, long loyaltyGradeCode) {
-        List<String> candidates = Arrays.asList(
-                "loyaltyGradeCode",
-                "loyalty_grade_code",
-                "loyaltyGrade");
-
-        for (String fieldName : candidates) {
-            try {
-                var f = Loyalty.class.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                f.set(loyalty, loyaltyGradeCode);
-                return;
-            } catch (NoSuchFieldException ignore) {
-                // next candidate
-            } catch (Exception e) {
-                throw new RuntimeException("Loyalty." + fieldName + " set failed", e);
-            }
-        }
-        throw new RuntimeException("Loyalty grade field not found. check Loyalty entity field name.");
     }
 }

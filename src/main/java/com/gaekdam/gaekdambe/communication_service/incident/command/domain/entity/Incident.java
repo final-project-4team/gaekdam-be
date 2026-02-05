@@ -14,14 +14,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@Table(
-        name = "incident",
-        indexes = {
-                @Index(name = "IDX_incident_property", columnList = "property_code"),
-                @Index(name = "IDX_incident_status", columnList = "incident_status"),
-                @Index(name = "IDX_incident_inquiry", columnList = "inquiry_code")
-        }
-)
+@Table(name = "incident", indexes = {
+        @Index(name = "IDX_incident_property", columnList = "property_code"),
+        @Index(name = "IDX_incident_status", columnList = "incident_status"),
+        @Index(name = "IDX_incident_inquiry", columnList = "inquiry_code"),
+        @Index(name = "idx_incident_property_status", columnList = "property_code, incident_status, incident_code")
+})
 public class Incident {
 
     @Id
@@ -79,8 +77,7 @@ public class Incident {
             IncidentType type,
             IncidentSeverity severity,
             LocalDateTime occurredAt,
-            Inquiry inquiry
-    ) {
+            Inquiry inquiry) {
         LocalDateTime now = LocalDateTime.now();
 
         return Incident.builder()

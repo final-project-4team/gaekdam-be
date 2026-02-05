@@ -11,14 +11,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@Table(
-        name = "inquiry",
-        indexes = {
-                @Index(name = "IDX_inquiry_property", columnList = "property_code"),
-                @Index(name = "IDX_inquiry_status", columnList = "inquiry_status"),
-                @Index(name = "IDX_inquiry_category", columnList = "inquiry_category_code")
-        }
-)
+@Table(name = "inquiry", indexes = {
+        @Index(name = "IDX_inquiry_property", columnList = "property_code"),
+        @Index(name = "IDX_inquiry_status", columnList = "inquiry_status"),
+        @Index(name = "IDX_inquiry_category", columnList = "inquiry_category_code"),
+        @Index(name = "idx_inquiry_property_status", columnList = "property_code, inquiry_status, inquiry_code")
+})
 public class Inquiry {
 
     @Id
@@ -57,7 +55,6 @@ public class Inquiry {
     @JoinColumn(name = "inquiry_category_code", nullable = false)
     private InquiryCategory category;
 
-
     @Column(name = "property_code", nullable = false)
     private Long propertyCode;
 
@@ -66,8 +63,7 @@ public class Inquiry {
             Long customerCode,
             InquiryCategory category,
             String title,
-            String content
-    ) {
+            String content) {
         LocalDateTime now = LocalDateTime.now();
         return Inquiry.builder()
                 .propertyCode(propertyCode)

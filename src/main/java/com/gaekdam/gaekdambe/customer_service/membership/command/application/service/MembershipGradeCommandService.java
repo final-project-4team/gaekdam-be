@@ -190,16 +190,16 @@ public class MembershipGradeCommandService {
         return "등급 정보가 수정 되었습니다";
     }
 
-    @Scheduled(cron = "0 38 6 1 1 *", zone = "Asia/Seoul") // 매년 1월 1일 06:38 실행
+    @Scheduled(cron = "0 10 19 * * *", zone = "Asia/Seoul") // 매년 1월 1일 06:38 실행
     @Transactional
     public void updateMembershipGrades() {
         log.info("Membership Grade Info Update Batch Start (Annual)");
         LocalDate today = LocalDate.now();
 
         // 1월 1일이 아니라면 실행하지 않음 (이중 방어)
-        if (today.getMonthValue() != 1 || today.getDayOfMonth() != 1) {
+/*        if (today.getMonthValue() != 1 || today.getDayOfMonth() != 1) {
             return;
-        }
+        }*/
 
         // 모든 호텔 그룹 조회 (조건 없는 일괄 갱신)
         List<HotelGroup> allGroups = hotelGroupRepository.findAll();
@@ -233,6 +233,7 @@ public class MembershipGradeCommandService {
         }
     }
 
+
     private void updateMemberGrade(Membership membership, List<MembershipGrade> allGrades,
                                    LocalDate startDate, LocalDate endDate, LocalDate today) {
         // 실적 조회
@@ -262,6 +263,7 @@ public class MembershipGradeCommandService {
                     membership.getExpiredAt(), // 만료일 유지 (등급 변경 시 만료일 정책이 있다면 수정 필요)
                     LocalDateTime.now());
 
+            membershipRepository.saveAndFlush(membership);
             // 이력 저장
             MembershipHistory history = MembershipHistory.recordMembershipChange(
                     membership.getCustomerCode(),
