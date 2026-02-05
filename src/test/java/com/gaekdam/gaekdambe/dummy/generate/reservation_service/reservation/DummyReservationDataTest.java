@@ -334,5 +334,6 @@ public class DummyReservationDataTest {
         List<Long> list = customerCodesByHotelGroup.get(hotelGroupCode);
         if (list == null || list.isEmpty()) return null;
         return list.get(random.nextInt(list.size()));
+        //
     }
 }
