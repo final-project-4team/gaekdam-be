@@ -74,23 +74,14 @@ public class MembershipGrade {
       Long tierLevel,
       String tierComment,
       Long calculationAmount,
-      Integer calculationCount,
-      Integer calculationTermMonth,
-      Integer calculationRenewalDay) {
+      Integer calculationCount) {
     if (gradeName == null || gradeName.isBlank()) {
       throw new IllegalArgumentException("gradeName must not be blank");
     }
     if (tierComment == null || tierComment.isBlank()) {
       throw new IllegalArgumentException("tierComment must not be blank");
     }
-    if (calculationTermMonth == null
-        || calculationTermMonth <= 0 | calculationTermMonth > 12) { // ✅ 변경
-      throw new IllegalArgumentException("calculationTermMonth는 1개월에서 12개월 사이여야 합니다");
-    }
-    if (calculationRenewalDay == null || calculationRenewalDay <= 0
-        || calculationRenewalDay > 31) { // ✅ 변경
-      throw new IllegalArgumentException("calculationRenewalDay는 1일에서 31일 사이여야 합니다");
-    }
+
 
     this.hotelGroup = hotelGroup;
     this.gradeName = gradeName.trim();
@@ -98,8 +89,8 @@ public class MembershipGrade {
     this.tierComment = tierComment;
     this.calculationAmount = calculationAmount;
     this.calculationCount = calculationCount;
-    this.calculationTermMonth = calculationTermMonth;
-    this.calculationRenewalDay = calculationRenewalDay;
+    this.calculationTermMonth = 12;
+    this.calculationRenewalDay = 1;
     this.membershipGradeStatus = MembershipGradeStatus.ACTIVE;
   }
 
@@ -109,18 +100,14 @@ public class MembershipGrade {
       Long tierLevel,
       String tierComment,
       Long calculationAmount,
-      Integer calculationCount,
-      Integer calculationTermMonth,
-      Integer calculationRenewalDay) {
+      Integer calculationCount) {
     return new MembershipGrade(
         hotelGroup,
         gradeName,
         tierLevel,
         tierComment,
         calculationAmount,
-        calculationCount,
-        calculationTermMonth,
-        calculationRenewalDay);
+        calculationCount);
   }
 
   public void deleteMemberShipGradeStatus() {
@@ -136,22 +123,12 @@ public class MembershipGrade {
       Long tierLevel,
       String tierComment,
       Long calculationAmount,
-      Integer calculationCount,
-      Integer calculationTermMonth,
-      Integer calculationRenewalDay) {
+      Integer calculationCount) {
     if (gradeName == null || gradeName.isBlank()) {
       throw new IllegalArgumentException("gradeName must not be blank");
     }
     if (tierComment == null || tierComment.isBlank()) {
       throw new IllegalArgumentException("tierComment must not be blank");
-    }
-    if (calculationTermMonth == null
-        || calculationTermMonth <= 0 || calculationTermMonth > 12) {
-      throw new IllegalArgumentException("calculationTermMonth는 1개월에서 12개월 사이여야 합니다");
-    }
-    if (calculationRenewalDay == null || calculationRenewalDay <= 0
-        || calculationRenewalDay > 31) {
-      throw new IllegalArgumentException("calculationRenewalDay는 1일에서 31일 사이여야 합니다");
     }
 
     this.gradeName = gradeName;
@@ -159,7 +136,5 @@ public class MembershipGrade {
     this.tierComment = tierComment;
     this.calculationAmount = calculationAmount;
     this.calculationCount = calculationCount;
-    this.calculationTermMonth = calculationTermMonth;
-    this.calculationRenewalDay = calculationRenewalDay;
   }
 }

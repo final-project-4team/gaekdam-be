@@ -21,36 +21,43 @@ public class DummyPositionDataTest {
   @Transactional
   public void generate() {
 
-      if (hotelPositionRepository.count() > 0) {
-          return;
+    if (hotelPositionRepository.count() > 0) {
+      return;
+    }
+    hotelPositionRepository.save(HotelPosition.createHotelPosition(
+        "더미용 직급",
+        departmentRepository.findById((long)1L).orElseThrow(),
+        hotelGroupRepository.findById((long) 10L).orElseThrow())
+    );
+
+    for (long hotel = 1L; hotel <= 5L; hotel++) {
+      Object[][] positionsDummy = {
+          {"총지배인", 1L, hotel},
+          {"부지배인", 1L, hotel},
+          {"회계부장", 2L, hotel},
+          {"회계부 사원", 2L, hotel},
+          {"하우스 키핑 매니저", 3L, hotel},
+          {"청소 직원", 3L, hotel},
+          {"레스토랑 매니저", 4L, hotel},
+          {"연회 매니저", 4L, hotel},
+          {"주방장", 5L, hotel},
+          {"조리사", 5L, hotel},
+          {"세일즈 매니저", 6L, hotel},
+          {"세일즈 디렉터", 6L, hotel},
+          {"마케팅 매니저", 7L, hotel},
+          {"브랜드 매니저", 7L, hotel},
+          {"시설 팀장", 8L, hotel},
+          {"난방 기사", 8L, hotel},
+      };
+      for (Object[] positionDummy : positionsDummy) {
+        HotelPosition position = HotelPosition.createHotelPosition(
+            (String) positionDummy[0],
+            departmentRepository.findById((long) positionDummy[1]).orElseThrow(),
+            hotelGroupRepository.findById((long) positionDummy[2]).orElseThrow()
+        );
+
+        hotelPositionRepository.save(position);
       }
-
-    Object[][] positionsDummy={
-        {"총지배인",1L,1L},
-        {"부지배인",1L,1L},
-        {"회계부장",2L,1L},
-        {"회계부 사원",2L,1L},
-        {"하우스 키핑 매니저",3L,1L},
-        {"청소 직원",3L,1L},
-        {"레스토랑 매니저",4L,1L},
-        {"연회 매니저",4L,1L},
-        {"주방장",5L,1L},
-        {"조리사",5L,1L},
-        {"세일즈 매니저",6L,1L},
-        {"세일즈 디렉터",6L,1L},
-        {"마케팅 매니저",7L,1L},
-        {"브랜드 매니저",7L,1L},
-        {"시설 팀장",8L,1L},
-        {"난방 기사",8L,1L},
-    };
-    for(Object[] positionDummy:positionsDummy){
-      HotelPosition position = HotelPosition.createHotelPosition(
-          (String)positionDummy[0],
-          departmentRepository.findById((long)positionDummy[1]).orElseThrow(),
-          hotelGroupRepository.findById((long)positionDummy[2]).orElseThrow()
-      );
-
-      hotelPositionRepository.save(position);
     }
   }
 }

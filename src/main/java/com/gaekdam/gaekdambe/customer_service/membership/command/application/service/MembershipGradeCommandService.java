@@ -56,12 +56,6 @@ public class MembershipGradeCommandService {
         if (request.tierComment() == null || request.tierComment().isBlank()) {
             throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
         }
-        if (request.calculationTermMonth() == null) {
-            throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
-        }
-        if (request.calculationRenewalDay() == null) {
-            throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
-        }
 
         HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.HOTEL_GROUP_NOT_FOUND));
@@ -72,9 +66,7 @@ public class MembershipGradeCommandService {
                 request.tierLevel(),
                 request.tierComment(),
                 request.calculationAmount(),
-                request.calculationCount(),
-                request.calculationTermMonth(),
-                request.calculationRenewalDay()
+                request.calculationCount()
 
         );
         membershipGradeRepository.save(membershipGrade);
@@ -115,12 +107,6 @@ public class MembershipGradeCommandService {
         if (request.tierComment() == null || request.tierComment().isBlank()) {
             throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
         }
-        if (request.calculationTermMonth() == null) {
-            throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
-        }
-        if (request.calculationRenewalDay() == null) {
-            throw new CustomException(ErrorCode.INVALID_INCORRECT_FORMAT);
-        }
 
         MembershipGrade membershipGrade = membershipGradeRepository.findById(membershipGradeCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBERSHIP_GRADE_NOT_FOUND));
@@ -143,9 +129,7 @@ public class MembershipGradeCommandService {
                 request.tierLevel(),
                 request.tierComment(),
                 request.calculationAmount(),
-                request.calculationCount(),
-                request.calculationTermMonth(),
-                request.calculationRenewalDay());
+                request.calculationCount());
 
         // --- 변경 후 데이터 캡처 & 비교 ---
         String newName = membershipGrade.getGradeName();

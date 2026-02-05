@@ -104,6 +104,9 @@
         <if test="search.employeeStatus != null">
           AND e.employee_status = #{search.employeeStatus}
         </if>
+        <if test="search.employeeStatus == null">
+          AND e.employee_status != 'INACTIVE'
+        </if>
       </where>
       <include refid="EmployeeOrderBy"/>
       LIMIT #{page.size} OFFSET #{page.offset}
@@ -133,6 +136,9 @@
             </if>
             <if test="search.employeeStatus != null">
                 AND e.employee_status = #{search.employeeStatus}
+            </if>
+            <if test="search.employeeStatus == null">
+                AND e.employee_status != 'INACTIVE'
             </if>
         </where>
     </select>

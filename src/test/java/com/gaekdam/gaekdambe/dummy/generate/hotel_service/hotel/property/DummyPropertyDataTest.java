@@ -31,6 +31,9 @@ public class DummyPropertyDataTest {
         {"한화리조트 제주", PropertyStatus.ACTIVE, "제주", (long)1},
         {"서울 신라 호텔", PropertyStatus.ACTIVE, "서울", (long)2},
         {"제주 신라 호텔", PropertyStatus.ACTIVE, "제주", (long)2},
+        {"부산 신라 호텔", PropertyStatus.ACTIVE, "서울", (long)2},
+        {"인천 신라 호텔", PropertyStatus.ACTIVE, "제주", (long)2},
+        {"대구 신라 호텔", PropertyStatus.ACTIVE, "서울", (long)2},
         {"시그니엘 서울", PropertyStatus.ACTIVE, "서울", (long)3},
         {"시그니엘 부산", PropertyStatus.ACTIVE, "부산", (long)3},
         {"롯데 호텔 서울", PropertyStatus.ACTIVE, "서울", (long)3},
@@ -44,6 +47,8 @@ public class DummyPropertyDataTest {
         {"그랜드 워커힐", PropertyStatus.ACTIVE, "서울", (long)5},
         {"비스타 워커힐", PropertyStatus.ACTIVE, "서울", (long)5},
         {"더글라스 하우스", PropertyStatus.ACTIVE, "서울", (long)5},
+        {"퍼스트 워커힐", PropertyStatus.ACTIVE, "서울", (long)5},
+        {"파스타 워커힐", PropertyStatus.ACTIVE, "서울", (long)5},
 
     };
 

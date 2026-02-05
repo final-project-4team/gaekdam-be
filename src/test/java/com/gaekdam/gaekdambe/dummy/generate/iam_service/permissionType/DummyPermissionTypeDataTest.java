@@ -4,6 +4,8 @@ import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.reposito
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.entity.PermissionType;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.infrastructure.PermissionTypeRepository;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,18 +24,19 @@ public class DummyPermissionTypeDataTest {
       return;
     }
 
-/*
-    HotelGroup hotelGroup = hotelGroupRepository.findById(1L)
-        .orElseThrow(() -> new IllegalArgumentException("HotelGroup with ID 1 not found"));
-*/
+    /*
+     * HotelGroup hotelGroup = hotelGroupRepository.findById(1L)
+     * .orElseThrow(() -> new
+     * IllegalArgumentException("HotelGroup with ID 1 not found"));
+     */
 
+    List<PermissionType> typeList = new ArrayList<>();
     for (PermissionTypeKey key : PermissionTypeKey.values()) {
       String keyName = key.name();
       int lastUnderscoreIndex = keyName.lastIndexOf('_');
 
       String resourceStr = (lastUnderscoreIndex != -1) ? keyName.substring(0, lastUnderscoreIndex) : keyName;
       String actionStr = (lastUnderscoreIndex != -1) ? keyName.substring(lastUnderscoreIndex + 1) : "";
-
 
       String koreanResource = getKoreanResource(resourceStr);
       String koreanAction = getKoreanAction(actionStr);
@@ -43,11 +46,11 @@ public class DummyPermissionTypeDataTest {
           key,
           permissionTypeName,
           resourceStr,
-          actionStr
-        );
+          actionStr);
 
-      permissionTypeRepository.save(permissionType);
+      typeList.add(permissionType);
     }
+    permissionTypeRepository.saveAll(typeList);
   }
 
   private String getKoreanResource(String resource) {
