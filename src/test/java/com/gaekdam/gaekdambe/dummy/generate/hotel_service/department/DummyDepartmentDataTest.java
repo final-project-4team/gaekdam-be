@@ -19,27 +19,29 @@ public class DummyDepartmentDataTest {
   @Transactional
   public void generate() {
 
-      if (departmentRepository.count() > 0) {
-          return;
+    if (departmentRepository.count() > 0) {
+      return;
+    }
+    for (long hotel = 1L; hotel <= 5L; hotel++) {
+      Object[][] departmentsDummy = {
+          {"경영",hotel},
+          {"지원", hotel},
+          {"객실", hotel},
+          {"식음", hotel},
+          {"조리", hotel},
+          {"세일즈", hotel},
+          {"홍보", hotel},
+          {"시설", hotel},
+      };
+
+      for (Object[] departmentDummy : departmentsDummy) {
+        Department department = Department.createDepartment(
+            (String) departmentDummy[0],
+            hotelGroupRepository.findById((long) departmentDummy[1]).orElseThrow()
+        );
+        departmentRepository.save(department);
+
       }
-
-    Object[][] departmentsDummy = {
-        {"경영", 1L},
-        {"지원", 1L},
-        {"객실", 1L},
-        {"식음", 1L},
-        {"조리", 1L},
-        {"세일즈", 1L},
-        {"홍보", 1L},
-        {"시설", 1L},
-    };
-
-    for (Object[] departmentDummy : departmentsDummy) {
-      Department department = Department.createDepartment(
-          (String)departmentDummy[0],
-          hotelGroupRepository.findById((long)departmentDummy[1]).orElseThrow()
-      );
-      departmentRepository.save(department);
     }
   }
 

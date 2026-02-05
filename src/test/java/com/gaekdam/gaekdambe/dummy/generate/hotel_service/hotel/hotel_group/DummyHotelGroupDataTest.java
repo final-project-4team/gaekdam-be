@@ -4,12 +4,8 @@ import com.gaekdam.gaekdambe.hotel_service.hotel.command.domain.entity.HotelGrou
 import com.gaekdam.gaekdambe.hotel_service.hotel.command.infrastructure.repository.HotelGroupRepository;
 
 import java.time.LocalDateTime;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -33,7 +29,7 @@ public class DummyHotelGroupDataTest {
         {"워커힐 호텔",LocalDateTime.of(2027,1,6,12,0,0)},
         {"라한 호텔",LocalDateTime.of(2026,1,19,12,0,0)},
         {"코모도 호텔",LocalDateTime.of(2026,2,11,12,0,0)},
-        {"파르나스 호텔",LocalDateTime.of(206,3,3,12,0,0)},
+        {"파르나스 호텔",LocalDateTime.of(2026,3,3,12,0,0)},
         {"소노 호텔",LocalDateTime.of(2027,1,3,12,0,0)},
         {"켄싱턴 호텔",LocalDateTime.of(2026,5,3,12,0,0)},
 

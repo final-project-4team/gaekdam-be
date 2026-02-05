@@ -103,4 +103,15 @@ public class EmployeeCommandController {
     return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 초기화 되었습니다.\n 임시 비밀번호는 : " + tempPassword));
   }
 
+  @PatchMapping("/inactive/{employeeCode}")
+  @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
+  @Operation(summary = "직원 비활성화 처리", description = "특정 직원을 비활성화 처리 합니다.")
+  public ResponseEntity<ApiResponse<String>> inactiveEmployee(
+      @AuthenticationPrincipal CustomUser employee,
+      @Parameter(description = "직원 코드") @PathVariable Long employeeCode) {
+    Long hotelGroupCode = employee.getHotelGroupCode();
+    employeeUpdateService.inactiveEmployee(hotelGroupCode, employeeCode);
+    return ResponseEntity.ok(ApiResponse.success("비활성화 처리 되었습니다."));
+  }
+
 }

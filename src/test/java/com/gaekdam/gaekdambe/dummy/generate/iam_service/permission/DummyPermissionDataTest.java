@@ -18,14 +18,24 @@ public class DummyPermissionDataTest {
  @Transactional
   public void generate()
   {
+
     if (permissionRepository.count() > 0) {
       return;
     }
+
+    permissionRepository.save(
+        Permission.createPermission(
+            "초기화 된 권한",
+            hotelGroupRepository.findById(10L).orElseThrow()
+        )
+    );
+
     for(long hotel=1;hotel<=10;hotel++) {
 
 
       String []permissionDummy=
-      {   "경영-총지배인",
+      {
+          "경영-총지배인",
           "경영-부지배인",
           "지원-회계부장",
           "지원-회계부사원",

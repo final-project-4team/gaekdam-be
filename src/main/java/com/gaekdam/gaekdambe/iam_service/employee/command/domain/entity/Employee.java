@@ -251,5 +251,8 @@ public class Employee {
     this.failedLoginCount++;
     this.updatedAt = LocalDateTime.now();
   }
+  public void employeeInactive() {
+    this.employeeStatus = EmployeeStatus.INACTIVE;
+  }
 
 }

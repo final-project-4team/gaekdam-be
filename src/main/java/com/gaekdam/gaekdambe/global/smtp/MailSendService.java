@@ -37,10 +37,17 @@ public class MailSendService {
   public void resetPasswordEmail(String email,String tempPassword) {
     MailSendRequest request = new MailSendRequest(
         email,
-        "회원님의 비밀번호가 갱신 되었습니다.",
+        "회원님의 비밀번호가 초기화 되었습니다.",
         "임시 비밀번호 : "+tempPassword
     );
     sendTxtEmail(request);
   }
-
+  public void registerEmail(String email,String tempPassword) {
+    MailSendRequest request = new MailSendRequest(
+        email,
+        "회원님의 비밀번호가 생성 되었습니다.",
+        "임시 비밀번호 : "+tempPassword
+    );
+    sendTxtEmail(request);
+  }
 }

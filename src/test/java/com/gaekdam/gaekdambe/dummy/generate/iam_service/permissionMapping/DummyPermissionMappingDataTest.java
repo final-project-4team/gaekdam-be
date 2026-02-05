@@ -7,6 +7,7 @@ import com.gaekdam.gaekdambe.iam_service.permission_mapping.command.infrastructu
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.entity.PermissionType;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.domain.seeds.PermissionTypeKey;
 import com.gaekdam.gaekdambe.iam_service.permission_type.command.infrastructure.PermissionTypeRepository;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,8 @@ public class DummyPermissionMappingDataTest {
     List<Permission> permissions = permissionRepository.findAll();
     List<PermissionType> permissionTypes = permissionTypeRepository.findAll();
 
+    List<PermissionMapping> mappingList = new ArrayList<>();
+
     for (Permission permission : permissions) {
       String name = permission.getPermissionName();
 
@@ -38,10 +41,11 @@ public class DummyPermissionMappingDataTest {
         PermissionTypeKey key = type.getPermissionTypeKey();
 
         if (shouldMap(name, key)) {
-          permissionMappingRepository.save(PermissionMapping.createPermissionMapping(permission, type));
+          mappingList.add(PermissionMapping.createPermissionMapping(permission, type));
         }
       }
     }
+    permissionMappingRepository.saveAll(mappingList);
   }
 
   private boolean shouldMap(String roleName, PermissionTypeKey key) {
@@ -52,14 +56,15 @@ public class DummyPermissionMappingDataTest {
 
     // 2. 지원 (회계 등)
     if (roleName.contains("회계")) {
-      return key.name().startsWith(" REPORT_LAYOUT_") ||key.name().startsWith(" REPORT_LAYOUT_TEMPLATE_")
-          ||key.name().startsWith(" REPORT_LAYOUT_TEMPLATE_LIBRARY_") || key.name().startsWith("MEMBER_")
-          || key.name().startsWith("TODAY_RESERVATION_")|| key.name().startsWith("TODAY_FACILITY_USAGE_");
+      return key.name().startsWith(" REPORT_LAYOUT_") || key.name().startsWith(" REPORT_LAYOUT_TEMPLATE_")
+          || key.name().startsWith(" REPORT_LAYOUT_TEMPLATE_LIBRARY_") || key.name().startsWith("MEMBER_")
+          || key.name().startsWith("TODAY_RESERVATION_") || key.name().startsWith("TODAY_FACILITY_USAGE_");
     }
 
     // 3. 객실 (하우스키핑)
     if (roleName.contains("객실") || roleName.contains("하우스") || roleName.contains("청소")) {
-      return key.name().contains("CHECK_IN_") ||key.name().contains("CHECK_OUT_") || key.name().contains("TODAY_FACILITY_USAGE_")
+      return key.name().contains("CHECK_IN_") || key.name().contains("CHECK_OUT_")
+          || key.name().contains("TODAY_FACILITY_USAGE_")
           || key.name().contains("TODAY_RESERVATION_") || key.name().contains(" INCIDENT_");
     }
 
@@ -72,7 +77,7 @@ public class DummyPermissionMappingDataTest {
     // 5. 세일즈/홍보
     if (roleName.contains("세일즈") || roleName.contains("홍보") || roleName.contains("마케팅") || roleName.contains("브랜드")) {
       return key.name().startsWith("CUSTOMER_")
-           || key.name().startsWith("MESSAGE_") || key.name().startsWith("REPORT_READ");
+          || key.name().startsWith("MESSAGE_") || key.name().startsWith("REPORT_READ");
     }
 
     // 6. 시설
