@@ -31,7 +31,7 @@ public class LoyaltyGradeCalculationService {
     private final HotelGroupRepository hotelGroupRepository;
     private final com.gaekdam.gaekdambe.customer_service.loyalty.query.service.LoyaltyGradeQueryService loyaltyGradeQueryService;
 
-    @Scheduled(cron = "0 38 7 1 1 *", zone = "Asia/Seoul") // 매년 1월 1일 07:38 실행 (멤버십 배치 후)
+    @Scheduled(cron = "0 5 18 * * *", zone = "Asia/Seoul") // 매년 1월 1일 07:38 실행 (멤버십 배치 후)
     @Transactional
     public void updateLoyaltyGrades() {
         log.info("Loyalty Grade Info Update Batch Start (Annual)");

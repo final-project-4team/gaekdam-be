@@ -14,6 +14,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +23,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "customer")
+@Table(name = "customer", indexes = {
+        @Index(name = "idx_customer_hotel_status_code", columnList = "hotel_group_code, customer_status, customer_code")
+})
 public class Customer {
 
     @Id
@@ -82,8 +85,7 @@ public class Customer {
             ContractType contractType,
             String kmsKeyId,
             byte[] dekEnc,
-            LocalDateTime now
-    ) {
+            LocalDateTime now) {
         this.hotelGroupCode = hotelGroupCode;
         this.customerNameEnc = customerNameEnc;
         this.customerNameHash = customerNameHash;
@@ -106,8 +108,7 @@ public class Customer {
             ContractType contractType,
             String kmsKeyId,
             byte[] dekEnc,
-            LocalDateTime now
-    ) {
+            LocalDateTime now) {
         return new Customer(
                 hotelGroupCode,
                 customerNameEnc,
@@ -117,8 +118,7 @@ public class Customer {
                 contractType,
                 kmsKeyId,
                 dekEnc,
-                now
-        );
+                now);
     }
 
     public void changeCustomerStatus(CustomerStatus afterStatus, LocalDateTime now) {
