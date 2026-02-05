@@ -81,9 +81,13 @@ public class DummyMembershipDataTest {
             if (scopedGrades == null || scopedGrades.isEmpty())
                 continue;
 
-            MembershipGrade grade = scopedGrades.get(random.nextInt(scopedGrades.size()));
-
             LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(30), random);
+
+            // 초기 가입: 최하위 등급으로 시작 (실제 호텔 멤버십 정책과 동일)
+            // 이후 연도 갱신 시 실적에 따라 등급이 상승합니다
+            MembershipGrade grade = scopedGrades.stream()
+                    .min(Comparator.comparing(MembershipGrade::getTierLevel))
+                    .orElse(scopedGrades.get(0));
 
             // 1. 가입 시점 세팅
             // 산정일 = 가입일
@@ -108,47 +112,43 @@ public class DummyMembershipDataTest {
             int idxInBatch = membershipBuffer.size();
             membershipBuffer.add(membership);
 
-            // 2. 연도 갱신 시뮬레이션 (확률적으로 다음 해, 다다음 해로 갱신)
+            // 2. 연도 갱신 시뮬레이션
             // joinedAt이 2024년이면 -> 2025년 1월 1일 갱신 시뮬레이션
             int currentYear = joinedAt.getYear();
             int maxYear = END.getYear(); // 2026
 
-            // 반복적으로 해를 넘기며 갱신 (확률 50%로 다음해 연장)
-            while (currentYear < maxYear && random.nextBoolean()) {
+            // 매년 1월 1일에 갱신 시도 (랜덤 스킵 없이 수행하여 등급 정합성 보장)
+            while (currentYear < maxYear) {
                 int nextYear = currentYear + 1;
-                LocalDateTime renewalDate = LocalDateTime.of(nextYear, 1, 1, 6, 38); // 배치 실행 시간
+                LocalDateTime renewalDate = LocalDateTime.of(nextYear, 1, 1, 6, 38);
 
                 // 2-1. 갱신 전 상태 백업 (History용)
-                MembershipGrade beforeGrade = grade; // (단순화: 등급 변동 없음 가정 or 랜덤 변경)
+                MembershipGrade beforeGrade = grade;
 
-                // 확률적으로 등급 변경 발생 (20%)
-                if (random.nextInt(100) < 20) {
-                    grade = scopedGrades.get(random.nextInt(scopedGrades.size()));
-                }
+                // 갱신 시점의 실적을 기준으로 등급 재계산
+                grade = calculateBestGradeForCustomer(customerCode, scopedGrades, renewalDate);
 
                 MembershipStatus beforeStatus = membership.getMembershipStatus();
                 LocalDateTime beforeExpiredAt = membership.getExpiredAt();
 
-                // 2-2. 갱신 후 상태 계산
-                // 산정일 = 1월 1일
-                // 만료일 = 12월 31일
-                LocalDateTime newCalculatedAt = renewalDate; // 1월 1일
+                // 2-2. 갱신 후 상태 계산 (1월 1일 ~ 12월 31일)
+                LocalDateTime newCalculatedAt = renewalDate;
                 LocalDateTime newExpiredAt = LocalDateTime.of(nextYear, 12, 31, 23, 59, 59);
 
-                // 2-3. 멤버십 업데이트 (메모리 상 객체 수정)
+                // 등급이 변경되었거나, 해가 바뀌었으므로 갱신 처리
                 membership.changeMembership(
                         grade.getMembershipGradeCode(),
-                        beforeStatus, // 상태 유지
+                        beforeStatus,
                         newExpiredAt,
                         newCalculatedAt);
 
-                // 2-4. 이력 저장 (갱신 시점 기록)
+                // 2-3. 이력 저장
                 MembershipHistory history = MembershipHistory.recordMembershipChange(
                         customerCode,
-                        0L, // flush 후 id 주입
+                        0L,
                         ChangeSource.SYSTEM,
-                        null, // system
-                        "Automatic Grade Update (Dummy Simulation)",
+                        null,
+                        "Automatic Grade Update based on performance",
                         beforeGrade.getGradeName(),
                         grade.getGradeName(),
                         beforeStatus,
@@ -160,7 +160,7 @@ public class DummyMembershipDataTest {
 
                 historySlots.add(new HistorySlot(idxInBatch, history));
 
-                currentYear = nextYear;
+                currentYear++;
             }
 
             if (membershipBuffer.size() == BATCH) {
@@ -260,5 +260,90 @@ public class DummyMembershipDataTest {
         } catch (Exception e) {
             throw new RuntimeException("MembershipHistory.membershipCode set failed", e);
         }
+    }
+
+    /**
+     * 고객의 실제 지출 통계를 기준으로 적절한 멤버십 등급을 계산합니다.
+     * Reservation(Total) + Facility(Usage) for COMPLETED stays
+     */
+    private MembershipGrade calculateBestGradeForCustomer(
+            Long customerCode,
+            List<MembershipGrade> scopedGrades,
+            LocalDateTime referenceDate) {
+
+        // 등급 계산 기준 기간: 최근 12개월 (referenceDate 기준)
+        LocalDateTime startDate = referenceDate.minusMonths(12);
+        LocalDateTime endDate = referenceDate; // 혹은 minusDays(1)
+
+        // 고객의 지출 통계 조회 (투숙 완료된 건에 한함: 객실/패키지 + 부대시설)
+        // LTV 산출 로직과 동일하게 구성
+        @SuppressWarnings("unchecked")
+        List<Object[]> stats = em.createNativeQuery("""
+                SELECT
+                  (
+                    SELECT COALESCE(SUM(r.total_price), 0)
+                    FROM reservation r
+                    JOIN stay s ON r.reservation_code = s.reservation_code
+                    WHERE r.customer_code = ?1
+                      AND s.stay_status = 'COMPLETED'
+                      AND s.actual_checkout_at BETWEEN ?2 AND ?3
+                  )
+                  +
+                  (
+                    SELECT COALESCE(SUM(fu.usage_price), 0)
+                    FROM facility_usage fu
+                    JOIN stay s ON fu.stay_code = s.stay_code
+                    WHERE s.customer_code = ?1
+                      AND s.stay_status = 'COMPLETED'
+                      AND s.actual_checkout_at BETWEEN ?2 AND ?3
+                  ) as totalAmount,
+
+                  (
+                    SELECT COUNT(s.stay_code)
+                    FROM stay s
+                    WHERE s.customer_code = ?1
+                      AND s.stay_status = 'COMPLETED'
+                      AND s.actual_checkout_at BETWEEN ?2 AND ?3
+                  ) as visitCount
+                """)
+                .setParameter(1, customerCode)
+                .setParameter(2, startDate.toLocalDate().toString())
+                .setParameter(3, endDate.toLocalDate().toString())
+                .getResultList();
+
+        java.math.BigDecimal totalAmount = java.math.BigDecimal.ZERO;
+        Long visitCount = 0L;
+
+        if (!stats.isEmpty()) {
+            Object[] row = stats.get(0);
+            if (row[0] != null)
+                totalAmount = (java.math.BigDecimal) row[0];
+            if (row[1] != null)
+                visitCount = ((Number) row[1]).longValue();
+        }
+
+        // 등급 리스트를 티어 높은 순으로 정렬 (높은 등급부터 검사)
+        scopedGrades.sort(Comparator.comparing(MembershipGrade::getTierLevel).reversed());
+
+        // [데이터 정합성 보장]
+        // 실제 지출액(totalAmount)이 해당 등급의 기준액(CalculationAmount) 이상이면 그 등급 부여
+        // "가상 지출액(Virtual Boost)" 로직 제거 -> 금액과 등급의 불일치 해결
+
+        for (MembershipGrade grade : scopedGrades) {
+            Long threshold = grade.getCalculationAmount();
+
+            // 기준액이 없으면(null) 보통 최하위거나 조건 없는 등급 -> 바로 부여 가능
+            if (threshold == null) {
+                return grade;
+            }
+
+            // 내 실적이 기준액 이상인가?
+            if (totalAmount.compareTo(java.math.BigDecimal.valueOf(threshold)) >= 0) {
+                return grade;
+            }
+        }
+
+        // 조건 미달 시 최하위 등급 반환 (Logic상 마지막이 최하위)
+        return scopedGrades.get(scopedGrades.size() - 1);
     }
 }

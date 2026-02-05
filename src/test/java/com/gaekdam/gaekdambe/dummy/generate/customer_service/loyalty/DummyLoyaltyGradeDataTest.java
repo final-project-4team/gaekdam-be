@@ -15,24 +15,26 @@ import java.util.List;
 @Component
 public class DummyLoyaltyGradeDataTest {
 
-    @Autowired LoyaltyGradeRepository loyaltyGradeRepository;
-    @Autowired HotelGroupRepository hotelGroupRepository;
+    @Autowired
+    LoyaltyGradeRepository loyaltyGradeRepository;
+    @Autowired
+    HotelGroupRepository hotelGroupRepository;
 
-    @PersistenceContext EntityManager em;
+    @PersistenceContext
+    EntityManager em;
 
     @Transactional
     public void generate() {
 
         List<HotelGroup> hotelGroups = hotelGroupRepository.findAll();
-        if (hotelGroups.isEmpty()) return;
+        if (hotelGroups.isEmpty())
+            return;
 
         for (HotelGroup hg : hotelGroups) {
 
             // 호텔그룹별로 존재여부 체크
-            boolean hasGeneral =
-                    loyaltyGradeRepository.existsByHotelGroupAndLoyaltyGradeName(hg, "GENERAL");
-            boolean hasExcellent =
-                    loyaltyGradeRepository.existsByHotelGroupAndLoyaltyGradeName(hg, "EXCELLENT");
+            boolean hasGeneral = loyaltyGradeRepository.existsByHotelGroupAndLoyaltyGradeName(hg, "GENERAL");
+            boolean hasExcellent = loyaltyGradeRepository.existsByHotelGroupAndLoyaltyGradeName(hg, "EXCELLENT");
 
             if (!hasGeneral) {
                 loyaltyGradeRepository.save(LoyaltyGrade.registerLoyaltyGrade(
@@ -43,8 +45,7 @@ public class DummyLoyaltyGradeDataTest {
                         0L,
                         0,
                         12,
-                        1
-                ));
+                        1));
             }
 
             if (!hasExcellent) {
@@ -54,10 +55,9 @@ public class DummyLoyaltyGradeDataTest {
                         2L,
                         "Excellent loyalty grade",
                         0L,
-                        10,
+                        5,
                         12,
-                        1
-                ));
+                        1));
             }
         }
 
