@@ -145,8 +145,10 @@
   <br>
 
 - ### CI/CD 계획서
-  <details> <summary>ci/cd 계획서</summary>
-  [객담_CICD_계획서.pdf](https://github.com/user-attachments/files/25066070/_CICD_.pdf)
+  <details><summary>CI/CD 계획서 열기</summary>
+    
+   [CI/CD 계획서 PDF](https://file.notion.so/f/f/33046c30-e635-8143-bcf2-0003df998aba/807411d7-22bc-40e2-8f0d-b5654bf2d45e/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf?table=block&id=2fe46c30-e635-80a8-ae64-c9e908f94545&spaceId=33046c30-e635-8143-bcf2-0003df998aba&expirationTimestamp=1770285600000&signature=H09m31SPfsxiTWLaNd9DolhDNhP7UOh0EAXfzJ-17YE&downloadName=%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+  
   <br>
 
 
