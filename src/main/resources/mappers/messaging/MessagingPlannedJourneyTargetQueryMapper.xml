@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingPlannedJourneyTargetQueryMapper">
+
+    <!-- =================================================
+         CHECKIN_PLANNED
+         TodayOperation 정의와 100% 동일
+         ================================================= -->
+    <select id="findTodayCheckinPlannedReservationCodes" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+                 INNER JOIN property p
+                            ON r.property_code = p.property_code
+                                AND p.hotel_group_code = #{hotelGroupCode}
+                 LEFT JOIN stay s
+                           ON r.reservation_code = s.reservation_code
+        WHERE r.checkin_date = #{today}
+          AND r.reservation_status = 'RESERVED'
+          AND r.canceled_at IS NULL
+          AND s.stay_code IS NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.reservation_code = r.reservation_code
+        )
+    </select>
+
+    <!-- =================================================
+         CHECKOUT_PLANNED
+         TodayOperation 정의와 100% 동일
+         ================================================= -->
+    <select id="findTodayCheckoutPlannedStayCodes" resultType="long">
+        SELECT s.stay_code
+        FROM reservation r
+                 INNER JOIN property p
+                            ON r.property_code = p.property_code
+                                AND p.hotel_group_code = #{hotelGroupCode}
+                 INNER JOIN stay s
+                            ON r.reservation_code = s.reservation_code
+        WHERE r.checkout_date = #{today}
+          AND r.reservation_status = 'RESERVED'
+          AND r.canceled_at IS NULL
+          AND s.actual_checkin_at IS NOT NULL
+          AND s.actual_checkout_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+              AND h.stay_code = s.stay_code
+        )
+    </select>
+
+</mapper>

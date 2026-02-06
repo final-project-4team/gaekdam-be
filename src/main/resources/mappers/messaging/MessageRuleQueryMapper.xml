@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageRuleQueryMapper">
+
+    <!-- =========================
+         메시지 룰 조회 (운영/관리용)
+         ========================= -->
+    <select id="findRules"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageRuleResponse">
+
+        SELECT
+        r.rule_code              AS ruleCode,
+        r.stage_code             AS stageCode,
+        r.template_code          AS templateCode,
+        r.reference_entity_type  AS referenceEntityType,
+        r.channel                AS channel,
+        r.is_enabled             AS isEnabled,
+        r.priority               AS priority
+        FROM message_rule r
+        JOIN message_template t
+        ON r.template_code = t.template_code
+
+        <where>
+            r.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.stageCode != null">
+                AND r.stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isEnabled != null">
+                AND r.is_enabled = #{search.isEnabled}
+            </if>
+        </where>
+
+        ORDER BY r.stage_code ASC, r.priority ASC
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         메시지 룰 개수
+         ========================= -->
+    <select id="countRules" resultType="long">
+        SELECT COUNT(*)
+        FROM message_rule r
+        JOIN message_template t
+        ON r.template_code = t.template_code
+        <where>
+            r.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.stageCode != null">
+                AND r.stage_code = #{search.stageCode}
+            </if>
+
+            <if test="search.isEnabled != null">
+                AND r.is_enabled = #{search.isEnabled}
+            </if>
+        </where>
+    </select>
+
+    <!-- =========================
+         스케줄링 전용 룰 조회 (핵심)
+         ========================= -->
+    <select id="findActiveRulesForSchedule"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.command.domain.entity.MessageRule">
+
+        SELECT
+            r.rule_code              AS ruleCode,
+            r.reference_entity_type  AS referenceEntityType,
+            r.offset_minutes         AS offsetMinutes,
+            r.channel                AS channel,
+            r.is_enabled             AS isEnabled,
+            r.priority               AS priority,
+            r.description            AS description,
+            r.created_at             AS createdAt,
+            r.updated_at             AS updatedAt,
+            r.stage_code             AS stageCode,
+            r.template_code          AS templateCode,
+            r.hotel_group_code       AS hotelGroupCode
+        FROM message_rule r
+                 JOIN message_template t
+                      ON r.template_code = t.template_code
+        WHERE
+            r.hotel_group_code = #{hotelGroupCode}
+          AND r.stage_code = #{stageCode}
+          AND r.is_enabled = true
+          AND t.visitor_type = #{visitorType}
+        ORDER BY r.priority ASC
+    </select>
+
+</mapper>

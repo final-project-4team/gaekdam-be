@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.customer.query.mapper.CustomerMemoMapper">
+
+    <select id="findCustomerMemos"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerMemoResponse">
+        SELECT
+        m.customer_memo_code     AS customerMemoCode,
+        m.customer_code          AS customerCode,
+        m.employee_code          AS employeeCode,
+        m.customer_memo_content  AS customerMemoContent,
+        m.created_at             AS createdAt,
+        m.updated_at             AS updatedAt
+        FROM customer_memo m
+        JOIN customer c ON c.customer_code = m.customer_code
+        WHERE
+        m.deleted_at IS NULL
+        AND m.customer_code = #{search.customerCode}
+        AND c.hotel_group_code = #{search.hotelGroupCode}
+
+        <!--  기간 필터 (created_at 기준) -->
+        <if test="search.fromDate != null">
+            AND m.created_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        <if test="search.toDate != null">
+            AND m.created_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+
+        <if test="sort != null and sort.sortBy != null">
+            ORDER BY
+            <choose>
+                <when test="sort.sortBy == 'created_at'">m.created_at</when>
+                <when test="sort.sortBy == 'updated_at'">m.updated_at</when>
+                <when test="sort.sortBy == 'customer_memo_code'">m.customer_memo_code</when>
+                <otherwise>m.created_at</otherwise>
+            </choose>
+            <choose>
+                <when test="sort.direction != null and sort.direction.toUpperCase() == 'ASC'">ASC</when>
+                <otherwise>DESC</otherwise>
+            </choose>
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countCustomerMemos" resultType="long">
+        SELECT COUNT(1)
+        FROM customer_memo m
+        JOIN customer c ON c.customer_code = m.customer_code
+        WHERE
+        m.deleted_at IS NULL
+        AND m.customer_code = #{search.customerCode}
+        AND c.hotel_group_code = #{search.hotelGroupCode}
+
+        <!-- 기간 필터 (created_at 기준) -->
+        <if test="search.fromDate != null">
+            AND m.created_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        <if test="search.toDate != null">
+            AND m.created_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </select>
+
+    <select id="findCustomerMemoDetail"
+            resultType="com.gaekdam.gaekdambe.customer_service.customer.query.dto.response.CustomerMemoResponse">
+        SELECT
+        m.customer_memo_code     AS customerMemoCode,
+        m.customer_code          AS customerCode,
+        m.employee_code          AS employeeCode,
+        m.customer_memo_content  AS customerMemoContent,
+        m.created_at             AS createdAt,
+        m.updated_at             AS updatedAt
+        FROM customer_memo m
+        JOIN customer c ON c.customer_code = m.customer_code
+        WHERE
+        m.deleted_at IS NULL
+        AND m.customer_code = #{search.customerCode}
+        AND m.customer_memo_code = #{search.customerMemoCode}
+        AND c.hotel_group_code = #{search.hotelGroupCode}
+    </select>
+
+</mapper>

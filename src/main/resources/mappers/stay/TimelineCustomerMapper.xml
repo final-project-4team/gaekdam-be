@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.timeline.query.mapper.TimelineCustomerMapper">
+
+    <select id="findTimelineCustomers"
+            resultType="com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineCustomerRow">
+
+        SELECT DISTINCT
+        c.customer_code      AS customerCode,
+        c.customer_name_enc  AS customerNameEnc,
+        cc.contact_value_enc AS phoneEnc,
+        c.dek_enc            AS dekEnc
+        FROM stay s
+        INNER JOIN reservation r
+        ON s.reservation_code = r.reservation_code
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        INNER JOIN customer c
+        ON s.customer_code = c.customer_code
+        LEFT JOIN customer_contact cc
+        ON cc.customer_code = c.customer_code
+        AND cc.contact_type = 'PHONE'
+        AND cc.is_primary = TRUE
+        WHERE p.hotel_group_code = #{hotelGroupCode}
+
+        <if test="customerCodeKeyword != null and customerCodeKeyword != ''">
+            AND CAST(c.customer_code AS CHAR)
+            LIKE CONCAT('%', #{customerCodeKeyword}, '%')
+        </if>
+
+        <if test="nameHash != null">
+            AND c.customer_name_hash = #{nameHash}
+        </if>
+
+        <if test="phoneHash != null">
+            AND EXISTS (
+            SELECT 1
+            FROM customer_contact cx
+            WHERE cx.customer_code = c.customer_code
+            AND cx.contact_type = 'PHONE'
+            AND cx.contact_value_hash = #{phoneHash}
+            )
+        </if>
+
+        ORDER BY c.customer_code DESC
+        LIMIT 100
+    </select>
+
+</mapper>

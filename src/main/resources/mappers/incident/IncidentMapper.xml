@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.incident.query.mapper.IncidentMapper">
+
+    <resultMap id="IncidentListEncMap"
+               type="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentListEncResponse">
+        <constructor>
+            <idArg column="incidentCode" javaType="java.lang.Long"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="incidentTitle" javaType="java.lang.String"/>
+            <arg column="incidentStatus" javaType="java.lang.String"/>
+            <arg column="severity" javaType="java.lang.String"/>
+            <arg column="incidentType" javaType="java.lang.String"/>
+            <arg column="propertyCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+            <arg column="inquiryCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="IncidentDetailEncMap"
+               type="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentDetailEncResponse">
+        <constructor>
+            <idArg column="incidentCode" javaType="java.lang.Long"/>
+            <arg column="propertyCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="incidentTitle" javaType="java.lang.String"/>
+            <arg column="incidentSummary" javaType="java.lang.String"/>
+            <arg column="incidentContent" javaType="java.lang.String"/>
+
+            <arg column="severity" javaType="java.lang.String"/>
+            <arg column="incidentType" javaType="java.lang.String"/>
+            <arg column="incidentStatus" javaType="java.lang.String"/>
+
+            <arg column="occurredAt" javaType="java.time.LocalDateTime"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="updatedAt" javaType="java.time.LocalDateTime"/>
+
+            <arg column="inquiryCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <!-- ✅ 조치 이력 Enc resultMap (추가) -->
+    <resultMap id="IncidentActionHistoryEncMap"
+               type="com.gaekdam.gaekdambe.communication_service.incident.query.dto.response.IncidentActionHistoryEncResponse">
+        <constructor>
+            <idArg column="incidentActionHistoryCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="actionContent" javaType="java.lang.String"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="IncidentBaseFrom">
+        FROM incident i
+        JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
+    </sql>
+
+    <sql id="IncidentWhere">
+        <where>
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND i.property_code = #{search.propertyCode}
+            </if>
+            <if test="search.status != null and search.status != ''">
+                AND i.incident_status = #{search.status}
+            </if>
+            <if test="search.severity != null and search.severity != ''">
+                AND i.severity = #{search.severity}
+            </if>
+            <if test="search.type != null and search.type != ''">
+                AND i.incident_type = #{search.type}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                <choose>
+
+                    <!-- 제목 -->
+                    <when test="search.searchType == 'TITLE'">
+                        AND i.incident_title LIKE CONCAT('%', #{search.keyword}, '%')
+                    </when>
+
+                    <!-- 담당자ID(login_id) -->
+                    <when test="search.searchType == 'EMPLOYEE_ID'">
+                        AND e.login_id LIKE CONCAT('%', #{search.keyword}, '%')
+                    </when>
+
+                    <!-- 담당자명(해시 exact match) -->
+                    <when test="search.searchType == 'EMPLOYEE_NAME'">
+                        AND e.employee_name_hash = #{search.employeeNameHash}
+                    </when>
+
+                    <!-- 전체(ALL): 제목/내용/담당자ID + (가능하면)담당자명 hash -->
+                    <otherwise>
+                        AND (
+                        i.incident_title LIKE CONCAT('%', #{search.keyword}, '%')
+                        OR i.incident_content LIKE CONCAT('%', #{search.keyword}, '%')
+                        OR e.login_id LIKE CONCAT('%', #{search.keyword}, '%')
+                        <if test="search.employeeNameHash != null">
+                            OR e.employee_name_hash = #{search.employeeNameHash}
+                        </if>
+                        )
+                    </otherwise>
+
+                </choose>
+            </if>
+
+
+            <if test="search.fromDate != null">
+                AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
+            </if>
+            <if test="search.toDate != null">
+                AND i.created_at &lt; DATE_ADD(CONCAT(#{search.toDate}, ' 00:00:00'), INTERVAL 1 DAY)
+            </if>
+        </where>
+    </sql>
+
+    <!-- LIST -->
+    <select id="findIncidents" resultMap="IncidentListEncMap">
+        SELECT
+        i.incident_code     AS incidentCode,
+        i.created_at        AS createdAt,
+        i.incident_title    AS incidentTitle,
+        i.incident_status   AS incidentStatus,
+        i.severity          AS severity,
+        i.incident_type     AS incidentType,
+        i.property_code     AS propertyCode,
+        i.employee_code     AS employeeCode,
+        i.inquiry_code      AS inquiryCode,
+
+        e.login_id          AS employeeLoginId,
+        e.employee_name_enc AS employeeNameEnc,
+        e.dek_enc           AS employeeDekEnc
+
+        <include refid="IncidentBaseFrom" />
+        <include refid="IncidentWhere" />
+
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy == 'created_at'"> i.created_at </when>
+            <when test="sort != null and sort.sortBy == 'updated_at'"> i.updated_at </when>
+            <when test="sort != null and sort.sortBy == 'occurred_at'"> i.occurred_at </when>
+            <when test="sort != null and sort.sortBy == 'severity'"> i.severity </when>
+            <when test="sort != null and sort.sortBy == 'incident_status'"> i.incident_status </when>
+            <otherwise> i.created_at </otherwise>
+        </choose>
+        <choose>
+            <when test="sort != null and sort.direction == 'ASC'"> ASC </when>
+            <otherwise> DESC </otherwise>
+        </choose>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <select id="countIncidents" resultType="long">
+        SELECT COUNT(*)
+        <include refid="IncidentBaseFrom" />
+        <include refid="IncidentWhere" />
+    </select>
+
+    <!-- DETAIL -->
+    <select id="findIncidentDetail" resultMap="IncidentDetailEncMap">
+        SELECT
+        i.incident_code     AS incidentCode,
+        i.property_code     AS propertyCode,
+        i.employee_code     AS employeeCode,
+        i.incident_title    AS incidentTitle,
+        i.incident_summary  AS incidentSummary,
+        i.incident_content  AS incidentContent,
+        i.severity          AS severity,
+        i.incident_type     AS incidentType,
+        i.incident_status   AS incidentStatus,
+        i.occurred_at       AS occurredAt,
+        i.created_at        AS createdAt,
+        i.updated_at        AS updatedAt,
+        i.inquiry_code      AS inquiryCode,
+
+        e.login_id          AS employeeLoginId,
+        e.employee_name_enc AS employeeNameEnc,
+        e.dek_enc           AS employeeDekEnc
+
+        FROM incident i
+        JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
+        WHERE i.incident_code = #{incidentCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+    <!-- ✅ 조치 이력 조회 (추가) -->
+    <select id="findIncidentActionHistories" resultMap="IncidentActionHistoryEncMap">
+        SELECT
+        iah.incident_action_history_code AS incidentActionHistoryCode,
+        iah.employee_code                AS employeeCode,
+        e.login_id                       AS employeeLoginId,
+        e.employee_name_enc              AS employeeNameEnc,
+        e.dek_enc                        AS employeeDekEnc,
+        iah.action_content               AS actionContent,
+        iah.created_at                   AS createdAt
+        FROM incident_action_history iah
+        JOIN incident i ON i.incident_code = iah.incident_code
+        JOIN property p ON p.property_code = i.property_code
+        LEFT JOIN employee e ON e.employee_code = iah.employee_code
+        WHERE iah.incident_code = #{incidentCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+        ORDER BY iah.created_at DESC
+    </select>
+
+</mapper>

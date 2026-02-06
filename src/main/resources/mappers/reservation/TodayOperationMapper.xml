@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.TodayOperationMapper">
+
+    <!-- =================================================
+         오늘 운영 대상 LIST
+         - reservation 기준
+         - stay는 1:1 서브쿼리
+         - 상태는 WHERE로 분기 (CASE 최소)
+         ================================================= -->
+    <select id="findTodayOperations"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow">
+
+        SELECT
+        r.reservation_code      AS reservationCode,
+        s.stay_code             AS stayCode,
+        r.customer_code         AS customerCode,
+        c.customer_name_enc     AS customerNameEnc,
+        c.customer_name_hash    AS customerNameHash,
+        c.dek_enc               AS dekEnc,
+        rt.type_name            AS roomType,
+        p.property_name         AS propertyName,
+        r.checkin_date          AS plannedCheckinDate,
+        r.checkout_date         AS plannedCheckoutDate,
+
+        /* 화면용 상태 */
+        <choose>
+            <when test="summaryType == 'CHECKIN_PLANNED'">
+                'CHECKIN_PLANNED'
+            </when>
+            <when test="summaryType == 'CHECKOUT_PLANNED'">
+                'CHECKOUT_PLANNED'
+            </when>
+            <otherwise>
+                'STAYING'
+            </otherwise>
+        </choose>
+        AS operationStatus
+
+        FROM reservation r
+
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+
+        INNER JOIN customer c
+        ON r.customer_code = c.customer_code
+        AND c.hotel_group_code = #{hotelGroupCode}
+
+        LEFT JOIN room ro
+        ON r.room_code = ro.room_code
+
+        LEFT JOIN room_type rt
+        ON ro.room_type_code = rt.room_type_code
+
+        <!-- stay 1:1 보장 -->
+        LEFT JOIN (
+        SELECT
+        reservation_code,
+        MAX(stay_code)           AS stay_code,
+        MAX(actual_checkin_at)   AS actual_checkin_at,
+        MAX(actual_checkout_at)  AS actual_checkout_at
+        FROM stay
+        GROUP BY reservation_code
+        ) s ON r.reservation_code = s.reservation_code
+
+        WHERE
+        r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+
+        <!-- 지점 필터 -->
+        <if test="propertyCode != null">
+            AND r.property_code = #{propertyCode}
+        </if>
+
+        <!-- =========================
+             오늘 기준 상태 분기
+             ========================= -->
+        <choose>
+
+            <!-- 체크인 예정 -->
+            <when test="summaryType == 'CHECKIN_PLANNED'">
+                AND r.checkin_date = #{today}
+                AND s.stay_code IS NULL
+            </when>
+
+            <!-- 체크아웃 예정 -->
+            <when test="summaryType == 'CHECKOUT_PLANNED'">
+                AND r.checkout_date = #{today}
+                AND s.actual_checkin_at IS NOT NULL
+                AND s.actual_checkout_at IS NULL
+            </when>
+
+            <!-- 투숙중 (기본 + ALL_TODAY) -->
+            <otherwise>
+                AND s.actual_checkin_at IS NOT NULL
+                AND s.actual_checkout_at IS NULL
+                AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+            </otherwise>
+
+        </choose>
+
+        <!-- 검색 -->
+        <if test="customerNameHash != null">
+            AND c.customer_name_hash = #{customerNameHash}
+        </if>
+
+        <if test="reservationCode != null and reservationCode != ''">
+            AND CAST(r.reservation_code AS CHAR)
+            LIKE CONCAT('%', #{reservationCode}, '%')
+        </if>
+
+        <!-- 정렬 -->
+        ORDER BY
+        r.checkout_date DESC,
+        r.reservation_code DESC
+
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
+
+    </select>
+
+
+    <!-- =================================================
+         오늘 운영 대상 SUMMARY
+         - LIST와 조건 100% 동일
+         - 상태별 COUNT
+         ================================================= -->
+    <select id="countTodayOperationsByStatus" resultType="map">
+
+        <!-- 체크인 예정 -->
+        SELECT 'CHECKIN_PLANNED' AS operationStatus, COUNT(*) AS cnt
+        FROM reservation r
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE
+        r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+        AND r.checkin_date = #{today}
+        AND s.stay_code IS NULL
+        <if test="propertyCode != null">
+            AND r.property_code = #{propertyCode}
+        </if>
+
+        UNION ALL
+
+        <!-- 투숙중 -->
+        SELECT 'STAYING' AS operationStatus, COUNT(*) AS cnt
+        FROM reservation r
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE
+        r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+        AND s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+        <if test="propertyCode != null">
+            AND r.property_code = #{propertyCode}
+        </if>
+
+        UNION ALL
+
+        <!-- 체크아웃 예정 -->
+        SELECT 'CHECKOUT_PLANNED' AS operationStatus, COUNT(*) AS cnt
+        FROM reservation r
+        INNER JOIN property p
+        ON r.property_code = p.property_code
+        AND p.hotel_group_code = #{hotelGroupCode}
+        LEFT JOIN stay s
+        ON r.reservation_code = s.reservation_code
+        WHERE
+        r.reservation_status = 'RESERVED'
+        AND r.canceled_at IS NULL
+        AND r.checkout_date = #{today}
+        AND s.actual_checkin_at IS NOT NULL
+        AND s.actual_checkout_at IS NULL
+        <if test="propertyCode != null">
+            AND r.property_code = #{propertyCode}
+        </if>
+
+    </select>
+
+</mapper>

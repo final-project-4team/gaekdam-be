@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.inquiry.query.mapper.InquiryMapper">
+
+    <resultMap id="InquiryListRowMap"
+               type="com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryListRow">
+        <constructor>
+            <idArg column="inquiryCode" javaType="java.lang.Long"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="inquiryTitle" javaType="java.lang.String"/>
+            <arg column="inquiryStatus" javaType="java.lang.String"/>
+            <arg column="customerCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="propertyCode" javaType="java.lang.Long"/>
+            <arg column="inquiryCategoryCode" javaType="java.lang.Long"/>
+            <arg column="inquiryCategoryName" javaType="java.lang.String"/>
+            <arg column="linkedIncidentCode" javaType="java.lang.Long"/>
+
+            <arg column="customerNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="dekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="InquiryDetailRowMap"
+               type="com.gaekdam.gaekdambe.communication_service.inquiry.query.service.model.InquiryDetailRow">
+        <constructor>
+            <idArg column="inquiryCode" javaType="java.lang.Long"/>
+            <arg column="inquiryStatus" javaType="java.lang.String"/>
+            <arg column="inquiryTitle" javaType="java.lang.String"/>
+            <arg column="inquiryContent" javaType="java.lang.String"/>
+            <arg column="answerContent" javaType="java.lang.String"/>
+            <arg column="createdAt" javaType="java.time.LocalDateTime"/>
+            <arg column="updatedAt" javaType="java.time.LocalDateTime"/>
+            <arg column="customerCode" javaType="java.lang.Long"/>
+            <arg column="employeeCode" javaType="java.lang.Long"/>
+
+            <arg column="employeeLoginId" javaType="java.lang.String"/>
+            <arg column="employeeNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="employeeDekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+
+            <arg column="propertyCode" javaType="java.lang.Long"/>
+            <arg column="inquiryCategoryCode" javaType="java.lang.Long"/>
+            <arg column="inquiryCategoryName" javaType="java.lang.String"/>
+            <arg column="linkedIncidentCode" javaType="java.lang.Long"/>
+
+            <arg column="customerNameEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+            <arg column="dekEnc" javaType="[B" jdbcType="VARBINARY"
+                 typeHandler="org.apache.ibatis.type.ByteArrayTypeHandler"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="InquiryBaseFrom">
+        FROM inquiry i
+        JOIN inquiry_category c ON c.inquiry_category_code = i.inquiry_category_code
+        JOIN property p ON p.property_code = i.property_code
+        JOIN customer cu ON cu.customer_code = i.customer_code
+        LEFT JOIN incident inc ON inc.inquiry_code = i.inquiry_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
+    </sql>
+
+    <sql id="InquiryWhere">
+        <where>
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.customerCode != null">
+                AND i.customer_code = #{search.customerCode}
+            </if>
+
+            <if test="search.propertyCode != null">
+                AND i.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.inquiryCategoryCode != null">
+                AND i.inquiry_category_code = #{search.inquiryCategoryCode}
+            </if>
+
+            <if test="search.status != null and search.status != ''">
+                AND i.inquiry_status = #{search.status}
+            </if>
+
+            <choose>
+                <!-- 고객명: customer.customer_name_hash 가 String 이므로 String 비교 -->
+                <when test="search.searchType == 'CUSTOMER_NAME'">
+                    <choose>
+                        <when test="search.customerNameHash != null and search.customerNameHash != ''">
+                            AND cu.customer_name_hash = #{search.customerNameHash}
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 담당자명: employee.employee_name_hash 는 VARBINARY(byte[]) -->
+                <when test="search.searchType == 'EMPLOYEE_NAME'">
+                    <choose>
+                        <when test="search.employeeNameHash != null and search.employeeNameHash.length > 0">
+                            AND e.employee_name_hash =
+                            #{search.employeeNameHash, jdbcType=VARBINARY, typeHandler=org.apache.ibatis.type.ByteArrayTypeHandler}
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 담당자 ID(login_id): 일치 -->
+                <when test="search.searchType == 'EMPLOYEE_ID'">
+                    <choose>
+                        <when test="search.employeeLoginId != null and search.employeeLoginId != ''">
+                            AND e.login_id = #{search.employeeLoginId}
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 제목: LIKE -->
+                <when test="search.searchType == 'TITLE'">
+                    <choose>
+                        <when test="search.keyword != null and search.keyword != ''">
+                            AND i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
+                        </when>
+                        <otherwise>AND 1=0</otherwise>
+                    </choose>
+                </when>
+
+                <!-- 기본: ALL(제목+내용 LIKE) -->
+                <otherwise>
+                    <if test="search.keyword != null and search.keyword != ''">
+                        AND (
+                        i.inquiry_title LIKE CONCAT('%', #{search.keyword}, '%')
+                        OR i.inquiry_content LIKE CONCAT('%', #{search.keyword}, '%')
+
+                        <if test="search.customerNameHash != null and search.customerNameHash != ''">
+                            OR cu.customer_name_hash = #{search.customerNameHash}
+                        </if>
+
+                        <if test="search.employeeNameHash != null and search.employeeNameHash.length > 0">
+                            OR e.employee_name_hash =
+                            #{search.employeeNameHash, jdbcType=VARBINARY, typeHandler=org.apache.ibatis.type.ByteArrayTypeHandler}
+                        </if>
+
+                        <if test="search.employeeLoginId != null and search.employeeLoginId != ''">
+                            OR e.login_id = #{search.employeeLoginId}
+                        </if>
+                        )
+                    </if>
+                </otherwise>
+
+            </choose>
+
+            <if test="search.fromDate != null">
+                AND i.created_at &gt;= CONCAT(#{search.fromDate}, ' 00:00:00')
+            </if>
+
+            <if test="search.toDate != null">
+                AND i.created_at &lt; DATE_ADD(CONCAT(#{search.toDate}, ' 00:00:00'), INTERVAL 1 DAY)
+            </if>
+        </where>
+    </sql>
+
+    <!-- LIST -->
+    <select id="findInquiries" resultMap="InquiryListRowMap">
+        SELECT
+        i.inquiry_code           AS inquiryCode,
+        i.created_at             AS createdAt,
+        i.inquiry_title          AS inquiryTitle,
+        i.inquiry_status         AS inquiryStatus,
+        i.customer_code          AS customerCode,
+        i.employee_code          AS employeeCode,
+
+        e.login_id               AS employeeLoginId,
+        e.employee_name_enc      AS employeeNameEnc,
+        e.dek_enc                AS employeeDekEnc,
+
+        i.property_code          AS propertyCode,
+        c.inquiry_category_code  AS inquiryCategoryCode,
+        c.inquiry_category_name  AS inquiryCategoryName,
+        MAX(inc.incident_code)   AS linkedIncidentCode,
+
+        cu.customer_name_enc     AS customerNameEnc,
+        cu.dek_enc               AS dekEnc
+
+        <include refid="InquiryBaseFrom"/>
+        <include refid="InquiryWhere"/>
+
+        GROUP BY
+        i.inquiry_code, i.created_at, i.inquiry_title, i.inquiry_status,
+        i.customer_code, i.employee_code,
+        e.login_id, e.employee_name_enc, e.dek_enc,
+        i.property_code,
+        c.inquiry_category_code, c.inquiry_category_name,
+        cu.customer_name_enc, cu.dek_enc
+
+        ORDER BY
+        <choose>
+            <when test="sort != null and sort.sortBy == 'created_at'"> i.created_at </when>
+            <when test="sort != null and sort.sortBy == 'updated_at'"> i.updated_at </when>
+            <when test="sort != null and sort.sortBy == 'inquiry_status'"> i.inquiry_status </when>
+            <otherwise> i.created_at </otherwise>
+        </choose>
+        <choose>
+            <when test="sort != null and sort.direction == 'ASC'"> ASC </when>
+            <otherwise> DESC </otherwise>
+        </choose>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- COUNT -->
+    <select id="countInquiries" resultType="long">
+        SELECT COUNT(DISTINCT i.inquiry_code)
+        <include refid="InquiryBaseFrom"/>
+        <include refid="InquiryWhere"/>
+    </select>
+
+    <!-- DETAIL -->
+    <select id="findInquiryDetail" resultMap="InquiryDetailRowMap">
+        SELECT
+        i.inquiry_code           AS inquiryCode,
+        i.inquiry_status         AS inquiryStatus,
+        i.inquiry_title          AS inquiryTitle,
+        i.inquiry_content        AS inquiryContent,
+        i.answer_content         AS answerContent,
+        i.created_at             AS createdAt,
+        i.updated_at             AS updatedAt,
+        i.customer_code          AS customerCode,
+        i.employee_code          AS employeeCode,
+
+        e.login_id               AS employeeLoginId,
+        e.employee_name_enc      AS employeeNameEnc,
+        e.dek_enc                AS employeeDekEnc,
+
+        i.property_code          AS propertyCode,
+        c.inquiry_category_code  AS inquiryCategoryCode,
+        c.inquiry_category_name  AS inquiryCategoryName,
+        (
+        SELECT MAX(inc2.incident_code)
+        FROM incident inc2
+        WHERE inc2.inquiry_code = i.inquiry_code
+        ) AS linkedIncidentCode,
+
+        cu.customer_name_enc     AS customerNameEnc,
+        cu.dek_enc               AS dekEnc
+
+        FROM inquiry i
+        JOIN inquiry_category c ON c.inquiry_category_code = i.inquiry_category_code
+        JOIN property p ON p.property_code = i.property_code
+        JOIN customer cu ON cu.customer_code = i.customer_code
+        LEFT JOIN employee e ON e.employee_code = i.employee_code
+        WHERE i.inquiry_code = #{inquiryCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+    </select>
+
+</mapper>

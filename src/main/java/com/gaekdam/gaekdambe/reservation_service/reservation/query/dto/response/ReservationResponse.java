@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -14,14 +15,29 @@ public class ReservationResponse {
 
     private Long reservationCode;
     private String reservationStatus;
+
     private LocalDate checkinDate;
     private LocalDate checkoutDate;
+
     private Integer guestCount;
     private String guestType;
     private String reservationChannel;
+
+    // 금액
+    private BigDecimal reservationRoomPrice;
+    private BigDecimal reservationPackagePrice;
+    private BigDecimal totalPrice;
+
+    // 시간
     private LocalDateTime reservedAt;
-    private Long tenantCode;
+    private LocalDateTime canceledAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // 연관 코드
+    private Long propertyCode;
     private Long roomCode;
-    private Long customerId;
+    private Long customerCode;
+    private Long packageCode;
 
 }

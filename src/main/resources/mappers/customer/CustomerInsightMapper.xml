@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.customer_service.insight.query.mapper.CustomerInsightMapper">
+
+
+    <!-- KPI: 총 지출, 총 투숙일, 예약 건수, 최근 방문일 -->
+    <select id="selectCustomerKpi" resultType="map">
+        SELECT
+        (
+        IFNULL(
+        (SELECT SUM(r.total_price)
+        FROM reservation r
+        JOIN stay s ON s.reservation_code = r.reservation_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'), 0)
+        +
+        IFNULL(
+        (SELECT SUM(fu.usage_price)
+        FROM facility_usage fu
+        JOIN stay s ON s.stay_code = fu.stay_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'), 0)
+        ) as totalSpending,
+
+        IFNULL(
+        (SELECT SUM(DATEDIFF(r.checkout_date, r.checkin_date))
+        FROM reservation r
+        JOIN stay s ON s.reservation_code = r.reservation_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'), 0) as totalStayDays,
+
+        (SELECT COUNT(*)
+        FROM stay s
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED') as reservationCount,
+
+        (SELECT MAX(s.actual_checkout_at)
+        FROM stay s
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED') as lastVisitedAt
+    </select>
+
+    <!-- 작년 총 지출 (트렌드 비교용) -->
+    <select id="selectLastYearTotalSpending" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(r.total_price), 0)
+        FROM reservation r
+        JOIN stay s ON s.reservation_code = r.reservation_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'
+        AND YEAR(r.checkin_date) = YEAR(CURDATE()) - 1
+    </select>
+
+    <!-- 월별 지출 (최근 12개월) - STAY COMPLETED 기준 -->
+    <select id="selectMonthlySpending" resultType="map">
+        SELECT
+        DATE_FORMAT(r.checkin_date, '%Y-%m') as month,
+        SUM(r.total_price) as amount
+        FROM reservation r
+        JOIN stay s ON s.reservation_code = r.reservation_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'
+        AND r.checkin_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        GROUP BY DATE_FORMAT(r.checkin_date, '%Y-%m')
+        ORDER BY month ASC
+    </select>
+
+    <!-- 지출 카테고리: 객실, F&B(패키지), 부대시설 합계 - STAY COMPLETED 기준 -->
+    <select id="selectSpendingCategory" resultType="map">
+        SELECT
+        (SELECT IFNULL(SUM(r.reservation_room_price), 0)
+        FROM reservation r
+        JOIN stay s ON s.reservation_code = r.reservation_code
+        WHERE s.customer_code = #{customerCode} AND s.stay_status = 'COMPLETED') as roomAmount,
+
+        (SELECT IFNULL(SUM(r.reservation_package_price), 0)
+        FROM reservation r
+        JOIN stay s ON s.reservation_code = r.reservation_code
+        WHERE s.customer_code = #{customerCode} AND s.stay_status = 'COMPLETED') as fnbAmount,
+
+        (SELECT IFNULL(SUM(fu.usage_price), 0)
+        FROM facility_usage fu
+        JOIN stay s ON s.stay_code = fu.stay_code
+        WHERE s.customer_code = #{customerCode} AND s.stay_status = 'COMPLETED') as facilityAmount
+    </select>
+
+    <!-- 요일별 투숙 패턴: 요일별 체크인 횟수 -->
+    <!-- DAYNAME returns 'Monday', 'Tuesday'... -->
+    <select id="selectStayDayPattern" resultType="map">
+        SELECT
+        UPPER(DAYNAME(checkin_date)) as dayOfWeek,
+        COUNT(*) as count
+        FROM reservation
+        WHERE customer_code = #{customerCode}
+        AND reservation_status = 'RESERVED'
+        GROUP BY dayOfWeek
+    </select>
+
+    <!-- 최근 예약 정보 (마케팅 인사이트용) -->
+    <select id="selectRecentReservations" resultType="map">
+        SELECT
+        checkin_date as checkinDate,
+        MONTH(checkin_date) as checkinMonth,
+        request_note as requestNote
+        FROM reservation
+        WHERE customer_code = #{customerCode}
+        ORDER BY checkin_date DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectPreferredRoomType" resultType="map">
+        SELECT
+        rt.type_name as typeName,
+        COUNT(r.reservation_code) as cnt
+        FROM reservation r
+        JOIN room rm ON r.room_code = rm.room_code
+        JOIN room_type rt ON rm.room_type_code = rt.room_type_code
+        WHERE r.customer_code = #{customerCode}
+        GROUP BY rt.type_name
+        ORDER BY cnt DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectPreferredFacility" resultType="map">
+        SELECT
+        f.facility_name as facilityName,
+        COUNT(fu.facility_usage_code) as cnt
+        FROM facility_usage fu
+        JOIN stay s ON s.stay_code = fu.stay_code
+        JOIN facility f ON fu.facility_code = f.facility_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'
+        GROUP BY f.facility_name
+        ORDER BY cnt DESC
+        LIMIT 1
+    </select>
+    <select id="selectFacilitySpendingDetail" resultType="map">
+        SELECT
+        IFNULL(f.facility_type, '기타') as facilityType,
+        SUM(fu.usage_price) as amount
+        FROM facility_usage fu
+        JOIN stay s ON s.stay_code = fu.stay_code
+        LEFT JOIN facility f ON fu.facility_code = f.facility_code
+        WHERE s.customer_code = #{customerCode}
+        AND s.stay_status = 'COMPLETED'
+        GROUP BY IFNULL(f.facility_type, '기타')
+        ORDER BY amount DESC
+    </select>
+</mapper>

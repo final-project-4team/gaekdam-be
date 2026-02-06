@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingJourneyTargetQueryMapper">
+
+    <!-- =================================================
+         예약 확정 : 오늘 생성된 RESERVED
+         ================================================= -->
+    <select id="findReservationConfirmedTargets" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+                 JOIN property p ON r.property_code = p.property_code
+        WHERE r.reservation_status = 'RESERVED'
+          AND r.canceled_at IS NULL
+          AND DATE(r.created_at) = CURDATE()
+          AND p.hotel_group_code = #{hotelGroupCode}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+          AND h.reservation_code = r.reservation_code
+            )
+    </select>
+
+    <!-- =================================================
+         예약 취소 : 오늘 취소된 것만
+         ================================================= -->
+    <select id="findReservationCancelledTargets" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+                 JOIN property p ON r.property_code = p.property_code
+        WHERE r.reservation_status = 'CANCELED'
+          AND r.canceled_at IS NOT NULL
+          AND DATE(r.canceled_at) = CURDATE()
+          AND p.hotel_group_code = #{hotelGroupCode}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+          AND h.reservation_code = r.reservation_code
+            )
+    </select>
+
+    <!-- =================================================
+         노쇼 : 오늘 노쇼 상태로 변경된 것만
+         ================================================= -->
+    <select id="findNoShowTargets" resultType="long">
+        SELECT r.reservation_code
+        FROM reservation r
+                 JOIN property p ON r.property_code = p.property_code
+        WHERE r.reservation_status = 'NO_SHOW'
+          AND DATE(r.updated_at) = CURDATE()
+          AND p.hotel_group_code = #{hotelGroupCode}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+          AND h.reservation_code = r.reservation_code
+            )
+    </select>
+
+    <!-- =================================================
+         체크인 등록 : 오늘 체크인한 것만
+         ================================================= -->
+    <select id="findCheckInConfirmedStayTargets" resultType="long">
+        SELECT s.stay_code
+        FROM stay s
+                 JOIN reservation r ON s.reservation_code = r.reservation_code
+                 JOIN property p ON r.property_code = p.property_code
+        WHERE s.actual_checkin_at IS NOT NULL
+          AND DATE(s.actual_checkin_at) = CURDATE()
+          AND p.hotel_group_code = #{hotelGroupCode}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+          AND h.stay_code = s.stay_code
+            )
+    </select>
+
+    <!-- =================================================
+         체크아웃 등록 : 오늘 체크아웃한 것만
+         ================================================= -->
+    <select id="findCheckOutConfirmedStayTargets" resultType="long">
+        SELECT s.stay_code
+        FROM stay s
+                 JOIN reservation r ON s.reservation_code = r.reservation_code
+                 JOIN property p ON r.property_code = p.property_code
+        WHERE s.actual_checkout_at IS NOT NULL
+          AND DATE(s.actual_checkout_at) = CURDATE()
+          AND p.hotel_group_code = #{hotelGroupCode}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM message_send_history h
+            WHERE h.stage_code = #{stageCode}
+          AND h.stay_code = s.stay_code
+            )
+    </select>
+
+</mapper>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.timeline.query.mapper.TimelineMapper">
+
+    <!-- =========================
+         타임라인 이벤트
+         ========================= -->
+    <select id="findTimelineEvents"
+            resultType="com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.TimelineEventResponse">
+
+        SELECT *
+        FROM (
+        <!-- 예약 생성 -->
+        SELECT
+        'RESERVATION_CREATED' AS eventType,
+        r.created_at          AS occurredAt,
+        r.guest_count         AS count,
+        rm.room_number        AS roomNumber,
+        r.reservation_channel AS channel,
+        NULL                  AS facilityName,
+        NULL                  AS facilityType
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
+        JOIN room rm ON s.room_code = rm.room_code
+        WHERE s.stay_code = #{stayCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+        AND r.created_at IS NOT NULL
+
+        UNION ALL
+
+        <!-- 체크인 / 체크아웃 -->
+        SELECT
+        CASE c.record_type
+        WHEN 'CHECK_IN'  THEN 'CHECK_IN'
+        WHEN 'CHECK_OUT' THEN 'CHECK_OUT'
+        END                   AS eventType,
+        c.recorded_at         AS occurredAt,
+        c.guest_count         AS count,
+        rm.room_number        AS roomNumber,
+        c.record_channel      AS channel,
+        NULL                  AS facilityName,
+        NULL                  AS facilityType
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
+        JOIN checkinout c ON s.stay_code = c.stay_code
+        JOIN room rm ON s.room_code = rm.room_code
+        WHERE s.stay_code = #{stayCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+
+        UNION ALL
+
+        <!-- 부대시설 이용 -->
+        SELECT
+        'FACILITY_USAGE'      AS eventType,
+        fu.usage_at           AS occurredAt,
+        fu.used_person_count  AS count,
+        NULL                  AS roomNumber,
+        NULL                  AS channel,
+        f.facility_name       AS facilityName,
+        f.facility_type       AS facilityType
+        FROM stay s
+        JOIN reservation r ON s.reservation_code = r.reservation_code
+        JOIN property p ON r.property_code = p.property_code
+        JOIN facility_usage fu ON s.stay_code = fu.stay_code
+        JOIN facility f ON fu.facility_code = f.facility_code
+        WHERE s.stay_code = #{stayCode}
+        AND p.hotel_group_code = #{hotelGroupCode}
+        ) t
+        ORDER BY occurredAt ASC
+    </select>
+
+    <!-- =========================
+         고객 선택 → 투숙 리스트
+         ========================= -->
+    <select id="findCustomerStays"
+            resultType="com.gaekdam.gaekdambe.reservation_service.timeline.query.dto.response.CustomerStayResponse">
+
+        SELECT
+            s.stay_code          AS stayCode,
+            s.stay_status        AS stayStatus,
+            s.actual_checkin_at  AS actualCheckinAt,
+            s.actual_checkout_at AS actualCheckoutAt,
+            s.guest_count        AS guestCount,
+            rm.room_number       AS roomNumber
+        FROM stay s
+                 JOIN reservation r ON s.reservation_code = r.reservation_code
+                 JOIN property p ON r.property_code = p.property_code
+                 JOIN room rm ON r.room_code = rm.room_code
+        WHERE s.customer_code = #{customerCode}
+          AND p.hotel_group_code = #{hotelGroupCode}
+        ORDER BY s.actual_checkin_at DESC
+    </select>
+
+    <!-- =========================
+         요약 카드
+         ========================= -->
+
+    <select id="findCustomerType" resultType="string">
+        SELECT
+            CASE
+                WHEN COUNT(*) > 1 THEN '재방문 고객'
+                ELSE '신규 고객'
+                END
+        FROM stay
+        WHERE customer_code = (
+            SELECT customer_code FROM stay WHERE stay_code = #{stayCode}
+        )
+    </select>
+
+    <select id="countFacilityUsage" resultType="int">
+        SELECT COUNT(*)
+        FROM facility_usage
+        WHERE stay_code = #{stayCode}
+    </select>
+
+    <select id="findUsedFacilities" resultType="string">
+        SELECT DISTINCT f.facility_name
+        FROM facility_usage fu
+                 JOIN facility f ON fu.facility_code = f.facility_code
+        WHERE fu.stay_code = #{stayCode}
+    </select>
+
+</mapper>

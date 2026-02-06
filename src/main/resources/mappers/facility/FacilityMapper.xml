@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.operation_service.facility.query.mapper.FacilityMapper">
+
+    <!-- =========================
+         부대시설 목록
+         ========================= -->
+    <select id="findFacilities"
+            resultType="com.gaekdam.gaekdambe.operation_service.facility.query.dto.response.FacilityResponse">
+
+        SELECT
+        f.facility_code AS facilityCode,
+        f.facility_name AS facilityName,
+        f.facility_type AS facilityType,
+        f.operating_hours AS operatingHours,
+        f.operating_status AS operatingStatus,
+        f.property_code AS propertyCode,
+        p.property_name AS propertyName,
+        f.created_at AS createdAt
+        FROM facility f
+        JOIN property p ON f.property_code = p.property_code
+
+        <where>
+
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND f.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                AND f.facility_name LIKE CONCAT('%', #{search.keyword}, '%')
+            </if>
+
+            <if test="search.facilityType != null and search.facilityType != ''">
+                AND f.facility_type = #{search.facilityType}
+            </if>
+
+            <if test="search.operatingStatus != null and search.operatingStatus != ''">
+                AND f.operating_status = #{search.operatingStatus}
+            </if>
+        </where>
+
+        ORDER BY ${sort.sortBy} ${sort.direction}
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         총 개수
+         ========================= -->
+    <select id="countFacilities" resultType="long">
+        SELECT COUNT(*)
+        FROM facility f
+        JOIN property p ON f.property_code = p.property_code
+
+        <where>
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND f.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                AND f.facility_name LIKE CONCAT('%', #{search.keyword}, '%')
+            </if>
+
+            <if test="search.facilityType != null and search.facilityType != ''">
+                AND f.facility_type = #{search.facilityType}
+            </if>
+
+            <if test="search.operatingStatus != null and search.operatingStatus != ''">
+                AND f.operating_status = #{search.operatingStatus}
+            </if>
+        </where>
+    </select>
+
+</mapper>

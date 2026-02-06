@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageTemplateSettingMapper">
+
+    <select id="findSettingRows"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageTemplateSettingFlatRow">
+
+        SELECT
+            s.stage_code       AS stageCode,
+            s.stage_name_kor   AS stageNameKor,
+
+            t.template_code   AS templateCode,
+            t.visitor_type    AS visitorType,
+            t.language_code   AS languageCode,
+            t.title           AS title,
+            t.is_active       AS isActive
+        FROM message_journey_stage s
+                 LEFT JOIN message_template t
+                           ON t.stage_code = s.stage_code
+                               AND t.hotel_group_code = #{hotelGroupCode}
+        WHERE s.is_active = true
+        ORDER BY s.stage_code ASC
+    </select>
+
+</mapper>

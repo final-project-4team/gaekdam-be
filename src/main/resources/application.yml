@@ -1,17 +1,38 @@
 server:
-  port: ${SERVER_PORT:8082}
+  port: 8082
+
 
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gaekdam_project}
-    username: ${DB_USERNAME:gaekdam}
-    password: ${DB_PASSWORD:gaekdam}
+    url: jdbc:mariadb://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
-#  data:
-#    redis:
-#      host: ${REDIS_HOST:localhost}
-#      port: ${REDIS_PORT:6379}
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
+      mail.smtp:
+        auth: true
+        timeout: 5000
+        starttls.enable: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+  flyway:
+    enabled: false
 
   jpa:
     hibernate:
@@ -19,8 +40,18 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
-        show_sql: true
+        # saveAll()을 실제 JDBC batch insert로 묶어주는 옵션
+        jdbc:
+          time_zone: Asia/Seoul
+          batch_size: 500
+        # 같은 테이블 insert/update를 묶어 배치 효율 증가
+        order_inserts: true
+        order_updates: true
+
+        # 더미 생성시 SQL 로그가 (속도 위해 OFF )
+        format_sql: false
+        show_sql: false
+
         dialect: org.hibernate.dialect.MariaDBDialect
 
   sql:
@@ -28,8 +59,44 @@ spring:
       mode: never
 
 
+
+
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
   mapper-locations: classpath:/mappers/**/*.xml
   type-aliases-package: com.gaekdam.gaekdambe.**
+
+
+jwt:
+  secret-b64: ${JWT_SECRET_B64}
+  access-expiration: 900000
+  refresh-expiration: 259200000
+
+crypto:
+  hmac:
+    pepper-b64: ${CRYPTO_HMAC_PEPPER_B64}
+  local-kek:
+    key-b64: ${CRYPTO_LOCAL_KEK_B64}
+
+logging:
+  level:
+    org.apache.coyote.http11: INFO
+    org.apache.tomcat.util.http.parser: DEBUG
+    org.apache.tomcat.util.net: INFO
+    # 레포트 로직 테스트용
+    com.gaekdam.gaekdambe.analytics_service.report.dataset.query.service: DEBUG
+
+
+management:
+  endpoints:
+    health:
+      show-details: always
+  health:
+    redis.enabled: false
+    db.enabled: true
+
+app:
+  cookie:
+    secure: false
+    same-site: Lax

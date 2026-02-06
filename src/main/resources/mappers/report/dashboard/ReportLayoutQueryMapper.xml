@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.mapper.ReportLayoutQueryMapper">
+
+  <resultMap id="ReportLayoutResult" type="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutResponseDto">
+    <id column="layout_id" property="layoutId"/>
+    <result column="employee_code" property="employeeCode"/>
+    <result column="name" property="name"/>
+    <result column="description" property="description"/>
+    <result column="is_default" property="isDefault"/>
+    <result column="is_archived" property="isArchived"/>
+    <result column="visibility_scope" property="visibilityScope"/>
+    <result column="date_range_preset" property="dateRangePreset"/>
+    <result column="default_filter_json" property="defaultFilterJson"/>
+    <result column="layout_json" property="layoutJson"/>
+    <result column="created_at" property="createdAt"/>
+    <result column="updated_at" property="updatedAt"/>
+  </resultMap>
+
+  <select id="findById" parameterType="long" resultMap="ReportLayoutResult">
+    SELECT *
+    FROM report_layout
+    WHERE layout_id = #{layoutId}
+  </select>
+
+  <select id="findByQuery" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutListQueryDto" resultMap="ReportLayoutResult">
+    SELECT *
+    FROM report_layout
+    WHERE 1=1
+    <if test="q != null and q.employeeCode != null">
+      AND employee_code = #{q.employeeCode}
+    </if>
+    <if test="q != null and q.name != null and q.name != ''">
+      AND name LIKE CONCAT('%', #{q.name}, '%')
+    </if>
+    ORDER BY created_at DESC
+    <if test="q != null and q.limit != null and q.offset != null">
+      LIMIT #{q.offset}, #{q.limit}
+    </if>
+  </select>
+
+  <select id="countByQuery" parameterType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutListQueryDto" resultType="int">
+    SELECT COUNT(1)
+    FROM report_layout
+    WHERE 1=1
+    <if test="q != null and q.employeeCode != null">
+      AND employee_code = #{q.employeeCode}
+    </if>
+    <if test="q != null and q.name != null and q.name != ''">
+      AND name LIKE CONCAT('%', #{q.name}, '%')
+    </if>
+  </select>
+
+  <!-- 레이아웃의 템플릿 현황 -->
+  <select id="selectTemplatesByLayoutId"
+          parameterType="long"
+          resultType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportLayoutTemplateItemDto">
+    SELECT
+      lt.template_id     AS templateId,
+      t.template_name    AS templateName,
+      t.template_desc    AS templateDesc,
+      lt.sort_order      AS sortOrder,
+      lt.is_active       AS isActive
+    FROM report_layout_template lt
+    JOIN report_template t
+      ON t.template_id = lt.template_id
+    WHERE lt.layout_id = #{layoutId}
+      AND lt.is_active = 1
+    ORDER BY lt.sort_order ASC, lt.created_at ASC
+  </select>
+
+  <!-- 첫 번째 템플릿 -->
+  <select id="selectInitialTemplateId"
+          parameterType="long"
+          resultType="long">
+    SELECT lt.template_id
+    FROM report_layout_template lt
+    WHERE lt.layout_id = #{layoutId}
+      AND lt.is_active = 1
+    ORDER BY lt.sort_order ASC, lt.created_at ASC
+    LIMIT 1
+  </select>
+
+  <!-- 위젯 조회: template_id 기준 -->
+  <select id="selectWidgetByTemplateId" 
+          parameterType="long" 
+          resultType="com.gaekdam.gaekdambe.analytics_service.report.dashboard.query.dto.ReportTemplateWidgetItemDto">
+    SELECT
+      template_widget_id,
+      template_id,
+      widget_type,
+      title,
+      dataset_type,
+      metric_key,
+      dimension_key,
+      default_period,
+      default_sort_order,
+      options_json,
+      default_filter_json,
+      created_at,
+      updated_at
+    FROM report_template_widget
+    WHERE template_id = #{templateId}
+    ORDER BY default_sort_order ASC, template_widget_id ASC
+  </select>
+  
+</mapper>

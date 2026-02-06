@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessagingConditionContextQueryMapper">
+
+    <!-- ===============================
+         Reservation 기준 Context
+         =============================== -->
+    <select id="findByReservationCode"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessagingConditionContext">
+
+        SELECT
+            r.reservation_code   AS reservationCode,
+            NULL                 AS stayCode,
+            r.customer_code      AS customerCode,
+            r.guest_count        AS guestCount,
+            r.property_code      AS propertyCode,
+            r.reservation_status AS reservationStatus,
+            r.checkin_date       AS checkinDate,
+            r.checkout_date      AS checkoutDate,
+            NULL                 AS actualCheckinAt,
+            NULL                 AS actualCheckoutAt
+        FROM reservation r
+        WHERE r.reservation_code = #{reservationCode}
+
+    </select>
+
+    <!-- ===============================
+         Stay 기준 Context
+         =============================== -->
+    <select id="findByStayCode"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessagingConditionContext">
+
+        SELECT
+            r.reservation_code   AS reservationCode,
+            s.stay_code          AS stayCode,
+            r.customer_code      AS customerCode,
+            r.guest_count        AS guestCount,
+            r.property_code      AS propertyCode,
+            r.reservation_status AS reservationStatus,
+            r.checkin_date       AS checkinDate,
+            r.checkout_date      AS checkoutDate,
+            s.actual_checkin_at  AS actualCheckinAt,
+            s.actual_checkout_at AS actualCheckoutAt
+        FROM stay s
+                 JOIN reservation r
+                      ON s.reservation_code = r.reservation_code
+        WHERE s.stay_code = #{stayCode}
+
+    </select>
+
+    <!-- ===============================
+         체크인 예정 날짜
+         =============================== -->
+    <select id="findCheckinDateByReservationCode"
+            resultType="java.time.LocalDate">
+
+        SELECT r.checkin_date
+        FROM reservation r
+        WHERE r.reservation_code = #{reservationCode}
+
+    </select>
+
+    <!-- ===============================
+         체크아웃 예정 날짜
+         =============================== -->
+    <select id="findCheckoutDateByStayCode"
+            resultType="java.time.LocalDate">
+
+        SELECT r.checkout_date
+        FROM stay s
+                 JOIN reservation r
+                      ON s.reservation_code = r.reservation_code
+        WHERE s.stay_code = #{stayCode}
+
+    </select>
+
+</mapper>

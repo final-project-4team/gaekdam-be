@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageJourneyStageQueryMapper">
+
+    <!-- =========================
+         메시지 여정 단계 목록
+         ========================= -->
+    <select id="findAllStages"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageJourneyStageResponse">
+
+        SELECT
+            stage_code      AS stageCode,
+            stage_name_kor  AS stageNameKor,
+            stage_name_eng  AS stageNameEng
+        FROM message_journey_stage
+        ORDER BY stage_code ASC
+
+    </select>
+
+</mapper>

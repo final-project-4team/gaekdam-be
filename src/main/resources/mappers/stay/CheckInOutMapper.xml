@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.stay.query.mapper.CheckInOutMapper">
+
+    <!-- =========================
+         체크인/아웃 조회
+         ========================= -->
+    <select id="findCheckInOuts"
+            resultType="com.gaekdam.gaekdambe.reservation_service.stay.query.dto.response.CheckInOutResponse">
+
+        SELECT
+        checkinout_code     AS checkinoutCode,
+        record_type         AS recordType,
+        recorded_at         AS recordedAt,
+        record_channel      AS recordChannel,
+        guest_count         AS guestCount,
+        car_number          AS carNumber,
+        settlement_yn       AS settlementYn,
+        stay_code           AS stayCode
+        FROM checkinout
+
+        <where>
+            <if test="search != null">
+
+                <if test="search.stayCode != null">
+                    AND stay_code = #{search.stayCode}
+                </if>
+
+                <if test="search.recordType != null and search.recordType != ''">
+                    AND record_type = #{search.recordType}
+                </if>
+
+                <if test="search.recordChannel != null and search.recordChannel != ''">
+                    AND record_channel = #{search.recordChannel}
+                </if>
+
+                <if test="search.settlementYn != null and search.settlementYn != ''">
+                    AND settlement_yn = #{search.settlementYn}
+                </if>
+
+                <if test="search.fromDate != null">
+                    AND recorded_at <![CDATA[ >= ]]> #{search.fromDate}
+                </if>
+
+                <if test="search.toDate != null">
+                    AND recorded_at <![CDATA[ <= ]]> #{search.toDate}
+                </if>
+
+            </if>
+        </where>
+
+        <if test="sort != null and sort.sortBy != null">
+            ORDER BY ${sort.sortBy} ${sort.direction}
+        </if>
+
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         체크인/아웃 총 개수
+         ========================= -->
+    <select id="countCheckInOuts" resultType="long">
+        SELECT COUNT(*)
+        FROM checkinout
+        <where>
+            <if test="search != null">
+
+                <if test="search.stayCode != null">
+                    AND stay_code = #{search.stayCode}
+                </if>
+
+                <if test="search.recordType != null and search.recordType != ''">
+                    AND record_type = #{search.recordType}
+                </if>
+
+                <if test="search.recordChannel != null and search.recordChannel != ''">
+                    AND record_channel = #{search.recordChannel}
+                </if>
+
+                <if test="search.settlementYn != null and search.settlementYn != ''">
+                    AND settlement_yn = #{search.settlementYn}
+                </if>
+
+                <if test="search.fromDate != null">
+                    AND recorded_at <![CDATA[ >= ]]> #{search.fromDate}
+                </if>
+
+                <if test="search.toDate != null">
+                    AND recorded_at <![CDATA[ <= ]]> #{search.toDate}
+                </if>
+
+            </if>
+        </where>
+    </select>
+
+</mapper>

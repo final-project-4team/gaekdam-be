@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.hotel_service.hotel.query.mapper.HotelGroupMapper">
+
+
+  <select id="findHotelGroupList"
+    resultType="com.gaekdam.gaekdambe.hotel_service.hotel.query.dto.response.HotelGroupListResponse">
+
+    SELECT
+    h.hotel_group_code AS hotelGroupCode,
+    h.hotel_expired_at AS hotelExpiredAt,
+    h.hotel_group_name AS hotelGroupName
+    FROM hotel_group h
+
+    <where>
+      <if test="search.hotelGroupCode != null">
+      AND h.hotel_group_code = #{search.hotelGroupCode}
+      </if>
+
+      <if test="search.hotelGroupName != null and search.hotelGroupName != ''">
+        AND h.hotel_group_name LIKE CONCAT('%', #{search.hotelGroupName}, '%')
+      </if>
+    </where>
+
+    <choose>
+      <when test="sort.sortBy != null and sort.sortBy != ''">
+        ORDER BY ${sort.sortBy} ${sort.direction}
+      </when>
+      <otherwise>
+        ORDER BY h.hotel_expired_at DESC
+      </otherwise>
+    </choose>
+    LIMIT #{page.size} OFFSET #{page.offset}
+  </select>
+
+  <select id="countHotelGroupList" resultType="long">
+    SELECT COUNT(*)
+    FROM hotel_group h
+
+    <where>
+      <if test="search.hotelGroupCode != null">
+        AND h.hotel_group_code = #{search.hotelGroupCode}
+      </if>
+
+      <if test="search.hotelGroupName != null">
+        AND h.hotel_group_name = #{search.hotelGroupName}
+      </if>
+    </where>
+  </select>
+
+</mapper>

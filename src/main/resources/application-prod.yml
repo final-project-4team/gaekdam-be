@@ -1,0 +1,33 @@
+server:
+  port: 8082
+
+spring:
+  mvc:
+    servlet:
+      load-on-startup: 1
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      ssl:
+        enabled: true
+      timeout: 3s
+
+  #      url: rediss://${REDIS_HOST}:${REDIS_PORT}
+#      timeout: 3s
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    validate-on-migrate: false #다시 true 로 수정 필요
+    locations: classpath:db/migration
+
+app:
+  cookie:
+    secure: true
+    same-site: None

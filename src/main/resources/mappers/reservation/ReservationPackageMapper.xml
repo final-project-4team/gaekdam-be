@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.reservation_service.reservation.query.mapper.ReservationPackageMapper">
+
+    <!-- =========================
+         예약 패키지 목록
+         ========================= -->
+    <select id="findPackages"
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.ReservationPackageResponse">
+
+        SELECT
+        rp.package_code AS packageCode,
+        rp.package_name AS packageName,
+        rp.package_content AS packageContent,
+        rp.package_price AS packagePrice,
+        rp.property_code AS propertyCode,
+        p.property_name AS propertyName,
+        rp.created_at AS createdAt
+        FROM reservation_package rp
+        JOIN property p ON rp.property_code = p.property_code
+
+        <where>
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND rp.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                AND rp.package_name LIKE CONCAT('%', #{search.keyword}, '%')
+            </if>
+        </where>
+
+        ORDER BY ${sort.sortBy} ${sort.direction}
+        LIMIT #{page.size} OFFSET #{page.offset}
+    </select>
+
+    <!-- =========================
+         총 개수 (조건 동일)
+         ========================= -->
+    <select id="countPackages" resultType="long">
+        SELECT COUNT(*)
+        FROM reservation_package rp
+        JOIN property p ON rp.property_code = p.property_code
+
+        <where>
+            p.hotel_group_code = #{search.hotelGroupCode}
+
+            <if test="search.propertyCode != null">
+                AND rp.property_code = #{search.propertyCode}
+            </if>
+
+            <if test="search.keyword != null and search.keyword != ''">
+                AND rp.package_name LIKE CONCAT('%', #{search.keyword}, '%')
+            </if>
+        </where>
+    </select>
+
+</mapper>

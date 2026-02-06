@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.communication_service.messaging.query.mapper.MessageSendHistoryMapper">
+
+    <!-- =========================
+         메시지 히스토리 리스트
+         - reservation / stay 모두 호텔 기준 필터
+         ========================= -->
+    <select id="findHistories"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryResponse">
+
+        SELECT
+        h.send_code        AS sendCode,
+        h.stage_code       AS stageCode,
+        s.stage_name_kor   AS stageNameKor,
+        h.template_code    AS templateCode,
+        mt.title           AS templateTitle,
+        h.reservation_code AS reservationCode,
+        h.stay_code        AS stayCode,
+        h.status           AS status,
+        h.scheduled_at     AS scheduledAt,
+        h.sent_at          AS sentAt,
+        h.fail_reason      AS failReason,
+        h.external_message_id AS externalMessageId,
+        p.property_code    AS propertyCode
+        FROM message_send_history h
+        JOIN message_journey_stage s
+        ON h.stage_code = s.stage_code
+        JOIN message_template mt
+        ON h.template_code = mt.template_code
+        AND h.stage_code   = mt.stage_code
+
+        LEFT JOIN reservation r
+        ON h.reservation_code = r.reservation_code
+        LEFT JOIN stay st
+        ON h.stay_code = st.stay_code
+        LEFT JOIN reservation r2
+        ON st.reservation_code = r2.reservation_code
+
+        JOIN property p
+        ON p.property_code = COALESCE(r.property_code, r2.property_code)
+
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+
+        <if test="search.propertyCode != null">
+            AND p.property_code = #{search.propertyCode}
+        </if>
+
+        <if test="search.stageCode != null">
+            AND h.stage_code = #{search.stageCode}
+        </if>
+
+        <if test="search.reservationCode != null">
+            AND h.reservation_code = #{search.reservationCode}
+        </if>
+
+        <if test="search.stayCode != null">
+            AND h.stay_code = #{search.stayCode}
+        </if>
+
+        <if test="search.status != null">
+            AND h.status = #{search.status}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND h.sent_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+
+        <if test="search.toDate != null">
+            AND h.sent_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+
+        ORDER BY ${sort.sortBy} ${sort.direction}
+        LIMIT #{page.size}
+        OFFSET #{page.offset}
+    </select>
+
+
+    <!-- =========================
+         메시지 히스토리 COUNT
+         - findHistories 와 100% 동일 기준
+         ========================= -->
+    <select id="countHistories" resultType="long">
+
+        SELECT COUNT(*)
+        FROM (
+        SELECT h.send_code
+        FROM message_send_history h
+        JOIN message_journey_stage s
+        ON h.stage_code = s.stage_code
+        JOIN message_template mt
+        ON h.template_code = mt.template_code
+        AND h.stage_code   = mt.stage_code
+
+        LEFT JOIN reservation r
+        ON h.reservation_code = r.reservation_code
+        LEFT JOIN stay st
+        ON h.stay_code = st.stay_code
+        LEFT JOIN reservation r2
+        ON st.reservation_code = r2.reservation_code
+
+        JOIN property p
+        ON p.property_code = COALESCE(r.property_code, r2.property_code)
+
+        WHERE p.hotel_group_code = #{search.hotelGroupCode}
+
+        <if test="search.propertyCode != null">
+            AND p.property_code = #{search.propertyCode}
+        </if>
+
+        <if test="search.stageCode != null">
+            AND h.stage_code = #{search.stageCode}
+        </if>
+
+        <if test="search.reservationCode != null">
+            AND h.reservation_code = #{search.reservationCode}
+        </if>
+
+        <if test="search.stayCode != null">
+            AND h.stay_code = #{search.stayCode}
+        </if>
+
+        <if test="search.status != null">
+            AND h.status = #{search.status}
+        </if>
+
+        <if test="search.fromDate != null">
+            AND h.sent_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+
+        <if test="search.toDate != null">
+            AND h.sent_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+        ) t
+    </select>
+
+
+
+<!--    상세      -->
+    <select id="findHistoryDetail"
+            resultType="com.gaekdam.gaekdambe.communication_service.messaging.query.dto.response.MessageSendHistoryDetailResponse">
+        SELECT
+            h.send_code           AS sendCode,
+            h.stage_code          AS stageCode,
+            stg.stage_name_kor    AS stageNameKor,
+
+            h.template_code       AS templateCode,
+            t.title               AS templateTitle,
+            t.content             AS templateContent,
+
+            h.reservation_code    AS reservationCode,
+            h.stay_code           AS stayCode,
+
+            p.property_code       AS propertyCode,
+            p.property_name       AS propertyName,
+
+            h.channel             AS channel,
+            h.status              AS status,
+            h.scheduled_at        AS scheduledAt,
+            h.processing_at       AS processingAt,
+            h.sent_at             AS sentAt,
+            h.fail_reason         AS failReason,
+            h.external_message_id AS externalMessageId
+        FROM message_send_history h
+                 JOIN message_journey_stage stg
+                      ON stg.stage_code = h.stage_code
+                 JOIN message_template t
+                      ON t.template_code = h.template_code
+                          AND t.stage_code   = h.stage_code
+
+            /* reservation 기준으로 property 추출 (stay만 있는 경우도 커버) */
+                 LEFT JOIN stay s
+                           ON s.stay_code = h.stay_code
+                 LEFT JOIN reservation r
+                           ON r.reservation_code = COALESCE(h.reservation_code, s.reservation_code)
+                 LEFT JOIN property p
+                           ON p.property_code = r.property_code
+
+        WHERE h.send_code = #{sendCode}
+            LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gaekdam.gaekdambe.iam_service.log.query.mapper.PermissionChangedLogMapper">
+
+  <select id="findPermissionChangedLogs"
+    resultType="com.gaekdam.gaekdambe.iam_service.log.query.dto.response.PermissionChangedLogQueryResponse">
+    SELECT
+        pcl.permission_changed_log_code AS permissionChangedLogCode,
+        pcl.changed_at AS changedAt,
+        ea.employee_code AS employeeAccessorCode,
+        ea.employee_name_enc AS employeeAccessorName,
+        ea.login_id AS employeeAccessorLoginId,
+        ec.employee_code AS employeeChangedCode,
+        ec.employee_name_enc AS employeeChangedName,
+        ec.login_id AS employeeChangedLoginId,
+        pcl.hotel_group_code AS hotelGroupCode,
+        pb.permission_code AS beforePermissionCode,
+        pb.permission_name AS beforePermissionName,
+        pa.permission_code AS afterPermissionCode,
+        pa.permission_name AS afterPermissionName
+    FROM permission_changed_log pcl
+    JOIN employee ea ON pcl.accessor_code = ea.employee_code
+    JOIN employee ec ON pcl.changed_user_code = ec.employee_code
+    JOIN permission pb ON pcl.before_permission_code = pb.permission_code
+    JOIN permission pa ON pcl.after_permission_code = pa.permission_code
+    
+    <where>
+        AND pcl.hotel_group_code = #{hotelGroupCode}
+        
+        <if test="search.accessorLoginId != null and search.accessorLoginId != ''">
+            AND ea.login_id LIKE CONCAT('%', #{search.accessorLoginId}, '%')
+        </if>
+        
+        <if test="search.changedLoginId != null and search.changedLoginId != ''">
+            AND ec.login_id LIKE CONCAT('%', #{search.changedLoginId}, '%')
+        </if>
+
+        <if test="search.beforePermissionName != null and search.beforePermissionName != ''">
+            AND pb.permission_name LIKE CONCAT('%', #{search.beforePermissionName}, '%')
+        </if>
+
+        <if test="search.afterPermissionName != null and search.afterPermissionName != ''">
+            AND pa.permission_name LIKE CONCAT('%', #{search.afterPermissionName}, '%')
+        </if>
+
+
+
+      <if test="search.fromDate != null">
+            AND pcl.changed_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        
+        <if test="search.toDate != null">
+            AND pcl.changed_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </where>
+
+    <choose>
+      <when test="sort != null and sort.sortBy != null and sort.sortBy != ''">
+        ORDER BY ${sort.sortBy} ${sort.direction}
+      </when>
+      <otherwise>
+        ORDER BY pcl.changed_at DESC
+      </otherwise>
+    </choose>
+    LIMIT #{page.size} OFFSET #{page.offset}
+  </select>
+
+  <select id="countPermissionChangedLogs" resultType="long">
+    SELECT COUNT(*) 
+    FROM permission_changed_log pcl
+    JOIN employee ea ON pcl.accessor_code = ea.employee_code
+    JOIN employee ec ON pcl.changed_user_code = ec.employee_code
+    JOIN permission pb ON pcl.before_permission_code = pb.permission_code
+    JOIN permission pa ON pcl.after_permission_code = pa.permission_code
+    <where>
+        AND pcl.hotel_group_code = #{hotelGroupCode}
+
+        <if test="search.accessorLoginId != null and search.accessorLoginId != ''">
+            AND ea.login_id LIKE CONCAT('%', #{search.accessorLoginId}, '%')
+        </if>
+        
+        <if test="search.changedLoginId != null and search.changedLoginId != ''">
+            AND ec.login_id LIKE CONCAT('%', #{search.changedLoginId}, '%')
+        </if>
+
+        <if test="search.beforePermissionName != null and search.beforePermissionName != ''">
+            AND pb.permission_name LIKE CONCAT('%', #{search.beforePermissionName}, '%')
+        </if>
+
+        <if test="search.afterPermissionName != null and search.afterPermissionName != ''">
+            AND pa.permission_name LIKE CONCAT('%', #{search.afterPermissionName}, '%')
+        </if>
+        
+        <if test="search.fromDate != null">
+            AND pcl.changed_at <![CDATA[ >= ]]> #{search.fromDate}
+        </if>
+        
+        <if test="search.toDate != null">
+            AND pcl.changed_at <![CDATA[ <= ]]> #{search.toDate}
+        </if>
+    </where>
+  </select>
+</mapper>
