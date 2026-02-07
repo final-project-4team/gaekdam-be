@@ -7,8 +7,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DemoSmsRequest {
 
+
     private Long reservationCode;
-    private Long stageCode;        // 히스토리용
-    private Long templateCode;     // 실제 발송용
+    private Long stageCode;
+    private Long senderPhoneCode;
     private String toPhone;
 }

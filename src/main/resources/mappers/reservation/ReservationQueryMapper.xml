@@ -9,16 +9,28 @@
          투숙(stay) 없는 예약 1건 조회 (시연용)
          - EXISTS 기반 (풀스캔 방지)
          ========================= -->
+    <!-- =========================
+         투숙(stay) 없는 예약 1건 조회 (시연용)
+         ========================= -->
     <select id="findOneReservationWithoutStay"
-            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.DemoReservationResponse">
+            resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.DemoReservationCryptoRow">
 
         SELECT
-            r.reservation_code AS reservationCode,
-            r.customer_code    AS customerCode
+            r.reservation_code    AS reservationCode,
+            r.reservation_status  AS reservationStatus,
+            c.customer_code       AS customerCode,
+            c.dek_enc             AS dekEnc,
+            cc.contact_value_enc  AS phoneEnc
         FROM reservation r
                  JOIN property p
                       ON p.property_code = r.property_code
                           AND p.hotel_group_code = #{hotelGroupCode}
+
+                 JOIN customer c
+                      ON c.customer_code = r.customer_code
+                 JOIN customer_contact cc
+                      ON cc.customer_code = r.customer_code
+                          AND cc.is_primary = 1
 
         WHERE r.reservation_status = 'RESERVED'
           AND NOT EXISTS (

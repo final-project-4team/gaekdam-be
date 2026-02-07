@@ -17,9 +17,11 @@ public class DemoSmsController {
     private final DemoSmsService demoSmsService;
 
     @PostMapping("/send")
-    public ResponseEntity<Void> send(@RequestBody DemoSmsRequest request,
-                                     @AuthenticationPrincipal CustomUser loginUser) {
-        demoSmsService.sendOne(request,loginUser.getHotelGroupCode());
+    public ResponseEntity<Void> send(
+            @RequestBody DemoSmsRequest request,
+            @AuthenticationPrincipal CustomUser loginUser
+    ) {
+        demoSmsService.sendOne(request, loginUser.getHotelGroupCode());
         return ResponseEntity.ok().build();
     }
 }
