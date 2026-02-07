@@ -38,7 +38,7 @@ public class ReportKPITargetController {
     private final ReportKPITargetService service;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_CREATE')")
+    @PreAuthorize("hasAuthority('SETTING_OBJECTIVE_UPDATE')")
     @Operation(summary = "KPI 목표 생성", description = "새로운 KPI 목표를 생성합니다.")
     @SpecResponse( description = "생성 성공")
     public ResponseEntity<ApiResponse<ReportKPITargetId>> create(@RequestBody @Valid ReportKPITargetCreateDto dto) {

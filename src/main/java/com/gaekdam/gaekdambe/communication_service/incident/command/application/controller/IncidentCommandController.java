@@ -34,6 +34,7 @@ public class IncidentCommandController {
     }
 
     @PatchMapping("/{incidentCode}/close")
+    @PreAuthorize("hasAuthority('INCIDENT_UPDATE')")
     @Operation(summary = "사건/사고 처리 완료", description = "사건/사고를 처리 완료된 상태로 변경한다.")
     public ApiResponse<Void> closeIncident(
         @Parameter(description = "사고 코드")@PathVariable Long incidentCode)

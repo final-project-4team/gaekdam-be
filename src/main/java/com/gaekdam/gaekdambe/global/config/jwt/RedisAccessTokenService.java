@@ -17,7 +17,7 @@ public class RedisAccessTokenService {
     return "access:" + userId;
   }
 
-  @Transactional
+
   public void save(String userId, String accessToken) {
 
     String key = getKey(userId);

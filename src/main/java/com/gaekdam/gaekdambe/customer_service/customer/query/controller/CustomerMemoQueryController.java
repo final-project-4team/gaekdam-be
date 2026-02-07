@@ -27,7 +27,7 @@ public class CustomerMemoQueryController {
     private final CustomerMemoQueryService customerMemoQueryService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_LIST')")
+    @PreAuthorize("hasAuthority('CUSTOMER_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_MEMO_LIST)
     @Operation(summary = "고객 메모 리스트 조회", description = "특정 고객에 대한 메모를 리스트로 조회 한다.")
     public ApiResponse<PageResponse<CustomerMemoResponse>> getMemos(
@@ -50,7 +50,7 @@ public class CustomerMemoQueryController {
     }
 
     @GetMapping("/{memoCode}")
-    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_READ')")
+    @PreAuthorize("hasAuthority('CUSTOMER_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.CUSTOMER_MEMO_READ)
     @Operation(summary = "고객 메모 상세 조회", description = "특정 고객에 대한 메모를 상세 조회 한다.")
     public ApiResponse<CustomerMemoResponse> getMemoDetail(

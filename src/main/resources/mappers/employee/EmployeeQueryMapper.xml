@@ -95,6 +95,9 @@
         <if test="emailHash != null">
           AND e.email_hash = #{emailHash}
         </if>
+        <if test="search.permissionName != null and search.permissionName != ''">
+          AND perm.permission_name LIKE CONCAT('%', #{search.permissionName}, '%')
+        </if>
         <if test="search.departmentName != null and search.departmentName != ''">
           AND d.department_name = #{search.departmentName}
         </if>
@@ -117,6 +120,7 @@
         FROM employee e
         LEFT JOIN department d ON e.department_code = d.department_code
         LEFT JOIN hotel_position p ON e.hotel_position_code = p.hotel_position_code
+        LEFT JOIN permission perm ON e.permission_code = perm.permission_code
         <where>
             e.hotel_group_code = #{hotelGroupCode}
             <if test="nameHash != null">
@@ -128,6 +132,9 @@
             <if test="emailHash != null">
                 AND e.email_hash = #{emailHash}
             </if>
+          <if test="search.permissionName != null and search.permissionName != ''">
+            AND perm.permission_name LIKE CONCAT('%', #{search.permissionName}, '%')
+          </if>
             <if test="search.departmentName != null and search.departmentName != ''">
                 AND d.department_name = #{search.departmentName}
             </if>

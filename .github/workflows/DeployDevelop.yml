@@ -13,7 +13,8 @@ env:
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}   
   ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}        
   ECS_SERVICE: ${{ secrets.ECS_SERVICE }}        
-  CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}   
+  CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+  BUILDKIT_PROGRESS: plain
 
 jobs:
   deploy:
