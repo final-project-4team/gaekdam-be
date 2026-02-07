@@ -173,20 +173,21 @@ class DummyDataRunnerTest {
         run(sw, "customer", customerDataTest::generate);
         run(sw, "membershipGrade", membershipGradeDataTest::generate);
         run(sw, "loyaltyGrade", loyaltyGradeDataTest::generate);
-        run(sw, "membership", membershipDataTest::generate);
-        run(sw, "member", memberDataTest::generate);
-        run(sw, "loyalty", loyaltyDataTest::generate);
 
         // 예약 서비스
         run(sw, "reservation(100k)", reservationDataTest::generate);
         run(sw, "stay", stayDataTest::generate);
         run(sw, "checkInOut", checkInOutDataTest::generate);
 
-        // 고객 상태 후처리 (StayStatus : 마지막 COMPLETED 기준)
-        run(sw, "customerStatusPostProcess", customerStatusPostProcess::generate);
-
         // 부대시설 이용
         run(sw, "facilityUsage", facilityUsageDataTest::generate);
+
+        run(sw, "membership", membershipDataTest::generate);
+        run(sw, "member", memberDataTest::generate);
+        run(sw, "loyalty", loyaltyDataTest::generate);
+
+        // 고객 상태 후처리 (StayStatus : 마지막 COMPLETED 기준)
+        run(sw, "customerStatusPostProcess", customerStatusPostProcess::generate);
 
         // 커뮤니케이션 서비스
         run(sw, "inquiryCategory", inquiryCategoryDataTest::generate);
