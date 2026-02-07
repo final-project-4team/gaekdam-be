@@ -27,6 +27,8 @@ public enum ErrorCode {
   PERMISSION_NOT_FOUND("1013", "권한을 찾을 수 없거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
   EMPLOYEE_NOT_FOUND("1014", "직원을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   PASSWORD_INCORRECT_FORMAT("1015", "비밀번호는 영문 대/소문자, 숫자, 특수문자 중 2종류 이상 10자리 또는 3종류 이상 8자리여야 합니다", HttpStatus.BAD_REQUEST),
+  LOGIN_ID_DUPLICATE("1016", "이미 존재하는 ID입니다", HttpStatus.CONFLICT),
+  PERMISSION_NAME_DUPLICATE("1017", "이미 존재하는 권한 명입니다", HttpStatus.CONFLICT),
 
   // 2000번대: Report / Dashboard 도메인 오류
 

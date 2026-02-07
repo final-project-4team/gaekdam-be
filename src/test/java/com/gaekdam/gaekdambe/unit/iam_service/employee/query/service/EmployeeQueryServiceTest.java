@@ -115,7 +115,7 @@ class EmployeeQueryServiceTest {
                 // given
                 Long hgCode = 100L;
                 EmployeeQuerySearchRequest req = new EmployeeQuerySearchRequest(
-                                "searchName", null, null, null, null, null, null);
+                                "searchName", null, null, null, null, null, null,null);
                 PageRequest page = new PageRequest();
                 page.setPage(1);
                 page.setSize(10);

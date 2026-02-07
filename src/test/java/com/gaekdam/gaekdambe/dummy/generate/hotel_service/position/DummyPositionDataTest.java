@@ -32,22 +32,22 @@ public class DummyPositionDataTest {
 
     for (long hotel = 1L; hotel <= 5L; hotel++) {
       Object[][] positionsDummy = {
-          {"총지배인", 1L, hotel},
-          {"부지배인", 1L, hotel},
-          {"회계부장", 2L, hotel},
-          {"회계부 사원", 2L, hotel},
-          {"하우스 키핑 매니저", 3L, hotel},
-          {"청소 직원", 3L, hotel},
-          {"레스토랑 매니저", 4L, hotel},
-          {"연회 매니저", 4L, hotel},
-          {"주방장", 5L, hotel},
-          {"조리사", 5L, hotel},
-          {"세일즈 매니저", 6L, hotel},
-          {"세일즈 디렉터", 6L, hotel},
-          {"마케팅 매니저", 7L, hotel},
-          {"브랜드 매니저", 7L, hotel},
-          {"시설 팀장", 8L, hotel},
-          {"난방 기사", 8L, hotel},
+          {"총지배인", 1L+(hotel-1)*8, hotel},
+          {"부지배인", 1L+(hotel-1)*8, hotel},
+          {"회계부장", 2L+(hotel-1)*8, hotel},
+          {"회계부 사원", 2L+(hotel-1)*8, hotel},
+          {"하우스 키핑 매니저", 3L+(hotel-1)*8, hotel},
+          {"청소 직원", 3L+(hotel-1)*8, hotel},
+          {"레스토랑 매니저", 4L+(hotel-1)*8, hotel},
+          {"연회 매니저", 4L+(hotel-1)*8, hotel},
+          {"주방장", 5L+(hotel-1)*8, hotel},
+          {"조리사", 5L+(hotel-1)*8, hotel},
+          {"세일즈 매니저", 6L+(hotel-1)*8, hotel},
+          {"세일즈 디렉터", 6L+(hotel-1)*8, hotel},
+          {"마케팅 매니저", 7L+(hotel-1)*8, hotel},
+          {"브랜드 매니저", 7L+(hotel-1)*8, hotel},
+          {"시설 팀장", 8L+(hotel-1)*8, hotel},
+          {"난방 기사", 8L+(hotel-1)*8, hotel},
       };
       for (Object[] positionDummy : positionsDummy) {
         HotelPosition position = HotelPosition.createHotelPosition(

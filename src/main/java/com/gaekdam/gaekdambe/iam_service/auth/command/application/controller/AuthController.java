@@ -108,15 +108,15 @@ public class AuthController {
     Long hotelGroupCode = employee.getHotelGroup().getHotelGroupCode();
     Long propertyCode = employee.getProperty().getPropertyCode();
 
-    String accessToken = jwtTokenProvider.createAccessToken(loginId, role, hotelGroupCode,
+    String accessToken = jwtTokenProvider.createAccessToken(employee.getLoginId(), role, hotelGroupCode,
         propertyCode);
-    String refreshToken = jwtTokenProvider.createRefreshToken(loginId, role, hotelGroupCode,
+    String refreshToken = jwtTokenProvider.createRefreshToken(employee.getLoginId(), role, hotelGroupCode,
         propertyCode);
 
     // refreshToken을 Redis에 저장(회전 / 검증용)
 
-    redisAccessTokenService.save(loginId, accessToken);
-    redisRefreshTokenService.save(loginId, refreshToken, REFRESH_TOKEN_EXPIRE);
+    redisAccessTokenService.save(employee.getLoginId(), accessToken);
+    redisRefreshTokenService.save(employee.getLoginId(), refreshToken, REFRESH_TOKEN_EXPIRE);
 
     // 1) refreshToken을 HttpOnly 쿠키에 넣기
     ResponseCookie refreshCookie = ResponseCookie.from(COOKIE_NAME, refreshToken)

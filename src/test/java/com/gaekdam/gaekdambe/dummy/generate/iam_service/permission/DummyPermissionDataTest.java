@@ -30,7 +30,7 @@ public class DummyPermissionDataTest {
         )
     );
 
-    for(long hotel=1;hotel<=10;hotel++) {
+    for(long hotel=1;hotel<=5;hotel++) {
 
 
       String []permissionDummy=
