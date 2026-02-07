@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class DummyMembershipGradeDataTest {
@@ -23,40 +24,55 @@ public class DummyMembershipGradeDataTest {
     @Transactional
     public void generate() {
 
-        if (membershipGradeRepository.count() > 0) return;
-
         List<HotelGroup> hotelGroups = hotelGroupRepository.findAll();
         if (hotelGroups.isEmpty()) return;
 
         for (HotelGroup hg : hotelGroups) {
-
-            membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
-                    hg, "BASIC",  1L, "Basic membership grade",
-                    0L, 0
-            ));
-
-            membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
-                    hg, "BRONZE", 2L, "Bronze membership grade",
-                    200_000L, 0
-            ));
-
-            membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
-                    hg, "SILVER", 3L, "Silver membership grade",
-                    500_000L, 0
-            ));
-
-            membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
-                    hg, "GOLD",   4L, "Gold membership grade",
-                    1_000_000L, 0
-            ));
-
-            membershipGradeRepository.save(MembershipGrade.registerMembershipGrade(
-                    hg, "VIP",    5L, "VIP membership grade",
-                    2_000_000L, 0
-            ));
+            upsert(hg, "BASIC",  1L, "Basic membership grade", 0L,         0);
+            upsert(hg, "BRONZE", 2L, "Bronze membership grade", 200_000L,  0);
+            upsert(hg, "SILVER", 3L, "Silver membership grade", 500_000L,  0);
+            upsert(hg, "GOLD",   4L, "Gold membership grade", 1_000_000L,  0);
+            upsert(hg, "VIP",    5L, "VIP membership grade", 1_500_000L,  0);
         }
 
         em.flush();
         em.clear();
+    }
+
+    private void upsert(
+            HotelGroup hg,
+            String gradeName,
+            Long tierLevel,
+            String tierComment,
+            Long calculationAmount,
+            Integer calculationCount
+    ) {
+        Optional<MembershipGrade> opt =
+                membershipGradeRepository.findByHotelGroup_HotelGroupCodeAndGradeName(
+                        hg.getHotelGroupCode(), gradeName
+                );
+
+        if (opt.isPresent()) {
+            MembershipGrade existing = opt.get();
+            existing.update(
+                    gradeName,
+                    tierLevel,
+                    tierComment,
+                    calculationAmount,
+                    calculationCount
+            );
+            // save() 없어도 Dirty Checking으로 업데이트됨
+        } else {
+            membershipGradeRepository.save(
+                    MembershipGrade.registerMembershipGrade(
+                            hg,
+                            gradeName,
+                            tierLevel,
+                            tierComment,
+                            calculationAmount,
+                            calculationCount
+                    )
+            );
+        }
     }
 }
