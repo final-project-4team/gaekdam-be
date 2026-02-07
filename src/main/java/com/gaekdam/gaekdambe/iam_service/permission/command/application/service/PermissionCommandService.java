@@ -38,6 +38,9 @@ public class PermissionCommandService {
   public String createPermission(PermissionCreateRequest request, Long hotelGroupCode) {
     HotelGroup hotelGroup = hotelGroupRepository.findById(hotelGroupCode).orElseThrow();
 
+    if(permissionRepository.existsByHotelGroup_HotelGroupCodeAndPermissionName(hotelGroup.getHotelGroupCode(),request.permissionName())){
+      throw new CustomException(ErrorCode.PERMISSION_NAME_DUPLICATE);
+    }
     // 권한이름 과 호텔 참조키로 권한 생성
     Permission permission = permissionRepository.save(
         Permission.createPermission(request.permissionName(), hotelGroup));
