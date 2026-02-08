@@ -21,14 +21,14 @@ public class DummyLoyaltyDataTest {
 
     private static final int BATCH = 500;
 
-    // 승급 비율: 15%면 대략 15%가 EXCELLENT로 저장됨
-    private static final int EXCELLENT_PROMOTION_RATE = 15;
-
     private static final LocalDateTime START = LocalDateTime.of(2024, 1, 1, 0, 0);
-    private static final LocalDateTime END = LocalDateTime.of(2026, 12, 31, 23, 59);
+    private static final LocalDateTime END   = LocalDateTime.of(2026, 12, 31, 23, 59);
+
+    private static final long VISIT_THRESHOLD = 5;
 
     @Autowired
     LoyaltyRepository loyaltyRepository;
+
     @Autowired
     LoyaltyHistoryRepository loyaltyHistoryRepository;
 
@@ -38,27 +38,15 @@ public class DummyLoyaltyDataTest {
     @Transactional
     public void generate() {
 
-        // 이미 loyalty 있으면 스킵(다시 만들고 싶으면 loyalty/loyalty_history 비우고 실행)
-        if (loyaltyRepository.count() > 0)
-            return;
+        if (loyaltyRepository.count() > 0) return;
 
-        // 호텔그룹별 GENERAL/EXCELLENT 등급코드 매핑
         Map<Long, GradePair> gradeByHotelGroup = loadGradePairsByHotelGroup();
-        if (gradeByHotelGroup.isEmpty())
-            return;
+        if (gradeByHotelGroup.isEmpty()) return;
 
         List<Object[]> customerRows = loadCustomerHotelGroupRows();
-        if (customerRows.isEmpty())
-            return;
+        if (customerRows.isEmpty()) return;
 
-        Map<Long, List<Long>> employeeByHotelGroup = loadActiveEmployeeCodesByHotelGroup();
-        List<Long> fallbackEmployees = new ArrayList<>();
-        for (List<Long> list : employeeByHotelGroup.values()) {
-            fallbackEmployees.addAll(list);
-        }
-        fallbackEmployees = fallbackEmployees.stream().distinct().toList();
-        if (fallbackEmployees.isEmpty())
-            return;
+        Map<Long, Long> visitCountByCustomer = loadVisitCountLast12Months();
 
         Random random = new Random();
 
@@ -70,45 +58,40 @@ public class DummyLoyaltyDataTest {
             long hotelGroupCode = ((Number) row[1]).longValue();
 
             GradePair pair = gradeByHotelGroup.get(hotelGroupCode);
-            if (pair == null || pair.generalCode == null)
-                continue;
+            if (pair == null || pair.generalCode == null) continue;
 
-            LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(10), random);
-            LocalDateTime now = joinedAt;
+            LocalDateTime joinedAt = randomDateTimeBetween(START, END.minusDays(30), random);
 
-            // 기본은 GENERAL
-            // [단순화] 랜덤 방문 횟수 기반 1회 생성 (0~30회)
-            long randomVisitCount = random.nextInt(31);
-            long visitThreshold = 5;
+            long visitCount = visitCountByCustomer.getOrDefault(customerCode, 0L);
 
             Long initialGradeCode = pair.generalCode;
-            if (pair.excellentCode != null && randomVisitCount >= visitThreshold) {
+            if (pair.excellentCode != null && visitCount >= VISIT_THRESHOLD) {
                 initialGradeCode = pair.excellentCode;
             }
 
-            // Loyalty 생성
             Loyalty loyalty = Loyalty.registerLoyalty(
                     customerCode,
                     hotelGroupCode,
                     initialGradeCode,
                     joinedAt,
-                    joinedAt);
+                    joinedAt
+            );
 
             int idxInBatch = loyaltyBuffer.size();
             loyaltyBuffer.add(loyalty);
 
-            // 초기 이력 저장
             LoyaltyHistory history = LoyaltyHistory.recordLoyaltyChange(
                     customerCode,
-                    0L, // flush 후 설정
+                    0L,
                     ChangeSource.SYSTEM,
                     null,
-                    "Initial Loyalty Grade (Simulated Visits: " + randomVisitCount + ")",
+                    "Initial Loyalty Grade (Visits last 12 months: " + visitCount + ")",
                     null,
                     initialGradeCode,
                     LoyaltyStatus.ACTIVE,
                     LoyaltyStatus.ACTIVE,
-                    joinedAt);
+                    joinedAt
+            );
 
             historySlots.add(new HistorySlot(idxInBatch, history));
 
@@ -145,11 +128,8 @@ public class DummyLoyaltyDataTest {
         historySlots.clear();
     }
 
-    private record HistorySlot(int loyaltyIndex, LoyaltyHistory history) {
-    }
-
-    private record GradePair(Long generalCode, Long excellentCode) {
-    }
+    private record HistorySlot(int loyaltyIndex, LoyaltyHistory history) {}
+    private record GradePair(Long generalCode, Long excellentCode) {}
 
     private Map<Long, GradePair> loadGradePairsByHotelGroup() {
 
@@ -169,10 +149,8 @@ public class DummyLoyaltyDataTest {
             String name = (String) r[1];
             Long code = ((Number) r[2]).longValue();
 
-            if ("GENERAL".equalsIgnoreCase(name))
-                generalMap.put(hg, code);
-            if ("EXCELLENT".equalsIgnoreCase(name))
-                excellentMap.put(hg, code);
+            if ("GENERAL".equalsIgnoreCase(name)) generalMap.put(hg, code);
+            if ("EXCELLENT".equalsIgnoreCase(name)) excellentMap.put(hg, code);
         }
 
         Map<Long, GradePair> out = new HashMap<>();
@@ -190,39 +168,43 @@ public class DummyLoyaltyDataTest {
                 .getResultList();
 
         List<Object[]> out = new ArrayList<>(raw.size());
-        for (Object obj : raw) {
-            out.add((Object[]) obj);
-        }
+        for (Object obj : raw) out.add((Object[]) obj);
         return out;
     }
 
-    private Map<Long, List<Long>> loadActiveEmployeeCodesByHotelGroup() {
+    private Map<Long, Long> loadVisitCountLast12Months() {
 
-        List<?> raw = em.createNativeQuery(
-                        "select hotel_group_code, employee_code " +
-                                "  from employee " +
-                                " where employee_status = 'ACTIVE' " +
-                                "   and hotel_group_code is not null")
+        LocalDateTime statsEnd = LocalDateTime.now();
+        LocalDateTime statsStart = statsEnd.minusMonths(12);
+
+        String sql = """
+            SELECT
+              s.customer_code,
+              COUNT(*) AS visit_count
+            FROM stay s
+            WHERE s.stay_status = 'COMPLETED'
+              AND s.actual_checkout_at BETWEEN ?1 AND ?2
+            GROUP BY s.customer_code
+            """;
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> raw = em.createNativeQuery(sql)
+                .setParameter(1, java.sql.Timestamp.valueOf(statsStart))
+                .setParameter(2, java.sql.Timestamp.valueOf(statsEnd))
                 .getResultList();
 
-        Map<Long, List<Long>> map = new HashMap<>();
-        for (Object obj : raw) {
-            Object[] r = (Object[]) obj;
-            Long hg = ((Number) r[0]).longValue();
-            Long ec = ((Number) r[1]).longValue();
-            map.computeIfAbsent(hg, k -> new ArrayList<>()).add(ec);
-        }
-
-        for (List<Long> list : map.values()) {
-            list.sort(Comparator.naturalOrder());
+        Map<Long, Long> map = new HashMap<>(raw.size() * 2);
+        for (Object[] r : raw) {
+            long customerCode = ((Number) r[0]).longValue();
+            long visitCount = ((Number) r[1]).longValue();
+            map.put(customerCode, visitCount);
         }
         return map;
     }
 
     private static LocalDateTime randomDateTimeBetween(LocalDateTime start, LocalDateTime end, Random random) {
         long seconds = Duration.between(start, end).getSeconds();
-        if (seconds <= 0)
-            return start;
+        if (seconds <= 0) return start;
         long add = (random.nextLong() & Long.MAX_VALUE) % seconds;
         return start.plusSeconds(add);
     }

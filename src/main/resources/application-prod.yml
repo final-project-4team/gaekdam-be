@@ -6,6 +6,19 @@ spring:
     servlet:
       load-on-startup: 1
 
+  datasource:
+    hikari:
+      maximum-pool-size: 6
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  task:
+    scheduling:
+      pool:
+        size: 1
+
   jpa:
     hibernate:
       ddl-auto: update

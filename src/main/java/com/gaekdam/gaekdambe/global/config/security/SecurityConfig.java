@@ -44,7 +44,7 @@ public class SecurityConfig {
         // 권한 설정
         .authorizeHttpRequests(auth -> auth
                 // 우선 개발초기랑 다 열어둠
-                       .requestMatchers("/**").permitAll()//주석 처리 후 preAuthorize확인
+                 //      .requestMatchers("/**").permitAll()//주석 처리 후 preAuthorize확인
                 // 로그인/회원가입 공개
               //  .requestMatchers("api/v1/employee/add").permitAll()
   /*              .requestMatchers(
@@ -56,10 +56,10 @@ public class SecurityConfig {
                 .requestMatchers("/health/**").permitAll()
                 // Swagger 공개
                 .requestMatchers(
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
+                  //  "/swagger-ui.html",
+                   // "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/swagger-resources/**",
+                   // "/swagger-resources/**",
                     "/webjars/**"
                 ).permitAll()
 
@@ -87,9 +87,9 @@ public class SecurityConfig {
     var c = new CorsConfiguration();
     // VSCode Live Server / 로컬 프론트들
     c.setAllowedOriginPatterns(java.util.List.of(
-        "http://localhost:*",
-        "http://127.0.0.1:*",
-        "http://localhost:5173",
+        "http://localhost:*",//
+        "http://127.0.0.1:*",//
+        "http://localhost:5173",//
         "https://gaekdam.cloud"
     ));
     c.setAllowedMethods(java.util.List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));

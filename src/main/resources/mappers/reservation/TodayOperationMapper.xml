@@ -94,11 +94,22 @@
                 AND s.actual_checkout_at IS NULL
             </when>
 
-            <!-- 투숙중 (기본 + ALL_TODAY) -->
+            <!-- ALL_TODAY) -->
             <otherwise>
-                AND s.actual_checkin_at IS NOT NULL
+                AND (
+                -- CHECKIN_PLANNED
+                (
+                r.checkin_date = #{today}
+                AND s.stay_code IS NULL
+                )
+                OR
+                -- STAYING (CHECKOUT_PLANNED 포함)
+                (
+                s.actual_checkin_at IS NOT NULL
                 AND s.actual_checkout_at IS NULL
                 AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+                )
+                )
             </otherwise>
 
         </choose>

@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -131,6 +130,19 @@ public class DummyFacilityUsageDataTest {
             int usageCount = random.nextInt(3) + 1;
             boolean staying = stay.actualCheckoutAt() == null;
 
+            // ------------------------------------
+            // ★ 핵심 수정 포인트
+            // ------------------------------------
+            LocalDateTime usageEnd =
+                    staying
+                            // 투숙중: 체크인 기준 + 2일로 고정
+                            ? stay.actualCheckinAt()
+                            .toLocalDate()
+                            .plusDays(2)
+                            .atTime(23, 59, 59)
+                            // 체크아웃 완료: 실제 체크아웃 시점
+                            : stay.actualCheckoutAt();
+
             for (int i = 0; i < usageCount; i++) {
 
                 Long facilityCode =
@@ -138,9 +150,8 @@ public class DummyFacilityUsageDataTest {
 
                 boolean personBased = random.nextBoolean();
 
-                LocalDateTime usageAt = staying
-                        ? randomBetween(stay.actualCheckinAt(), LocalDateTime.now(), random)
-                        : randomBetween(stay.actualCheckinAt(), stay.actualCheckoutAt(), random);
+                LocalDateTime usageAt =
+                        randomBetween(stay.actualCheckinAt(), usageEnd, random);
 
                 Integer usedPerson =
                         personBased ? random.nextInt(4) + 1 : null;

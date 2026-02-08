@@ -10,7 +10,8 @@ public record EmployeeQuerySearchRequest(
     Long employeeNumber,
     String departmentName,
     String hotelPositionName,
-    EmployeeStatus employeeStatus
+    EmployeeStatus employeeStatus,
+    String permissionName
 ) {
 
 }

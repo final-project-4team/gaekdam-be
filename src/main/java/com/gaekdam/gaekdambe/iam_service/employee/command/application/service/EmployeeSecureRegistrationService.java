@@ -6,6 +6,8 @@ import com.gaekdam.gaekdambe.global.crypto.KmsService;
 import com.gaekdam.gaekdambe.global.crypto.PasswordValidator;
 import com.gaekdam.gaekdambe.global.crypto.RandomPassword;
 import com.gaekdam.gaekdambe.global.crypto.SearchHashService;
+import com.gaekdam.gaekdambe.global.exception.CustomException;
+import com.gaekdam.gaekdambe.global.exception.ErrorCode;
 import com.gaekdam.gaekdambe.global.smtp.MailSendService;
 import com.gaekdam.gaekdambe.hotel_service.department.command.domain.entity.Department;
 import com.gaekdam.gaekdambe.hotel_service.department.command.infrastructure.DepartmentRepository;
@@ -48,6 +50,8 @@ public class EmployeeSecureRegistrationService {
         private final PermissionRepository permissionRepository;
         private final MailSendService mailSendService;
 
+        private final com.gaekdam.gaekdambe.iam_service.employee.command.infrastructure.BatchEmployeeRepository batchEmployeeRepository;
+
         @Transactional
         @AuditLog(details = "'직원 이름: '+ #command.name", type = PermissionTypeKey.EMPLOYEE_CREATE)
         public void registerEmployee(Long hotelGroupCode, EmployeeSecureRegistrationRequest command) {
@@ -55,7 +59,10 @@ public class EmployeeSecureRegistrationService {
                 // 비밀번호 암호화 (BCrypt)
                 // 테스트 시에 주석처리 하여 비밀번호가 password123으로 들어가게 설정
 
-                //PasswordValidator.validate(command.password());
+                // PasswordValidator.validate(command.password());
+                if (employeeRepository.findByLoginId(command.loginId()).isPresent()) {
+                        throw new CustomException(ErrorCode.LOGIN_ID_DUPLICATE);
+                }
 
                 RandomPassword randomPassword = new RandomPassword();
                 String tempPassword = randomPassword.getRandomPassword();
@@ -117,10 +124,10 @@ public class EmployeeSecureRegistrationService {
                                 hotelGroup,
                                 role);
 
-                 employeeRepository.save(employee);
+                employeeRepository.save(employee);
 
                 // 테스트시에 주석처리하여 존재하지않는 이메일로 메일발송 되지 않게 설정
-                 mailSendService.registerEmail(command.email(),tempPassword);
+                mailSendService.registerEmail(command.email(), tempPassword);
 
         }
 
@@ -184,7 +191,7 @@ public class EmployeeSecureRegistrationService {
                                         role);
                 }).toList();
 
-                employeeRepository.saveAll(employees);
+                batchEmployeeRepository.saveAllBatch(employees);
         }
 
 }

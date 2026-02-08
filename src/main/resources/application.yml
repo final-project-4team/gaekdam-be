@@ -100,3 +100,7 @@ app:
   cookie:
     secure: false
     same-site: Lax
+
+messaging:
+  sms:
+    enabled: true
