@@ -77,6 +77,16 @@ public class MessageSendHistory {
     @Column(name = "external_message_id", length = 100)
     private String externalMessageId;
 
+
+    @Column(name = "from_phone", length = 20)
+    private String fromPhone;
+
+    @Column(name = "to_phone", length = 20)
+    private String toPhone;
+
+
+
+
     /* =====================
        상태 변경 메서드
        ===================== */

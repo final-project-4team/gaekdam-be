@@ -23,9 +23,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "customer", indexes = {
-        @Index(name = "idx_customer_hotel_status_code", columnList = "hotel_group_code, customer_status, customer_code")
-})
+@Table(name = "customer")
 public class Customer {
 
     @Id

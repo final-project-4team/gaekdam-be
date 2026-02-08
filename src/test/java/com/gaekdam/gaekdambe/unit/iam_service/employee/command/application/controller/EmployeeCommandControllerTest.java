@@ -71,7 +71,7 @@ class EmployeeCommandControllerTest {
 
                     @Override
                     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                            NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+                                                  NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
                         return new CustomUser("testAdmin", "pass", Collections.emptyList(), 1L, 2L);
                     }
                 })
@@ -88,8 +88,8 @@ class EmployeeCommandControllerTest {
 
         // when
         mockMvc.perform(post("/api/v1/employee/add")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("유저 추가"));
 
@@ -106,10 +106,10 @@ class EmployeeCommandControllerTest {
 
         // when & then
         mockMvc.perform(post("/api/v1/employee/add")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-            .   andExpect(jsonPath("$.errorCode").value("INVALID_REQUEST"));
+                .   andExpect(jsonPath("$.errorCode").value("INVALID_REQUEST"));
     }
 
     @Test
@@ -129,8 +129,8 @@ class EmployeeCommandControllerTest {
 
         // when
         mockMvc.perform(put("/api/v1/employee/{employeeCode}", empCode)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("유저 정보 수정 완료"));
 
@@ -148,8 +148,8 @@ class EmployeeCommandControllerTest {
 
         // when
         mockMvc.perform(patch("/api/v1/employee/password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("비밀번호가 성공적으로 변경 되었습니다."));
 

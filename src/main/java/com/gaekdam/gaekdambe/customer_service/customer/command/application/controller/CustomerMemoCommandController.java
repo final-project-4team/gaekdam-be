@@ -24,7 +24,7 @@ public class CustomerMemoCommandController {
     private final CustomerMemoCommandService customerMemoCommandService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_CREATE')")
+    @PreAuthorize("hasAuthority('CUSTOMER_UPDATE')")
     @Operation(summary = "고객 메모를 생성한다.", description = "직원이 특정 고객에 대한 메모를 작성한다")
     public ApiResponse<CustomerMemoCommandResponse> createMemo(
             @AuthenticationPrincipal CustomUser user,
@@ -35,7 +35,7 @@ public class CustomerMemoCommandController {
     }
 
     @PutMapping("/{memoCode}")
-    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_UPDATE')")
+    @PreAuthorize("hasAuthority('CUSTOMER_UPDATE')")
     @Operation(summary = "고객 메모를 수정 한다.", description = "직원이 특정 고객에 대한 메모를 수정 한다")
     public ApiResponse<CustomerMemoCommandResponse> updateMemo(
             @AuthenticationPrincipal CustomUser user,
@@ -47,7 +47,7 @@ public class CustomerMemoCommandController {
     }
 
     @DeleteMapping("/{memoCode}")
-    @PreAuthorize("hasAuthority('CUSTOMER_MEMO_DELETE')")
+    @PreAuthorize("hasAuthority('CUSTOMER_UPDATE')")
     @Operation(summary = "고객 메모를 삭제 한다.", description = "직원이 특정 고객에 대한 메모를 삭제 할 수 있다.")
     public ApiResponse<Void> deleteMemo(
             @AuthenticationPrincipal CustomUser user,
