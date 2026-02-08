@@ -141,9 +141,10 @@ class EmployeeSecureRegistrationServiceTest {
                                 222L, "user2", "Password123!", "email2@test.com", "010-2222-2222", "Name2",
                                 10L, 20L, 30L, 40L);
 
-                List<EmployeeSecureRegistrationRequest> requests = List.of(req1, req2);
+            List<EmployeeSecureRegistrationRequest> requests = List.of(req1);
 
-                given(hotelGroupRepository.findById(hotelGroupCode))
+
+            given(hotelGroupRepository.findById(hotelGroupCode))
                                 .willReturn(Optional.of(Mockito.mock(HotelGroup.class)));
                 given(departmentRepository.findById(any())).willReturn(Optional.of(Mockito.mock(Department.class)));
                 given(hotelPositionRepository.findById(any()))

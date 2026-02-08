@@ -28,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import static org.mockito.ArgumentMatchers.*;
 
 import java.util.Optional;
 
@@ -102,10 +103,19 @@ class AuthControllerTest {
                 given(permissionRepository.findById(10L)).willReturn(Optional.of(perm));
                 given(perm.getPermissionName()).willReturn("ADMIN");
 
-                given(jwtTokenProvider.createAccessToken(anyString(), anyString(), anyLong(), anyLong()))
-                                .willReturn("access-token");
-                given(jwtTokenProvider.createRefreshToken(anyString(), anyString(), anyLong(), anyLong()))
-                                .willReturn("refresh-token");
+            given(jwtTokenProvider.createAccessToken(
+                    nullable(String.class),
+                    nullable(String.class),
+                    anyLong(),
+                    anyLong()
+            )).willReturn("access-token");
+
+            given(jwtTokenProvider.createRefreshToken(
+                    nullable(String.class),
+                    nullable(String.class),
+                    anyLong(),
+                    anyLong()
+            )).willReturn("refresh-token");
 
                 // when
                 mockMvc.perform(post("/api/v1/auth/login")
