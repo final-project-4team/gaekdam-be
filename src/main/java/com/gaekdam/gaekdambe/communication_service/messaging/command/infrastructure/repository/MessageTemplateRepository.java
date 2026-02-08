@@ -5,6 +5,7 @@ import com.gaekdam.gaekdambe.communication_service.messaging.command.domain.enum
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MessageTemplateRepository
         extends JpaRepository<MessageTemplate, Long> {
