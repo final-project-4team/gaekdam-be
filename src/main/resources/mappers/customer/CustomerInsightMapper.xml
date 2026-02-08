@@ -52,7 +52,7 @@
         AND YEAR(r.checkin_date) = YEAR(CURDATE()) - 1
     </select>
 
-    <!-- 월별 지출 (최근 12개월) - STAY COMPLETED 기준 -->
+    <!-- 월별 지출 (2025-01-01 부터) - STAY COMPLETED 기준 -->
     <select id="selectMonthlySpending" resultType="map">
         SELECT
         DATE_FORMAT(r.checkin_date, '%Y-%m') as month,
@@ -61,7 +61,7 @@
         JOIN stay s ON s.reservation_code = r.reservation_code
         WHERE s.customer_code = #{customerCode}
         AND s.stay_status = 'COMPLETED'
-        AND r.checkin_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        AND r.checkin_date >= '2025-01-01'
         GROUP BY DATE_FORMAT(r.checkin_date, '%Y-%m')
         ORDER BY month ASC
     </select>
