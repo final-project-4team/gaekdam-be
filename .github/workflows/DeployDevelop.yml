@@ -3,16 +3,16 @@ name: deploy-develop-ecs
 on:
   pull_request:
     types: [closed]
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}   
-  ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}        
-  ECS_SERVICE: ${{ secrets.ECS_SERVICE }}        
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
   CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
   BUILDKIT_PROGRESS: plain
 
@@ -38,9 +38,6 @@ jobs:
       - name: Build jar (skip tests)
         run: ./gradlew clean bootJar -x test
 
-
-      
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -62,9 +59,7 @@ jobs:
         run: |
           echo "${{ secrets.REDIS_TRUSTSTORE_BASE64 }}" | base64 -d > redis-truststore.jks
           echo "${{ secrets.TRUSTSTORE_BASE64 }}" | base64 -d > truststore.jks
-          
-          ls -l *.jks *.pem
-      
+          ls -l *.jks
 
       - name: Build & Push (AMD64)
         id: docker
@@ -79,7 +74,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-     
+      # 🔹 현재 서비스가 사용하는 최신 taskDefinition ARN 조회
       - name: Get current task definition ARN from service
         id: td-arn
         run: |
@@ -90,10 +85,11 @@ jobs:
             --output text)
           echo "task_definition_arn=$TD_ARN" >> $GITHUB_OUTPUT
 
+      # 🔹 위에서 가져온 최신 taskDefinition 기준으로 JSON 다운로드
       - name: Download task definition (from ECS)
         run: |
           aws ecs describe-task-definition \
-            --task-definition "gaekdam-backend-task:73" \
+            --task-definition "${{ steps.td-arn.outputs.task_definition_arn }}" \
             --query taskDefinition \
             --output json > task-definition.raw.json
 
