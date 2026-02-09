@@ -98,7 +98,7 @@
 <details>
   <summary><h3 style="display: inline-block;">WBS</h3></summary>
   
-  [WBS] (https://github.com/final-project-4team/gaekdam-be/wiki/WBS)
+  [WBS](https://github.com/final-project-4team/gaekdam-be/wiki/WBS)
 </details>
   <br>
     
@@ -127,35 +127,35 @@
 <details>
   <summary><h3 style="display: inline-block;">프로그램 사양서(API명세서)</h3></summary>
   
-  [프로그램 사양서(API명세서)] (https://github.com/final-project-4team/gaekdam-be/wiki/API-%EB%AA%85%EC%84%B8%EC%84%9C)
+  [프로그램 사양서(API명세서)](https://github.com/final-project-4team/gaekdam-be/wiki/API-%EB%AA%85%EC%84%B8%EC%84%9C)
 </details>
   <br>
 
   <details>
   <summary><h3 style="display: inline-block;">단위 테스트 결과서</h3></summary>
     
-  [단위 테스트 결과서] (https://github.com/final-project-4team/gaekdam-be/wiki/%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+  [단위 테스트 결과서](https://github.com/final-project-4team/gaekdam-be/wiki/%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
   </details>
   <br>
 
 <details>
 <summary><h3 style="display: inline-block;">UI/UX 단위 테스트 결과서</h3></summary>
   
-  [UI/UX 단위 테스트 결과서] (https://github.com/final-project-4team/gaekdam-be/wiki/UI-UX-%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+  [UI/UX 단위 테스트 결과서](https://github.com/final-project-4team/gaekdam-be/wiki/UI-UX-%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
 </details>
   <br>
 
 <details>
 <summary><h3 style="display: inline-block;">통합 테스트 결과서</h3></summary>
   
-  [통합 테스트 결과서] (https://github.com/final-project-4team/gaekdam-be/wiki/%ED%86%B5%ED%95%A9-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+  [통합 테스트 결과서](https://github.com/final-project-4team/gaekdam-be/wiki/%ED%86%B5%ED%95%A9-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
 </details>
   <br>
 
 <details>
 <summary><h3 style="display: inline-block;">CI/CD 계획서</h3></summary>
     
-[ 객담 CI/CD 계획서 상세보기] (https://github.com/final-project-4team/gaekdam-be/blob/sub_develop/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+[ 객담 CI/CD 계획서 상세보기](https://github.com/final-project-4team/gaekdam-be/blob/sub_develop/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
   </details>
   <br>
 
