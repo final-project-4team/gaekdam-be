@@ -83,7 +83,8 @@
 ## 📂 5. **프로젝트 산출물**
 
 - ### 프로젝트 기획서
-  <details> <summary>프로젝트 기획서</summary>
+  <details>
+    
   <br>[프로젝트 기획서 바로가기](https://github.com/final-project-4team/gaekdam-be/wiki/프로젝트-기획서)
 
   </details> 
