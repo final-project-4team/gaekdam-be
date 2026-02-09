@@ -7,9 +7,8 @@
 
     <!-- =================================================
          오늘 운영 대상 LIST
-         - reservation 기준
-         - stay는 1:1 서브쿼리
-         - 상태는 WHERE로 분기 (CASE 최소)
+         - 시간 범위 기준 (startDate / endDate)
+         - LIST / COUNT 조건 100% 동일
          ================================================= -->
     <select id="findTodayOperations"
             resultType="com.gaekdam.gaekdambe.reservation_service.reservation.query.dto.response.OperationBoardCryptoRow">
@@ -26,7 +25,6 @@
         r.checkin_date          AS plannedCheckinDate,
         r.checkout_date         AS plannedCheckoutDate,
 
-        /* 화면용 상태 */
         <choose>
             <when test="summaryType == 'CHECKIN_PLANNED'">
                 'CHECKIN_PLANNED'
@@ -56,13 +54,12 @@
         LEFT JOIN room_type rt
         ON ro.room_type_code = rt.room_type_code
 
-        <!-- stay 1:1 보장 -->
         LEFT JOIN (
         SELECT
         reservation_code,
-        MAX(stay_code)           AS stay_code,
-        MAX(actual_checkin_at)   AS actual_checkin_at,
-        MAX(actual_checkout_at)  AS actual_checkout_at
+        MAX(stay_code) AS stay_code,
+        MAX(actual_checkin_at) AS actual_checkin_at,
+        MAX(actual_checkout_at) AS actual_checkout_at
         FROM stay
         GROUP BY reservation_code
         ) s ON r.reservation_code = s.reservation_code
@@ -71,50 +68,47 @@
         r.reservation_status = 'RESERVED'
         AND r.canceled_at IS NULL
 
-        <!-- 지점 필터 -->
         <if test="propertyCode != null">
             AND r.property_code = #{propertyCode}
         </if>
 
-        <!-- =========================
-             오늘 기준 상태 분기
-             ========================= -->
         <choose>
 
-            <!-- 체크인 예정 -->
+            <!-- CHECKIN_PLANNED -->
             <when test="summaryType == 'CHECKIN_PLANNED'">
-                AND r.checkin_date = #{today}
+                AND r.checkin_date <![CDATA[ >= ]]> #{startDate}
+                AND r.checkin_date <![CDATA[ < ]]> #{endDate}
                 AND s.stay_code IS NULL
             </when>
 
-            <!-- 체크아웃 예정 -->
+            <!-- CHECKOUT_PLANNED -->
             <when test="summaryType == 'CHECKOUT_PLANNED'">
-                AND r.checkout_date = #{today}
+                AND r.checkout_date <![CDATA[ >= ]]> #{startDate}
+                AND r.checkout_date <![CDATA[ < ]]> #{endDate}
                 AND s.actual_checkin_at IS NOT NULL
                 AND s.actual_checkout_at IS NULL
             </when>
 
-            <!-- ALL_TODAY) -->
+            <!-- ALL_TODAY -->
             <otherwise>
                 AND (
-                -- CHECKIN_PLANNED
                 (
-                r.checkin_date = #{today}
+                r.checkin_date <![CDATA[ >= ]]> #{startDate}
+                AND r.checkin_date <![CDATA[ < ]]> #{endDate}
                 AND s.stay_code IS NULL
                 )
                 OR
-                -- STAYING (CHECKOUT_PLANNED 포함)
                 (
                 s.actual_checkin_at IS NOT NULL
                 AND s.actual_checkout_at IS NULL
-                AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+                AND r.checkin_date <![CDATA[ < ]]> #{endDate}
+                AND r.checkout_date <![CDATA[ >= ]]> #{startDate}
                 )
                 )
             </otherwise>
 
         </choose>
 
-        <!-- 검색 -->
         <if test="customerNameHash != null">
             AND c.customer_name_hash = #{customerNameHash}
         </if>
@@ -124,7 +118,6 @@
             LIKE CONCAT('%', #{reservationCode}, '%')
         </if>
 
-        <!-- 정렬 -->
         ORDER BY
         r.checkout_date DESC,
         r.reservation_code DESC
@@ -134,15 +127,12 @@
 
     </select>
 
-
     <!-- =================================================
-         오늘 운영 대상 SUMMARY
-         - LIST와 조건 100% 동일
-         - 상태별 COUNT
+         SUMMARY (LIST와 100% 동일 조건)
          ================================================= -->
     <select id="countTodayOperationsByStatus" resultType="map">
 
-        <!-- 체크인 예정 -->
+        <!-- CHECKIN_PLANNED -->
         SELECT 'CHECKIN_PLANNED' AS operationStatus, COUNT(*) AS cnt
         FROM reservation r
         INNER JOIN property p
@@ -153,7 +143,8 @@
         WHERE
         r.reservation_status = 'RESERVED'
         AND r.canceled_at IS NULL
-        AND r.checkin_date = #{today}
+        AND r.checkin_date <![CDATA[ >= ]]> #{startDate}
+        AND r.checkin_date <![CDATA[ < ]]> #{endDate}
         AND s.stay_code IS NULL
         <if test="propertyCode != null">
             AND r.property_code = #{propertyCode}
@@ -161,7 +152,7 @@
 
         UNION ALL
 
-        <!-- 투숙중 -->
+        <!-- STAYING -->
         SELECT 'STAYING' AS operationStatus, COUNT(*) AS cnt
         FROM reservation r
         INNER JOIN property p
@@ -174,14 +165,15 @@
         AND r.canceled_at IS NULL
         AND s.actual_checkin_at IS NOT NULL
         AND s.actual_checkout_at IS NULL
-        AND #{today} BETWEEN r.checkin_date AND r.checkout_date
+        AND r.checkin_date <![CDATA[ < ]]> #{endDate}
+        AND r.checkout_date <![CDATA[ >= ]]> #{startDate}
         <if test="propertyCode != null">
             AND r.property_code = #{propertyCode}
         </if>
 
         UNION ALL
 
-        <!-- 체크아웃 예정 -->
+        <!-- CHECKOUT_PLANNED -->
         SELECT 'CHECKOUT_PLANNED' AS operationStatus, COUNT(*) AS cnt
         FROM reservation r
         INNER JOIN property p
@@ -192,7 +184,8 @@
         WHERE
         r.reservation_status = 'RESERVED'
         AND r.canceled_at IS NULL
-        AND r.checkout_date = #{today}
+        AND r.checkout_date <![CDATA[ >= ]]> #{startDate}
+        AND r.checkout_date <![CDATA[ < ]]> #{endDate}
         AND s.actual_checkin_at IS NOT NULL
         AND s.actual_checkout_at IS NULL
         <if test="propertyCode != null">
