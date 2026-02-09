@@ -22,7 +22,6 @@ public class TodayOperationQueryService {
     private final DecryptionService decryptionService;
     private final SearchHashService searchHashService;
 
-
     public PageResponse<OperationBoardResponse> findTodayOperations(
             PageRequest page,
             Long hotelGroupCode,
@@ -32,12 +31,13 @@ public class TodayOperationQueryService {
             String reservationCode,
             SortRequest sort
     ) {
-
+        // ✅ 오늘 범위 (부대시설과 동일 개념)
         LocalDate today = LocalDate.now();
+        LocalDate startDate = today;
+        LocalDate endDate = today.plusDays(1);
 
         String nameHashHex = null;
         if (customerName != null && !customerName.isBlank()) {
-
             nameHashHex = HexUtils.toHex(
                     searchHashService.nameHash(customerName)
             );
@@ -51,7 +51,8 @@ public class TodayOperationQueryService {
                                 nameHashHex,
                                 reservationCode,
                                 page,
-                                today,
+                                startDate,
+                                endDate,
                                 sort
                         )
                         .stream()
@@ -84,7 +85,8 @@ public class TodayOperationQueryService {
                 mapper.countTodayOperationsByStatus(
                         hotelGroupCode,
                         propertyCode,
-                        today
+                        startDate,
+                        endDate
                 ),
                 summaryType
         );
@@ -96,8 +98,6 @@ public class TodayOperationQueryService {
                 total
         );
     }
-
-
 
     private long calculateTotalBySummaryType(
             List<Map<String, Object>> rows,
@@ -112,28 +112,29 @@ public class TodayOperationQueryService {
             );
         }
 
-        // ALL_TODAY = 체크인 예정 + 투숙중
+        // ALL_TODAY = CHECKIN_PLANNED + STAYING
         if (summaryType == null || summaryType.equals("ALL_TODAY")) {
             return map.getOrDefault("CHECKIN_PLANNED", 0L)
                     + map.getOrDefault("STAYING", 0L);
         }
 
-        // 일반 카드
         return map.getOrDefault(summaryType, 0L);
     }
-
 
     public Map<String, Long> getTodayOperationSummary(
             Long hotelGroupCode,
             Long propertyCode
     ) {
         LocalDate today = LocalDate.now();
+        LocalDate startDate = today;
+        LocalDate endDate = today.plusDays(1);
 
         List<Map<String, Object>> rows =
                 mapper.countTodayOperationsByStatus(
                         hotelGroupCode,
                         propertyCode,
-                        today
+                        startDate,
+                        endDate
                 );
 
         Map<String, Long> result = new HashMap<>();
@@ -145,7 +146,6 @@ public class TodayOperationQueryService {
             );
         }
 
-        // ALL_TODAY = CHECKIN_PLANNED + STAYING
         long allToday =
                 result.getOrDefault("CHECKIN_PLANNED", 0L)
                         + result.getOrDefault("STAYING", 0L);
