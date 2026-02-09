@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -33,7 +34,7 @@ public class DummyStayDataTest {
         // [가드] 이미 있으면 중복 생성 방지
         if (stayRepository.count() > 0) return;
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
         Random random = new Random();
 
         List<Stay> buffer = new ArrayList<>(BATCH);

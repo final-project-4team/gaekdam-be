@@ -21,11 +21,14 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class DummyReservationDataTest {
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private static final int TOTAL = 100_000;
     private static final int BATCH = 500;
@@ -52,7 +55,7 @@ public class DummyReservationDataTest {
         if (reservationRepository.count() > 0) return;
 
         Random random = new Random();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(KST);
 
         //  property_code -> hotel_group_code 맵 구성 (스코프 정합성 보장)
         Map<Long, Long> hotelGroupByProperty = buildHotelGroupByProperty();
