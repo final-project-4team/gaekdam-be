@@ -95,16 +95,12 @@
 
   </details> 
   
-- ### WBS
-  <details> <summary>WBS</summary>
-    <div>
-      https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=0#gid=0
-    </div>
+<details>
+  <summary><h3 style="display: inline-block;">WBS</h3></summary>
+  
+  [WBS] (https://github.com/final-project-4team/gaekdam-be/wiki/WBS)
+</details>
   <br>
-    <div>
-    <img width="1522" height="292" alt="image" src="https://github.com/user-attachments/assets/072d8f07-01e3-4ece-817f-5af76fdab179" />
-    </div>
-    </details> 
     
 - ### ERD
   <details> <summary>ERD</summary>
@@ -120,36 +116,47 @@
     
     </details> 
 
-- ### 시스템 아키텍처 구조도
-  <details> <summary>아키텍처 구조도</summary>
-  <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
-
-
-- ### 프로그램 사양서
-  <details> <summary>프로그램 사양서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=784246878#gid=784246878
-  <br>
-
-- ### 단위테스트 결과서
-  <details> <summary>단위테스트 결과서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1492834519#gid=1492834519
-  <br>
-
-- ### UI/UX 단위 테스트 결과서
-  <details> <summary>UI/UX 단위 테스트 결과서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1079372133#gid=1079372133
-  <br>
-
-- ### 통합 테스트 결과서
-  <details> <summary>통합 테스트 결과서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
-  <br>
-
-- ### CI/CD 계획서
-  <details><summary>CI/CD 계획서 열기</summary>
-    
-   [CI/CD 계획서 PDF](https://file.notion.so/f/f/33046c30-e635-8143-bcf2-0003df998aba/807411d7-22bc-40e2-8f0d-b5654bf2d45e/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf?table=block&id=2fe46c30-e635-80a8-ae64-c9e908f94545&spaceId=33046c30-e635-8143-bcf2-0003df998aba&expirationTimestamp=1770285600000&signature=H09m31SPfsxiTWLaNd9DolhDNhP7UOh0EAXfzJ-17YE&downloadName=%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+<details>
+  <summary><h3 style="display: inline-block;">시스템 아키텍쳐 구조도</h3></summary>
   
+  <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
+  </details>
+  <br>
+
+
+<details>
+  <summary><h3 style="display: inline-block;">프로그램 사양서(API명세서)</h3></summary>
+  
+  [프로그램 사양서(API명세서)] (https://github.com/final-project-4team/gaekdam-be/wiki/API-%EB%AA%85%EC%84%B8%EC%84%9C)
+</details>
+  <br>
+
+  <details>
+  <summary><h3 style="display: inline-block;">단위 테스트 결과서</h3></summary>
+    
+  [단위 테스트 결과서] (https://github.com/final-project-4team/gaekdam-be/wiki/%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+  </details>
+  <br>
+
+<details>
+<summary><h3 style="display: inline-block;">UI/UX 단위 테스트 결과서</h3></summary>
+  
+  [UI/UX 단위 테스트 결과서] (https://github.com/final-project-4team/gaekdam-be/wiki/UI-UX-%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+</details>
+  <br>
+
+<details>
+<summary><h3 style="display: inline-block;">통합 테스트 결과서</h3></summary>
+  
+  [통합 테스트 결과서] (https://github.com/final-project-4team/gaekdam-be/wiki/%ED%86%B5%ED%95%A9-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+</details>
+  <br>
+
+<details>
+<summary><h3 style="display: inline-block;">CI/CD 계획서</h3></summary>
+    
+[ 객담 CI/CD 계획서 상세보기] (https://github.com/final-project-4team/gaekdam-be/blob/sub_develop/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+  </details>
   <br>
 
 
