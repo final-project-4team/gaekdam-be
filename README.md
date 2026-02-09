@@ -82,18 +82,19 @@
 
 ## 📂 5. **프로젝트 산출물**
 
-- ### 프로젝트 기획서
-  <details>
+<details>
+  <summary><h3 style="display: inline-block;">프로젝트 기획서</h3></summary>
     
   <br>[프로젝트 기획서 바로가기](https://github.com/final-project-4team/gaekdam-be/wiki/프로젝트-기획서)
 
   </details> 
 
-- ### 요구사항 명세서
-  <details> <summary>요구사항 명세서</summary>
+<details>
+  <summary><h3 style="display: inline-block;">요구사항 명세서</h3></summary>
   <br>[바로가기](https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=2015108767#gid=2015108767)
 
   </details> 
+  <br>
   
 <details>
   <summary><h3 style="display: inline-block;">WBS</h3></summary>
@@ -102,19 +103,19 @@
 </details>
   <br>
     
-- ### ERD
-  <details> <summary>ERD</summary>
+<details>
+  <summary><h3 style="display: inline-block;">ERD</h3></summary>
     [바로가기](https://www.erdcloud.com/d/28ycP85iBgnF2iSQq)
     <img width="1312" height="882" alt="image" src="https://github.com/user-attachments/assets/4c1bc569-5719-4d19-97e0-dd39e64a1469" />
-  
-  </details> 
 
-- ### 화면 설계서
-  <details> <summary>화면 설계서</summary>
+  </details> 
+    <br>
+
+<details>
+  <summary><h3 style="display: inline-block;">화면 설계서</h3></summary>
   [바로가기] https://www.figma.com/design/ZFiVUIj6o5Xbcj5I0pOCky/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8?node-id=0-1&p=f&t=aJuRvgQ6vPVidrht-0
+  </details>
   <br>
-    
-    </details> 
 
 <details>
   <summary><h3 style="display: inline-block;">시스템 아키텍쳐 구조도</h3></summary>
