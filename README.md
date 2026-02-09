@@ -84,7 +84,7 @@
 
 - ### 프로젝트 기획서
   <details> <summary>프로젝트 기획서</summary>
-  <br>[바로가기](https://www.notion.so/20-v-7-2e046c30e63580b29c3ee632146f2685)
+  <br>[프로젝트 기획서 바로가기](https://github.com/final-project-4team/gaekdam-be/wiki/프로젝트-기획서)
 
   </details> 
 
