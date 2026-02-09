@@ -11,9 +11,13 @@
 ## 🤣  목차 (Table of Contents)
 
 ### [👩‍👧‍👦 멤버 소개](#1-멤버-소개)  
-### [🖼️ 프로젝트 개요](#2-프로젝트-개요)  
+### [🖼️ 프로젝트 개요](#2-프로젝트-개요)
+### [🚀 주요 기능 요약](#3-주요기능-요약)
 ### [🛠️ Tech Stack](#4-tech-stack)  
 ### [🗂️ 프로젝트 산출물](#5-프로젝트-산출물)
+### [🤝 팀원 회고](#6-팀원-회고)
+### [⚠️ Trouble Shooting](#7-trouble-shooting)
+---
 
 
 
@@ -28,7 +32,7 @@
 </div>
 
 ## 🖼️ 2. **프로젝트 개요**
-
+### 본 프로젝트는 호텔에 특화된 CRM으로 기존의 CRM에서 호텔에 불필요한 기능은 제거하고 KPI관리와 같은 필요한 기술만 적용하였습니다. 추가로   AI 에이전트를 활용하여 직원의 고객 응대 품질을 높일 수 있게 하였습니다.
 
 
 
@@ -82,73 +86,118 @@
 
 ## 📂 5. **프로젝트 산출물**
 
-- ### 프로젝트 기획서
-  <details> <summary>프로젝트 기획서</summary>
-  <br>[바로가기](https://www.notion.so/20-v-7-2e046c30e63580b29c3ee632146f2685)
+<details>
+  <summary><h3 style="display: inline-block;">프로젝트 기획서</h3></summary>
+    
+  <br>[프로젝트 기획서 바로가기](https://github.com/final-project-4team/gaekdam-be/wiki/프로젝트-기획서)
 
   </details> 
 
-- ### 요구사항 명세서
-  <details> <summary>요구사항 명세서</summary>
+<details>
+  <summary><h3 style="display: inline-block;">요구사항 명세서</h3></summary>
   <br>[바로가기](https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=2015108767#gid=2015108767)
 
   </details> 
-  
-- ### WBS
-  <details> <summary>WBS</summary>
-    <div>
-      https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=0#gid=0
-    </div>
   <br>
-    <div>
-    <img width="1522" height="292" alt="image" src="https://github.com/user-attachments/assets/072d8f07-01e3-4ece-817f-5af76fdab179" />
-    </div>
-    </details> 
+  
+<details>
+  <summary><h3 style="display: inline-block;">WBS</h3></summary>
+  
+  [WBS](https://github.com/final-project-4team/gaekdam-be/wiki/WBS)
+</details>
+  <br>
     
-- ### ERD
-  <details> <summary>ERD</summary>
+<details>
+  <summary><h3 style="display: inline-block;">ERD</h3></summary>
     [바로가기](https://www.erdcloud.com/d/28ycP85iBgnF2iSQq)
     <img width="1312" height="882" alt="image" src="https://github.com/user-attachments/assets/4c1bc569-5719-4d19-97e0-dd39e64a1469" />
-  
+
   </details> 
+    <br>
 
-- ### 화면 설계서
-  <details> <summary>화면 설계서</summary>
+<details>
+  <summary><h3 style="display: inline-block;">화면 설계서</h3></summary>
   [바로가기] https://www.figma.com/design/ZFiVUIj6o5Xbcj5I0pOCky/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8?node-id=0-1&p=f&t=aJuRvgQ6vPVidrht-0
-  <br>
-    
-    </details> 
-
-- ### 시스템 아키텍처 구조도
-  <details> <summary>아키텍처 구조도</summary>
-  <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
-
-
-- ### 프로그램 사양서
-  <details> <summary>프로그램 사양서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=784246878#gid=784246878
+  </details>
   <br>
 
-- ### 단위테스트 결과서
-  <details> <summary>단위테스트 결과서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1492834519#gid=1492834519
-  <br>
-
-- ### UI/UX 단위 테스트 결과서
-  <details> <summary>UI/UX 단위 테스트 결과서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=1079372133#gid=1079372133
-  <br>
-
-- ### 통합 테스트 결과서
-  <details> <summary>통합 테스트 결과서</summary>
-  [바로가기] https://docs.google.com/spreadsheets/d/18o3ChA9HKGxNwZcl9T_01co17eDQA2Mkc36GwEzm_v4/edit?gid=61765224#gid=61765224
-  <br>
-
-- ### CI/CD 계획서
-  <details><summary>CI/CD 계획서 열기</summary>
-    
-   [CI/CD 계획서 PDF](https://file.notion.so/f/f/33046c30-e635-8143-bcf2-0003df998aba/807411d7-22bc-40e2-8f0d-b5654bf2d45e/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf?table=block&id=2fe46c30-e635-80a8-ae64-c9e908f94545&spaceId=33046c30-e635-8143-bcf2-0003df998aba&expirationTimestamp=1770285600000&signature=H09m31SPfsxiTWLaNd9DolhDNhP7UOh0EAXfzJ-17YE&downloadName=%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+<details>
+  <summary><h3 style="display: inline-block;">시스템 아키텍쳐 구조도</h3></summary>
   
+  <img width="1823" height="1881" alt="최종프로젝트_스무고객_시스템아키텍쳐 drawio (3)" src="https://github.com/user-attachments/assets/9fa479fe-1ce8-4a75-aeef-9df74c6d2d46" />
+  </details>
   <br>
 
 
+<details>
+  <summary><h3 style="display: inline-block;">프로그램 사양서(API명세서)</h3></summary>
+  
+  [프로그램 사양서(API명세서)](https://github.com/final-project-4team/gaekdam-be/wiki/API-%EB%AA%85%EC%84%B8%EC%84%9C)
+</details>
+  <br>
+
+  <details>
+  <summary><h3 style="display: inline-block;">단위 테스트 결과서</h3></summary>
+    
+  [단위 테스트 결과서](https://github.com/final-project-4team/gaekdam-be/wiki/%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+  </details>
+  <br>
+
+<details>
+<summary><h3 style="display: inline-block;">UI/UX 단위 테스트 결과서</h3></summary>
+  
+  [UI/UX 단위 테스트 결과서](https://github.com/final-project-4team/gaekdam-be/wiki/UI-UX-%EB%8B%A8%EC%9C%84-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+</details>
+  <br>
+
+<details>
+<summary><h3 style="display: inline-block;">통합 테스트 결과서</h3></summary>
+  
+  [통합 테스트 결과서](https://github.com/final-project-4team/gaekdam-be/wiki/%ED%86%B5%ED%95%A9-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B2%B0%EA%B3%BC%EC%84%9C)
+</details>
+  <br>
+
+<details>
+<summary><h3 style="display: inline-block;">CI/CD 계획서</h3></summary>
+    
+[ 객담 CI/CD 계획서 상세보기](https://github.com/final-project-4team/gaekdam-be/blob/sub_develop/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+  </details>
+  <br>
+
+
+## 🤝 6. 팀원 회고
+
+| 이름 | 회고 |
+| --- | --- |
+| <div align="center">김<br/>성<br/>태</div> | 이번 프로젝트를 하면서 “일단 구현”보다 먼저, 실제 운영을 전제로 흐름과 기준을 잡는 일이 결국 더 빠르고 안정적인 결과로 이어진다는 걸 확실히 느꼈습니다.<br/>초반에 요구사항을 정리하고 팀이 같은 기준으로 판단할 수 있도록 규칙과 형태를 맞췄고, 변경이 생겨도 혼선이 줄어들도록 작업 범위와 우선순위를 공유하며 조율했습니다.<br/>개발 과정에서는 Vitest 단위 테스트와 Testcontainers 기반 통합 테스트로 기능과 흐름을 검증했고, GitHub Actions로 PR 머지 전에 자동으로 검사되게 구성해 머지 전에 문제를 미리 걸러낼 수 있게 했습니다.<br/>또한 이슈가 생기면 감으로 밀기보다 로그와 근거를 바탕으로 상황을 정리해 공유하고, 원인을 좁힌 뒤 해결과 재발 방지까지 연결하는 방식으로 팀 내 커뮤니케이션을 맞춰갔습니다.<br/>결과적으로 단순히 기능을 많이 만드는 것보다, 함께 이해하고 같은 방향으로 움직일 수 있는 구조와 소통이 프로젝트 속도와 품질을 동시에 만든다는 걸 크게 배웠습니다. |
+| <div align="center">김<br/>상<br/>재</div> | 내용 입력<br/> |
+| <div align="center">김<br/>성<br/>현</div> | 내용 입력<br/> |
+| <div align="center">박<br/>인<br/>수</div> | 내용 입력<br/> |
+
+<br>
+
+## ⚠️ 7. Trouble Shooting
+  <details> <summary>1) GitHub Actions 오토머지가 “Waiting for status checks”에서 멈춤</summary>
+
+### 증상
+PR에 Auto-merge를 걸어도 머지가 진행되지 않고 Waiting for status checks 상태로 계속 대기
+
+### 원인 분석
+
+머지 조건으로 걸린 필수 체크(checks) 와 실제 워크플로우에서 실행되는 job 이름이 달라 “체크 통과”로 인식되지 않는 케이스
+또는 develop 전용 auto-merge workflow가 main까지 영향을 주는 형태로 동작하여, 브랜치 정책이 의도와 다르게 묶이는 케이스
+
+### 해결
+
+브랜치별로 워크플로우 트리거를 명확히 분리
+pull_request.branches: ["develop"] 처럼 대상 브랜치 제한
+필수 체크로 등록된 job 이름과 실제 job 이름을 일치시키고, CI 흐름을 unit-test → integration-test로 고정
+
+### 검증
+
+PR 생성 → Actions에서 unit/integration 순차 실행 → 모두 성공 시 Auto-merge가 즉시 수행되는 것을 확인
+
+### 재발 방지
+
+브랜치별 워크플로우 파일 분리(또는 조건문 명확화) + 필수 체크 항목을 CI job 이름과 1:1로 관리
+  </details> 
