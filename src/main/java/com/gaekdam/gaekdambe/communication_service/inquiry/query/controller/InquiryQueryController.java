@@ -27,7 +27,7 @@ public class InquiryQueryController {
     private final InquiryQueryService inquiryQueryService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('INQUIRY_LIST')")
+    @PreAuthorize("hasAnyAuthority('INQUIRY_LIST','CUSTOMER_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.INQUIRY_LIST)
     @Operation(summary = "문의 리스트 조회", description = "호텔에 대한 문의 리스트를 조회한다.")
     public ApiResponse<PageResponse<InquiryListResponse>> getInquiries(
@@ -51,7 +51,7 @@ public class InquiryQueryController {
     }
 
     @GetMapping("/{inquiryCode}")
-    @PreAuthorize("hasAuthority('INQUIRY_READ')")
+    @PreAuthorize("hasAnyAuthority('INQUIRY_READ','CUSTOMER_READ')")
     @AuditLog(details = "", type = PermissionTypeKey.INQUIRY_READ)
     @Operation(summary = "문의 상세 조회", description = "특정 문의에 대해 상세 조회 한다.")
     public ApiResponse<InquiryDetailResponse> getInquiryDetail(
