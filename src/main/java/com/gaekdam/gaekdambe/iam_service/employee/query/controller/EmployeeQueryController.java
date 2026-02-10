@@ -37,7 +37,7 @@ public class EmployeeQueryController {
   }
 
   // 직원 리스트 조회
-  @PreAuthorize("hasAuthority('EMPLOYEE_LIST')")
+  @PreAuthorize("hasAnyAuthority('EMPLOYEE_LIST','INCIDENT_CREATE')")
   @GetMapping("")
   @Operation(summary = "직원 리스트 조회", description = "직원 리스트를 조회한다.")
   public ApiResponse<PageResponse<EmployeeListResponse>> searchEmployee(
