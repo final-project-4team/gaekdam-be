@@ -136,7 +136,7 @@
 <details>
   <summary><h3 style="display: inline-block;">프로젝트 기획서</h3></summary>
     
-  <br>[프로젝트 기획서 바로가기](https://github.com/final-project-4team/gaekdam-be/wiki/프로젝트-기획서)
+  <br>[프로젝트 기획서 바로가기](https://github.com/final-project-4team/gaekdam-be/blob/main/assets/%EA%B0%9D%EB%8B%B4_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8_%EA%B8%B0%ED%9A%8D%EC%84%9C.pdf)
 
   </details> 
 
@@ -179,7 +179,7 @@
 <details>
   <summary><h3 style="display: inline-block;">프로그램 사양서(API명세서)</h3></summary>
   
-  [프로그램 사양서(API명세서)](https://github.com/final-project-4team/gaekdam-be/wiki/API-%EB%AA%85%EC%84%B8%EC%84%9C)
+  [프로그램 사양서(API명세서)](https://github.com/final-project-4team/gaekdam-be/blob/main/assets/%EA%B0%9D%EB%8B%B4_API_%EB%AA%85%EC%84%B8%EC%84%9C.pdf)
 </details>
   <br>
 
@@ -207,7 +207,7 @@
 <details>
 <summary><h3 style="display: inline-block;">CI/CD 계획서</h3></summary>
     
-[ 객담 CI/CD 계획서 상세보기](https://github.com/final-project-4team/gaekdam-be/blob/sub_develop/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
+[ 객담 CI/CD 계획서 상세보기](https://github.com/final-project-4team/gaekdam-be/blob/main/assets/%EA%B0%9D%EB%8B%B4_CICD_%EA%B3%84%ED%9A%8D%EC%84%9C.pdf)
   </details>
   <br>
 
