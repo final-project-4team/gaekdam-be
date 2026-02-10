@@ -27,7 +27,7 @@ public class ReservationDetailQueryController {
 
     // 통합예약정보 상세보기
     @GetMapping("/detail/{reservationCode}")
-    @PreAuthorize("hasAuthority('RESERVATION_READ')")
+    @PreAuthorize("hasAnyAuthority('RESERVATION_READ','CUSTOMER_READ')")
     @Operation(summary = "예약 상세 조회", description = "예약 코드를 사용하여 예약 상세 정보를 조회합니다.")
     public ApiResponse<ReservationDetailResponse> getReservationDetail(
             @Parameter(description = "예약 코드") @PathVariable Long reservationCode,
