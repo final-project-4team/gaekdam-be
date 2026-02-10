@@ -172,8 +172,12 @@ public class AuthController {
 
     String userId = jwtTokenProvider.getUsername(refreshToken);
 
-    if (!redisRefreshTokenService.isValid(userId, refreshToken)
-        || !jwtTokenProvider.validateToken(refreshToken)) {
+    if (!redisRefreshTokenService.isValid(userId, refreshToken)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.failure("AUTH-002", "다른 기기에서 로그인되어 종료 합니다."));
+    }
+
+    if (!jwtTokenProvider.validateToken(refreshToken)) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .body(ApiResponse.failure("AUTH-002", "유효하지 않은 토큰입니다."));
     }

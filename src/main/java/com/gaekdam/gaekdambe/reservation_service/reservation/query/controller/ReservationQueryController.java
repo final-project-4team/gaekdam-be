@@ -40,7 +40,7 @@ public class ReservationQueryController {
         private final ReservationQueryService reservationQueryService;
 
         @GetMapping
-        @PreAuthorize("hasAuthority('RESERVATION_LIST')")
+        @PreAuthorize("hasAnyAuthority('RESERVATION_LIST','CUSTOMER_READ')")
         @AuditLog(details = "", type = PermissionTypeKey.RESERVATION_LIST)
         @Operation(summary = "예약 리스트 조회", description = "예약을 리스트 조회합니다.")
         public ApiResponse<PageResponse<ReservationResponse>> getReservations(
